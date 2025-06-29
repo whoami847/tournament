@@ -90,10 +90,10 @@ const Matchup = ({
       {nextMatch && (
         <>
           <div className="relative mx-4 h-[124px] w-12 flex-shrink-0">
-            <div className="absolute left-0 top-[25%] h-0.5 w-6 bg-border/70" />
-            {match2 && <div className="absolute left-0 top-[75%] h-0.5 w-6 bg-border/70" />}
-            <div className="absolute left-6 top-[25%] h-1/2 w-0.5 bg-border/70" />
-            <div className="absolute left-6 top-[50%] h-0.5 w-6 bg-border/70" />
+            <div className="absolute left-0 top-[25%] h-0.5 w-6 bg-[#FFB74D]" />
+            {match2 && <div className="absolute left-0 top-[75%] h-0.5 w-6 bg-[#FFB74D]" />}
+            <div className="absolute left-6 top-[25%] h-1/2 w-0.5 bg-[#FFB74D]" />
+            <div className="absolute left-6 top-[50%] h-0.5 w-6 bg-[#FFB74D]" />
           </div>
           <MatchCard match={nextMatch} />
         </>
@@ -141,52 +141,41 @@ export default function Bracket({ tournament }: { tournament: Tournament }) {
     );
   }
 
-  const renderColumn = (roundIndex: number) => {
-    const round = processedBracket[roundIndex];
-    if (!round) return null;
-    
-    return (
-      <div className="flex flex-col items-center flex-shrink-0">
-        <h2 className="text-lg font-bold mb-6">{round.name}</h2>
-        <div className="flex flex-col" style={{gap: `${Math.pow(2, roundIndex) * 5.5 - 5.5}rem`}}>
-          {round.matches.map((match, matchIndex) => {
-            const nextMatch = processedBracket[roundIndex + 1]?.matches[Math.floor(matchIndex / 2)];
-            
-            // For all but the first round, the matchups are handled by the previous round's connectors.
-            if (roundIndex > 0) {
-                return <MatchCard key={match.id} match={match} />
-            }
-
-            // For the first round, we create matchups
-            if (matchIndex % 2 !== 0) return null; // Process in pairs
-            return (
-              <Matchup
-                key={match.id}
-                match1={match}
-                match2={round.matches[matchIndex + 1]}
-                nextMatch={nextMatch}
-              />
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-  
-  const finalRoundIndex = processedBracket.length - 1;
-
   return (
     <div className="overflow-x-auto pb-4">
-      <div className="flex items-start space-x-0 p-4">
-        {renderColumn(0)}
-        {processedBracket.length > 2 &&
-          <div className="flex flex-col items-center flex-shrink-0 pt-[9.75rem]">
-            {renderColumn(1)}
+      <div className="flex items-start p-4">
+        {processedBracket.map((round, roundIndex) => (
+          <div key={round.name} className="flex-shrink-0">
+            <h2 className="text-lg font-bold mb-6 text-center">{round.name}</h2>
+            <div 
+              className="flex flex-col justify-around h-full"
+              style={{
+                gap: `${Math.pow(2, roundIndex + 1) * 1.5}rem`,
+                paddingTop: `${Math.pow(2, roundIndex) * 3 - 3}rem`,
+              }}
+            >
+              {round.matches.map((match, matchIndex) => {
+                if (roundIndex < processedBracket.length - 1) {
+                  // For all rounds except the last, we render matchups in pairs
+                  if (matchIndex % 2 !== 0) return null;
+                  const nextMatch = processedBracket[roundIndex + 1]?.matches[Math.floor(matchIndex / 2)];
+                  return (
+                    <Matchup
+                      key={match.id}
+                      match1={match}
+                      match2={round.matches[matchIndex + 1]}
+                      nextMatch={nextMatch}
+                    />
+                  );
+                } else {
+                  // For the final round, the matches are already positioned by the previous round's Matchups
+                  // so we don't render anything here. The Matchup component handles the final MatchCard.
+                  return null;
+                }
+              })}
+            </div>
           </div>
-        }
-        <div className="flex flex-col items-center flex-shrink-0 pt-[25rem]">
-           {processedBracket.length > 1 && renderColumn(finalRoundIndex)}
-        </div>
+        )).slice(0, -1)} {/* We render one less column because Matchup handles the next one */}
       </div>
     </div>
   );

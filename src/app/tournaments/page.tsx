@@ -30,7 +30,7 @@ export default function TournamentsPage() {
     });
   }, [tournaments, searchTerm, selectedGame, showBookmarkedOnly, bookmarked]);
   
-  const games: Game[] = ['Free Fire', 'Mobile Legends', 'Valorant', 'COD: Mobile'];
+  const games: Game[] = ['Free Fire', 'PUBG', 'Mobile Legends', 'COD: Mobile'];
 
   return (
     <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">

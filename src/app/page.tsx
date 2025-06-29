@@ -12,36 +12,37 @@ import Link from 'next/link';
 // --- MOCK DATA ---
 
 const featuredEventData = {
-  game: 'DOFUS',
-  name: 'Goultarminator #11',
-  date: '05.04.2023 • 15:00',
+  game: 'Free Fire',
+  name: 'Free Fire World Series',
+  date: '10.11.2024 • 18:00',
   image: 'https://placehold.co/800x400.png',
-  dataAiHint: 'fantasy characters battle'
+  dataAiHint: 'fire battle action'
 };
 
 const popularEventsData = [
-  { name: 'Winter Cup #2', date: '05.05.23 • 19:00', game: 'Waven', image: 'https://placehold.co/300x400.png', dataAiHint: 'female warrior magic', isWinner: true },
-  { name: 'Le goultarminator', date: '07.05.23 • 15:00', game: 'Dofus', image: 'https://placehold.co/300x400.png', dataAiHint: 'fantasy battle arena' },
-  { name: 'Extra Event', date: '08.08.23 • 20:00', game: 'Valorant', image: 'https://placehold.co/300x400.png', dataAiHint: 'sci-fi soldier' },
+  { name: 'MSC 2024', date: '28.06.24 • 19:00', game: 'Mobile Legends', image: 'https://placehold.co/300x400.png', dataAiHint: 'fantasy MOBA characters', isWinner: true },
+  { name: 'FFWS SEA', date: '22.03.24 • 15:00', game: 'Free Fire', image: 'https://placehold.co/300x400.png', dataAiHint: 'fire characters battle' },
+  { name: 'PMGC Grand Finals', date: '08.12.24 • 20:00', game: 'PUBG', image: 'https://placehold.co/300x400.png', dataAiHint: 'soldiers battle royale' },
 ];
 
 const tournamentsData = [
-    { name: 'Tournament of Twelve...', date: '05.05.23 • 15:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'team characters lineup', tags: ['3v3', 'Cashprice'], isOpen: true },
-    { name: 'Open Tour Winter Split', date: '09.06.23 • 21:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'ice world sword', tags: ['1v1', 'Casual'], isOpen: true },
-    { name: 'Wakfu Championship', date: '04.07.23 • 21:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'owl beast fantasy', tags: ['1v1', 'Casual'], isOpen: true },
-    { name: 'Goultaminator Junior', date: '18.08.23 • 19:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'monster battle fire', tags: ['3v3', 'Cashprice'], isOpen: true },
+    { name: 'Free Fire City Open', date: '15.06.24 • 15:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'urban battle royale', tags: ['Squad', 'Cash Prize'], isOpen: true },
+    { name: 'PUBG Mobile Pro League', date: '20.06.24 • 21:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'esports arena logo', tags: ['Pro', 'Squad'], isOpen: true },
+    { name: 'MLBB Pro League', date: '04.07.24 • 21:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'MOBA game characters', tags: ['Pro', '5v5'], isOpen: true },
+    { name: 'COD:M World Champs', date: '18.08.24 • 19:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'soldier aiming rifle', tags: ['5v5', 'Cash Prize'], isOpen: true },
 ];
 
 const gamesData = [
-    { name: 'Waven', categories: 'Adventure • MMORPG', image: 'https://placehold.co/400x200.png', dataAiHint: 'blue robot adventure',},
-    { name: 'Dofus', categories: 'Adventure • MMORPG', image: 'https://placehold.co/400x200.png', dataAiHint: 'green dragon character',},
-    { name: 'Extra Game', categories: 'Action • FPS', image: 'https://placehold.co/400x200.png', dataAiHint: 'futuristic city',},
+    { name: 'Free Fire', categories: 'Battle Royale • Action', image: 'https://placehold.co/400x200.png', dataAiHint: 'fire character action',},
+    { name: 'PUBG', categories: 'Battle Royale • FPS', image: 'https://placehold.co/400x200.png', dataAiHint: 'soldier helmet',},
+    { name: 'Mobile Legends', categories: 'MOBA • Strategy', image: 'https://placehold.co/400x200.png', dataAiHint: 'fantasy characters',},
+    { name: 'COD: Mobile', categories: 'FPS • Action', image: 'https://placehold.co/400x200.png', dataAiHint: 'modern warfare soldier',},
 ];
 
 const topPlayersData = [
-    { rank: 1, name: 'Enipsa876', role: 'Player', winrate: '95%', games: 127, avatar: 'https://placehold.co/48x48.png', dataAiHint: 'wizard character hat',},
-    { rank: 2, name: 'Eliottrope98', role: 'Player', winrate: '87%', games: 98, avatar: 'https://placehold.co/48x48.png', dataAiHint: 'blue energy character',},
-    { rank: 3, name: 'CrâtteDu16e', role: 'Player', winrate: '82.5%', games: 64, avatar: 'https://placehold.co/48x48.png', dataAiHint: 'golden armor character',},
+    { rank: 1, name: 'Jonathan Gaming', role: 'Player', winrate: '95%', games: 127, avatar: 'https://placehold.co/48x48.png', dataAiHint: 'male gamer headset',},
+    { rank: 2, name: 'ScoutOP', role: 'Player', winrate: '87%', games: 98, avatar: 'https://placehold.co/48x48.png', dataAiHint: 'male gamer intense',},
+    { rank: 3, name: 'Mortal', role: 'Player', winrate: '82.5%', games: 64, avatar: 'https://placehold.co/48x48.png', dataAiHint: 'male gamer smiling',},
 ];
 
 

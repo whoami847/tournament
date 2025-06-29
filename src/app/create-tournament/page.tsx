@@ -29,7 +29,7 @@ import { useToast } from "@/hooks/use-toast"
 
 const formSchema = z.object({
   name: z.string().min(5, "Tournament name must be at least 5 characters."),
-  game: z.enum(["Free Fire", "Mobile Legends", "Valorant", "COD: Mobile"]),
+  game: z.enum(["Free Fire", "PUBG", "Mobile Legends", "COD: Mobile"]),
   startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Please enter a valid date and time.",
   }),
@@ -41,7 +41,7 @@ const formSchema = z.object({
 
 export default function CreateTournamentPage() {
     const { toast } = useToast()
-    const games: Game[] = ['Free Fire', 'Mobile Legends', 'Valorant', 'COD: Mobile'];
+    const games: Game[] = ['Free Fire', 'PUBG', 'Mobile Legends', 'COD: Mobile'];
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),

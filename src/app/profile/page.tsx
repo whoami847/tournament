@@ -6,10 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { Game } from '@/types';
 
 type Match = {
     tournament: string;
-    game: string;
+    game: Game;
     team1: { name: string; avatar: string, dataAiHint: string };
     team2: { name: string; avatar: string, dataAiHint: string };
     score1: number;
@@ -19,8 +20,8 @@ type Match = {
 };
 
 const liveMatch: Match = {
-  tournament: '1001 Claws',
-  game: 'Waven',
+  tournament: 'Free Fire Pro Series',
+  game: 'Free Fire',
   team1: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
   team2: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
   score1: 0,
@@ -31,8 +32,8 @@ const liveMatch: Match = {
 
 const recentMatches: Match[] = [
   {
-    tournament: 'Open Winter Cup',
-    game: 'Dofus',
+    tournament: 'PUBG Mobile Global Championship',
+    game: 'PUBG',
     team1: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
     team2: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
     score1: 2,
@@ -41,8 +42,8 @@ const recentMatches: Match[] = [
     status: 'victory',
   },
   {
-    tournament: 'Open Winter Cup',
-    game: 'Dofus',
+    tournament: 'COD:M Masters',
+    game: 'COD: Mobile',
     team1: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
     team2: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
     score1: 1,
@@ -51,8 +52,8 @@ const recentMatches: Match[] = [
     status: 'defeat',
   },
    {
-    tournament: 'Open Winter Cup',
-    game: 'Dofus',
+    tournament: 'MLBB Southeast Asia Cup',
+    game: 'Mobile Legends',
     team1: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
     team2: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
     score1: 2,

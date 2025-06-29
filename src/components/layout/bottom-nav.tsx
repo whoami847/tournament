@@ -30,10 +30,11 @@ export default function BottomNav() {
             const isActive = getIsActive(item.href);
             return (
               <Link key={item.label} href={item.href} className={cn(
-                "flex flex-col items-center justify-center w-1/4 h-full rounded-lg transition-colors",
+                "flex flex-col items-center justify-center w-1/4 h-full rounded-lg transition-colors text-xs gap-1",
                 isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               )}>
-                <item.icon className={cn('h-6 w-6')} />
+                <item.icon className={cn('h-5 w-5')} />
+                <span className="truncate">{item.label}</span>
               </Link>
             );
           })}

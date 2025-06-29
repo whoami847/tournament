@@ -33,56 +33,58 @@ export default function TournamentsPage() {
   const games: Game[] = ['Free Fire', 'Mobile Legends', 'Valorant', 'COD: Mobile'];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-primary">Live Tournaments</h1>
-        <p className="text-muted-foreground mt-1">Discover and join tournaments from around the world.</p>
-      </div>
+    <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-primary">Live Tournaments</h1>
+          <p className="text-muted-foreground mt-1">Discover and join tournaments from around the world.</p>
+        </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-grow">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input 
-            placeholder="Search tournaments..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex-none w-full md:w-48">
-          <Select value={selectedGame} onValueChange={(value: Game | 'all') => setSelectedGame(value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filter by game" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Games</SelectItem>
-              {games.map(game => <SelectItem key={game} value={game}>{game}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Switch id="bookmarks-only" checked={showBookmarkedOnly} onCheckedChange={setShowBookmarkedOnly} />
-          <Label htmlFor="bookmarks-only">My Bookmarks</Label>
-        </div>
-      </div>
-
-      {filteredTournaments.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTournaments.map(tournament => (
-            <TournamentCard 
-              key={tournament.id}
-              tournament={tournament}
-              isBookmarked={!!bookmarked[tournament.id]}
-              onBookmarkToggle={() => handleBookmarkToggle(tournament.id)}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-grow">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input 
+              placeholder="Search tournaments..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-          ))}
+          </div>
+          <div className="flex-none w-full md:w-48">
+            <Select value={selectedGame} onValueChange={(value: Game | 'all') => setSelectedGame(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by game" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Games</SelectItem>
+                {games.map(game => <SelectItem key={game} value={game}>{game}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch id="bookmarks-only" checked={showBookmarkedOnly} onCheckedChange={setShowBookmarkedOnly} />
+            <Label htmlFor="bookmarks-only">My Bookmarks</Label>
+          </div>
         </div>
-      ) : (
-        <div className="text-center py-16 border border-dashed rounded-lg">
-          <h3 className="text-xl font-medium">No Tournaments Found</h3>
-          <p className="text-muted-foreground mt-2">Try adjusting your search or filters.</p>
-        </div>
-      )}
+
+        {filteredTournaments.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTournaments.map(tournament => (
+              <TournamentCard 
+                key={tournament.id}
+                tournament={tournament}
+                isBookmarked={!!bookmarked[tournament.id]}
+                onBookmarkToggle={() => handleBookmarkToggle(tournament.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 border border-dashed rounded-lg">
+            <h3 className="text-xl font-medium">No Tournaments Found</h3>
+            <p className="text-muted-foreground mt-2">Try adjusting your search or filters.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -65,127 +65,129 @@ export default function CreateTournamentPage() {
     }
   
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Create New Tournament</CardTitle>
-                <CardDescription>Fill out the details below to set up your next big event.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Tournament Name</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="e.g., Summer Skirmish 2024" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Create New Tournament</CardTitle>
+                    <CardDescription>Fill out the details below to set up your next big event.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                             <FormField
                                 control={form.control}
-                                name="game"
+                                name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Game</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a game" />
-                                            </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {games.map(game => <SelectItem key={game} value={game}>{game}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="startDate"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Start Date & Time</FormLabel>
-                                        <FormControl>
-                                            <Input type="datetime-local" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <FormField
-                                control={form.control}
-                                name="maxTeams"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Max Teams</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                             <FormField
-                                control={form.control}
-                                name="entryFee"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Entry Fee ($)</FormLabel>
-                                        <FormControl>
-                                            <Input type="number" placeholder="0 for free entry" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                             <FormField
-                                control={form.control}
-                                name="prizePool"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Prize Pool ($)</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="e.g. 10,000" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        <FormField
-                            control={form.control}
-                            name="rules"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Rules</FormLabel>
+                                    <FormLabel>Tournament Name</FormLabel>
                                     <FormControl>
-                                        <Textarea placeholder="Describe the tournament rules, format, and schedule..." className="min-h-[150px]" {...field} />
+                                        <Input placeholder="e.g., Summer Skirmish 2024" {...field} />
                                     </FormControl>
-                                    <FormDescription>
-                                        Be clear and concise. This will be shown to all participants.
-                                    </FormDescription>
                                     <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                                    </FormItem>
+                                )}
+                            />
 
-                        <Button type="submit" size="lg">Create Tournament</Button>
-                    </form>
-                </Form>
-            </CardContent>
-        </Card>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <FormField
+                                    control={form.control}
+                                    name="game"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Game</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a game" />
+                                                </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {games.map(game => <SelectItem key={game} value={game}>{game}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="startDate"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Start Date & Time</FormLabel>
+                                            <FormControl>
+                                                <Input type="datetime-local" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <FormField
+                                    control={form.control}
+                                    name="maxTeams"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Max Teams</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={form.control}
+                                    name="entryFee"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Entry Fee ($)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="0 for free entry" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={form.control}
+                                    name="prizePool"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Prize Pool ($)</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="e.g. 10,000" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <FormField
+                                control={form.control}
+                                name="rules"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Rules</FormLabel>
+                                        <FormControl>
+                                            <Textarea placeholder="Describe the tournament rules, format, and schedule..." className="min-h-[150px]" {...field} />
+                                        </FormControl>
+                                        <FormDescription>
+                                            Be clear and concise. This will be shown to all participants.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <Button type="submit" size="lg">Create Tournament</Button>
+                        </form>
+                    </Form>
+                </CardContent>
+            </Card>
+        </div>
     )
 }

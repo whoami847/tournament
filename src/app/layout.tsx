@@ -25,7 +25,7 @@ export default function RootLayout({
       </head>
       <body className={cn("font-body antialiased bg-background text-foreground min-h-screen flex flex-col")}>
         <Header />
-        <main className="flex-grow container mx-auto px-4 py-8 md:pb-8 pb-24">
+        <main className="flex-grow">
           {children}
         </main>
         <Footer />

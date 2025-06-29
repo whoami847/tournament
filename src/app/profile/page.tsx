@@ -1,42 +1,180 @@
+import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from '@/components/ui/badge';
+import { MoreHorizontal } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+type Match = {
+    tournament: string;
+    game: string;
+    team1: { name: string; avatar: string, dataAiHint: string };
+    team2: { name: string; avatar: string, dataAiHint: string };
+    score1: number;
+    score2: number;
+    date: string;
+    status: 'live' | 'victory' | 'defeat';
+};
+
+const liveMatch: Match = {
+  tournament: '1001 Griffes',
+  game: 'Waven',
+  team1: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
+  team2: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
+  score1: 0,
+  score2: 0,
+  date: '04.04.2023',
+  status: 'live',
+};
+
+const recentMatches: Match[] = [
+  {
+    tournament: 'Open Winter Cup',
+    game: 'Dofus',
+    team1: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
+    team2: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
+    score1: 2,
+    score2: 1,
+    date: '07.03.2023',
+    status: 'victory',
+  },
+  {
+    tournament: 'Open Winter Cup',
+    game: 'Dofus',
+    team1: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
+    team2: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
+    score1: 1,
+    score2: 2,
+    date: '06.03.2023',
+    status: 'defeat',
+  },
+   {
+    tournament: 'Open Winter Cup',
+    game: 'Dofus',
+    team1: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
+    team2: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
+    score1: 2,
+    score2: 1,
+    date: '07.03.2023',
+    status: 'victory',
+  },
+];
+
+
+const MatchCard = ({ match }: { match: Match }) => {
+    const statusBadges = {
+        live: <Badge className="bg-primary/80 text-primary-foreground border-none">En live</Badge>,
+        victory: <Badge className="bg-green-500/80 text-green-50 border-none">Victoire</Badge>,
+        defeat: <Badge className="bg-red-500/80 text-red-50 border-none">Défaite</Badge>
+    }
+
+    return (
+        <Card className="bg-card border-border/50 overflow-hidden">
+            <CardContent className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                    <p className="text-sm text-muted-foreground">{match.tournament} &bull; {match.game}</p>
+                    {statusBadges[match.status]}
+                </div>
+                <div className="flex items-center justify-between space-x-4">
+                     <div className="flex flex-col items-center text-center gap-2 flex-1">
+                        <Avatar className="h-12 w-12"><AvatarImage src={match.team1.avatar} data-ai-hint={match.team1.dataAiHint} /><AvatarFallback>T1</AvatarFallback></Avatar>
+                        <span className="font-semibold text-sm truncate">{match.team1.name}</span>
+                     </div>
+                     <div className="text-3xl font-bold text-center flex items-center">
+                        <span className={cn(match.score1 > match.score2 && "text-green-400")}>{match.score1}</span>
+                        <span className="text-muted-foreground mx-3 text-lg">vs</span>
+                        <span className={cn(match.score2 > match.score1 && "text-green-400")}>{match.score2}</span>
+                     </div>
+                     <div className="flex flex-col items-center text-center gap-2 flex-1">
+                        <Avatar className="h-12 w-12"><AvatarImage src={match.team2.avatar} data-ai-hint={match.team2.dataAiHint} /><AvatarFallback>T2</AvatarFallback></Avatar>
+                        <span className="font-semibold text-sm truncate">{match.team2.name}</span>
+                     </div>
+                </div>
+                 <p className="text-center text-muted-foreground text-xs mt-4">{match.date}</p>
+            </CardContent>
+        </Card>
+    );
+};
 
 export default function ProfilePage() {
   return (
-    <div className="flex justify-center items-start pt-8">
-      <Card className="w-full max-w-lg">
-        <CardHeader className="items-center text-center">
-            <Avatar className="h-24 w-24 mb-4">
-              <AvatarImage src="https://placehold.co/100x100.png" alt="User" data-ai-hint="user avatar" />
-              <AvatarFallback>P1</AvatarFallback>
-            </Avatar>
-          <CardTitle className="text-2xl">PlayerOne</CardTitle>
-          <CardDescription>player.one@email.com</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-            <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4 text-center">My Stats</h3>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                        <p className="text-2xl font-bold">12</p>
-                        <p className="text-sm text-muted-foreground">Joined</p>
-                    </div>
-                     <div>
-                        <p className="text-2xl font-bold">3</p>
-                        <p className="text-sm text-muted-foreground">Wins</p>
-                    </div>
-                     <div>
-                        <p className="text-2xl font-bold">25%</p>
-                        <p className="text-sm text-muted-foreground">Win Rate</p>
-                    </div>
-                </div>
+    <div className="pb-24">
+        {/* Header Section */}
+        <div className="relative h-48 w-full">
+            <Image
+                src="https://placehold.co/800x300.png"
+                alt="Profile banner"
+                data-ai-hint="abstract background"
+                fill
+                className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+            <div className="absolute top-14 right-4 sm:top-4">
+                <Button variant="ghost" size="icon" className="bg-black/20 hover:bg-black/40">
+                    <MoreHorizontal className="h-5 w-5" />
+                </Button>
             </div>
-          <Button className="w-full" variant="outline">
-            Edit Profile
-          </Button>
-        </CardContent>
-      </Card>
+            <h1 className="absolute top-16 left-4 text-2xl font-bold text-white sm:top-6">Profil</h1>
+        </div>
+
+        {/* Profile Info Section */}
+        <div className="relative z-10 -mt-16 flex flex-col items-center text-center px-4">
+            <div className="relative">
+                <Avatar className="h-28 w-28 border-4 border-background">
+                    <AvatarImage src="https://placehold.co/112x112.png" alt="Mapple" data-ai-hint="fantasy character" />
+                    <AvatarFallback>M</AvatarFallback>
+                </Avatar>
+                <div className="absolute bottom-1 right-1 h-5 w-5 bg-teal-400 rounded-full border-2 border-background" />
+            </div>
+            <h2 className="mt-3 text-3xl font-bold">Mapple</h2>
+            <p className="text-muted-foreground">Player</p>
+        </div>
+        
+        {/* Tabs Navigation */}
+        <div className="px-4 mt-6">
+             <Tabs defaultValue="matches" className="w-full">
+                <TabsList className="grid w-full grid-cols-4 bg-transparent p-0 h-auto rounded-lg">
+                    <TabsTrigger value="info" className="data-[state=active]:bg-card rounded-md">Informations</TabsTrigger>
+                    <TabsTrigger value="team" className="data-[state=active]:bg-card rounded-md">Team</TabsTrigger>
+                    <TabsTrigger value="matches" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Matchs</TabsTrigger>
+                    <TabsTrigger value="success" className="data-[state=active]:bg-card rounded-md">Succès</TabsTrigger>
+                </TabsList>
+                <TabsContent value="matches" className="mt-6 space-y-6">
+                    {/* Live Match */}
+                    <div>
+                         <h3 className="text-lg font-semibold flex items-center gap-2 mb-3">
+                            <span className="h-2 w-2 rounded-full bg-red-500 relative flex">
+                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            </span>
+                            En live
+                        </h3>
+                        <MatchCard match={liveMatch} />
+                    </div>
+
+                    {/* Recent Matches */}
+                    <div>
+                        <div className="flex justify-between items-baseline mb-3">
+                            <h3 className="text-lg font-semibold">Les matchs récents</h3>
+                            <span className="text-sm text-muted-foreground">{recentMatches.length} matchs</span>
+                        </div>
+                        <div className="space-y-4">
+                          {recentMatches.map((match, i) => <MatchCard key={i} match={match} />)}
+                        </div>
+                    </div>
+                </TabsContent>
+                <TabsContent value="info">
+                    <Card><CardContent><p className="text-center text-muted-foreground p-8">Informations not available.</p></CardContent></Card>
+                </TabsContent>
+                 <TabsContent value="team">
+                    <Card><CardContent><p className="text-center text-muted-foreground p-8">Team details not available.</p></CardContent></Card>
+                </TabsContent>
+                 <TabsContent value="success">
+                    <Card><CardContent><p className="text-center text-muted-foreground p-8">Succès not available.</p></CardContent></Card>
+                </TabsContent>
+            </Tabs>
+        </div>
     </div>
   );
 }

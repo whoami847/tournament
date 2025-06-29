@@ -89,11 +89,11 @@ const Matchup = ({
       </div>
       {nextMatch && (
         <>
-          <div className="relative mx-2 h-[124px] w-8 flex-shrink-0">
-            {match1 && <div className="absolute left-0 top-[25%] h-0.5 w-4 bg-[#FFB74D]" />}
-            {match2 && <div className="absolute left-0 top-[75%] h-0.5 w-4 bg-[#FFB74D]" />}
-            <div className="absolute left-4 top-[25%] h-1/2 w-0.5 bg-[#FFB74D]" />
-            <div className="absolute left-4 top-[50%] h-0.5 w-4 bg-[#FFB74D]" />
+          <div className="relative h-[124px] w-6 flex-shrink-0">
+            {match1 && <div className="absolute left-0 top-[25%] h-0.5 w-3 bg-[#FFB74D]" />}
+            {match2 && <div className="absolute left-0 top-[75%] h-0.5 w-3 bg-[#FFB74D]" />}
+            <div className="absolute left-3 top-[25%] h-1/2 w-0.5 bg-[#FFB74D]" />
+            <div className="absolute left-3 top-[50%] h-0.5 w-3 bg-[#FFB74D]" />
           </div>
           <MatchCard match={nextMatch} />
         </>
@@ -101,6 +101,7 @@ const Matchup = ({
     </div>
   );
 };
+
 
 export default function Bracket({ tournament }: { tournament: Tournament }) {
   const { bracket } = tournament;
@@ -150,7 +151,7 @@ export default function Bracket({ tournament }: { tournament: Tournament }) {
             <div 
               className="flex flex-col justify-around h-full"
               style={{
-                gap: `${Math.pow(2, roundIndex + 1) * 1.5}rem`,
+                gap: `${Math.pow(2, roundIndex + 1) * 1.2}rem`,
                 paddingTop: `${Math.pow(2, roundIndex) * 3 - 3}rem`,
               }}
             >
@@ -161,8 +162,6 @@ export default function Bracket({ tournament }: { tournament: Tournament }) {
                   
                   const nextMatch = processedBracket[roundIndex + 1]?.matches[Math.floor(matchIndex / 2)];
                   
-                  // If we are in a round past the first, the base matches are duplicates.
-                  // Pass null to the matchup component to prevent re-rendering them.
                   const match1 = roundIndex > 0 ? null : match;
                   const match2 = roundIndex > 0 ? null : round.matches[matchIndex + 1];
 
@@ -175,14 +174,12 @@ export default function Bracket({ tournament }: { tournament: Tournament }) {
                     />
                   );
                 } else {
-                  // For the final round, the matches are already positioned by the previous round's Matchups
-                  // so we don't render anything here. The Matchup component handles the final MatchCard.
                   return null;
                 }
               })}
             </div>
           </div>
-        )).slice(0, -1)} {/* We render one less column because Matchup handles the next one */}
+        )).slice(0, -1)}
       </div>
     </div>
   );

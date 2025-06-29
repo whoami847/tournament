@@ -1,6 +1,8 @@
 "use client";
 
 import Image from 'next/image';
+import { useRef } from 'react';
+import Autoplay from 'embla-carousel-autoplay';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,13 +13,29 @@ import Link from 'next/link';
 
 // --- MOCK DATA ---
 
-const featuredEventData = {
-  game: 'Free Fire',
-  name: 'Free Fire World Series',
-  date: '10.11.2024 • 18:00',
-  image: 'https://placehold.co/800x400.png',
-  dataAiHint: 'fire battle action'
-};
+const featuredEventsData = [
+  {
+    game: 'Free Fire',
+    name: 'Free Fire World Series',
+    date: '10.11.2024 • 18:00',
+    image: 'https://placehold.co/800x400.png',
+    dataAiHint: 'fire battle action'
+  },
+  {
+    game: 'Mobile Legends',
+    name: 'MSC 2024',
+    date: '28.06.24 • 19:00',
+    image: 'https://placehold.co/800x400.png',
+    dataAiHint: 'fantasy MOBA characters'
+  },
+  {
+    game: 'PUBG',
+    name: 'PMGC Grand Finals',
+    date: '08.12.24 • 20:00',
+    image: 'https://placehold.co/800x400.png',
+    dataAiHint: 'soldiers battle royale'
+  }
+];
 
 const popularEventsData = [
   { name: 'MSC 2024', date: '28.06.24 • 19:00', game: 'Mobile Legends', image: 'https://placehold.co/300x400.png', dataAiHint: 'fantasy MOBA characters', isWinner: true },
@@ -71,18 +89,37 @@ const SectionHeader = ({ title, actionText, actionHref }: { title: string, actio
   </div>
 );
 
-const FeaturedEvent = () => (
-  <Card className="relative w-full h-48 border-none overflow-hidden rounded-2xl">
-    <Image src={featuredEventData.image} alt={featuredEventData.name} fill className="object-cover" data-ai-hint={featuredEventData.dataAiHint} />
-    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-    <CardContent className="absolute bottom-0 left-0 p-4 text-white">
-      <p className="text-xs font-bold uppercase tracking-wider">{featuredEventData.game}</p>
-      <h3 className="text-2xl font-black">{featuredEventData.name}</h3>
-      <p className="text-xs text-white/80">{featuredEventData.date}</p>
-    </CardContent>
-    <Button size="icon" className="absolute bottom-4 right-4 rounded-full bg-primary/80 backdrop-blur-sm h-12 w-12 border-2 border-primary/50"><ChevronRight className="h-6 w-6" /></Button>
-  </Card>
-);
+const FeaturedEvent = () => {
+    const plugin = useRef(
+        Autoplay({ delay: 3000, stopOnInteraction: true })
+    );
+
+    return (
+        <Carousel
+            plugins={[plugin.current]}
+            className="w-full"
+            onMouseEnter={plugin.current.stop}
+            onMouseLeave={plugin.current.reset}
+        >
+            <CarouselContent>
+                {featuredEventsData.map((event, i) => (
+                    <CarouselItem key={i}>
+                        <Card className="relative w-full h-48 border-none overflow-hidden rounded-2xl">
+                            <Image src={event.image} alt={event.name} fill className="object-cover" data-ai-hint={event.dataAiHint} />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                            <CardContent className="absolute bottom-0 left-0 p-4 text-white">
+                                <p className="text-xs font-bold uppercase tracking-wider">{event.game}</p>
+                                <h3 className="text-2xl font-black">{event.name}</h3>
+                                <p className="text-xs text-white/80">{event.date}</p>
+                            </CardContent>
+                            <Button size="icon" className="absolute bottom-4 right-4 rounded-full bg-primary/80 backdrop-blur-sm h-12 w-12 border-2 border-primary/50"><ChevronRight className="h-6 w-6" /></Button>
+                        </Card>
+                    </CarouselItem>
+                ))}
+            </CarouselContent>
+        </Carousel>
+    );
+};
 
 const PopularEvents = () => (
     <div className="-mx-4">

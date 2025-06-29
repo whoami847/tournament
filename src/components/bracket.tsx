@@ -72,53 +72,122 @@ const MatchCard = ({ match }: { match: Match | null }) => {
     );
 };
 
+const Matchup = ({
+  match1,
+  match2,
+  nextMatch,
+}: {
+  match1: Match;
+  match2: Match | null;
+  nextMatch: Match | null;
+}) => {
+  return (
+    <div className="flex items-center">
+      <div className="flex flex-col gap-4">
+        <MatchCard match={match1} />
+        {match2 ? <MatchCard match={match2} /> : <div className="h-[100px] w-48 flex-shrink-0" />}
+      </div>
+      {nextMatch && (
+        <>
+          <div className="relative mx-4 h-[124px] w-12 flex-shrink-0">
+            <div className="absolute left-0 top-[25%] h-0.5 w-6 bg-border/70" />
+            {match2 && <div className="absolute left-0 top-[75%] h-0.5 w-6 bg-border/70" />}
+            <div className="absolute left-6 top-[25%] h-1/2 w-0.5 bg-border/70" />
+            <div className="absolute left-6 top-[50%] h-0.5 w-6 bg-border/70" />
+          </div>
+          <MatchCard match={nextMatch} />
+        </>
+      )}
+    </div>
+  );
+};
 
 export default function Bracket({ tournament }: { tournament: Tournament }) {
-    const { bracket } = tournament;
+  const { bracket } = tournament;
 
-    // Pre-process bracket to populate winners
-    const processedBracket = JSON.parse(JSON.stringify(bracket));
+  const processedBracket = React.useMemo(() => {
+    if (!bracket || bracket.length === 0) return [];
+    
+    const newBracket = JSON.parse(JSON.stringify(bracket));
 
     const getWinner = (match: Match | null): Team | null => {
-        if (!match || match.status !== 'completed' || !match.teams[0] || !match.teams[1]) {
+      if (!match || match.status !== 'completed' || !match.teams[0] || !match.teams[1]) {
         return null;
-        }
-        return match.scores[0] > match.scores[1] ? match.teams[0] : match.teams[1];
+      }
+      return match.scores[0] > match.scores[1] ? match.teams[0] : match.teams[1];
     };
 
-    for (let i = 0; i < processedBracket.length - 1; i++) {
-        const currentRound = processedBracket[i];
-        const nextRound = processedBracket[i + 1];
-        for (let j = 0; j < currentRound.matches.length; j += 2) {
-            const match1 = currentRound.matches[j];
-            const match2 = currentRound.matches[j + 1];
-            const nextMatch = nextRound.matches[Math.floor(j / 2)];
-            if (nextMatch) {
-                if (nextMatch.teams[0] === null) nextMatch.teams[0] = getWinner(match1);
-                if (nextMatch.teams[1] === null) nextMatch.teams[1] = getWinner(match2);
-            }
+    for (let i = 0; i < newBracket.length - 1; i++) {
+      const currentRound = newBracket[i];
+      const nextRound = newBracket[i + 1];
+      for (let j = 0; j < currentRound.matches.length; j += 2) {
+        const match1 = currentRound.matches[j];
+        const match2 = currentRound.matches[j + 1];
+        const nextMatch = nextRound.matches[Math.floor(j / 2)];
+        if (nextMatch) {
+          if (nextMatch.teams[0] === null) nextMatch.teams[0] = getWinner(match1);
+          if (nextMatch.teams[1] === null) nextMatch.teams[1] = getWinner(match2);
         }
+      }
     }
-  
+    return newBracket;
+  }, [bracket]);
+
+  if (!processedBracket || processedBracket.length === 0) {
     return (
-        <div className="overflow-x-auto pb-4">
-            <div className="flex space-x-12 p-4">
-            {processedBracket.map((round: Round, roundIndex: number) => (
-                <div key={round.name} className="flex flex-col items-center flex-shrink-0">
-                    <h2 className="text-lg font-bold mb-6">{round.name}</h2>
-                    <div className="flex flex-col justify-around" style={{ gap: `${Math.pow(2, roundIndex) * 3 - 3}rem`}}>
-                        {round.matches.map((match: Match) => (
-                           <div key={match.id} className="flex items-center">
-                                <MatchCard match={match} />
-                                {roundIndex < processedBracket.length - 1 && (
-                                    <div className="w-6 h-px bg-border/50"></div>
-                                )}
-                           </div>
-                        ))}
-                    </div>
-                </div>
-            ))}
-            </div>
+        <div className="text-center py-12">
+            <p className="text-muted-foreground">Bracket not available for this tournament.</p>
         </div>
     );
+  }
+
+  const renderColumn = (roundIndex: number) => {
+    const round = processedBracket[roundIndex];
+    if (!round) return null;
+    
+    return (
+      <div className="flex flex-col items-center flex-shrink-0">
+        <h2 className="text-lg font-bold mb-6">{round.name}</h2>
+        <div className="flex flex-col" style={{gap: `${Math.pow(2, roundIndex) * 5.5 - 5.5}rem`}}>
+          {round.matches.map((match, matchIndex) => {
+            const nextMatch = processedBracket[roundIndex + 1]?.matches[Math.floor(matchIndex / 2)];
+            
+            // For all but the first round, the matchups are handled by the previous round's connectors.
+            if (roundIndex > 0) {
+                return <MatchCard key={match.id} match={match} />
+            }
+
+            // For the first round, we create matchups
+            if (matchIndex % 2 !== 0) return null; // Process in pairs
+            return (
+              <Matchup
+                key={match.id}
+                match1={match}
+                match2={round.matches[matchIndex + 1]}
+                nextMatch={nextMatch}
+              />
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+  
+  const finalRoundIndex = processedBracket.length - 1;
+
+  return (
+    <div className="overflow-x-auto pb-4">
+      <div className="flex items-start space-x-0 p-4">
+        {renderColumn(0)}
+        {processedBracket.length > 2 &&
+          <div className="flex flex-col items-center flex-shrink-0 pt-[9.75rem]">
+            {renderColumn(1)}
+          </div>
+        }
+        <div className="flex flex-col items-center flex-shrink-0 pt-[25rem]">
+           {processedBracket.length > 1 && renderColumn(finalRoundIndex)}
+        </div>
+      </div>
+    </div>
+  );
 }

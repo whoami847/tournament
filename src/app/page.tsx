@@ -26,15 +26,15 @@ const popularEventsData = [
 ];
 
 const tournamentsData = [
-    { name: 'Tournoi des douze...', date: '05.05.23 • 15:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'team characters lineup', tags: ['3v3', 'Cashprice'], isOpen: true },
+    { name: 'Tournament of Twelve...', date: '05.05.23 • 15:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'team characters lineup', tags: ['3v3', 'Cashprice'], isOpen: true },
     { name: 'Open Tour Winter Split', date: '09.06.23 • 21:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'ice world sword', tags: ['1v1', 'Casual'], isOpen: true },
     { name: 'Wakfu Championship', date: '04.07.23 • 21:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'owl beast fantasy', tags: ['1v1', 'Casual'], isOpen: true },
     { name: 'Goultaminator Junior', date: '18.08.23 • 19:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'monster battle fire', tags: ['3v3', 'Cashprice'], isOpen: true },
 ];
 
 const gamesData = [
-    { name: 'Waven', categories: 'Aventure • MMORPG', image: 'https://placehold.co/400x200.png', dataAiHint: 'blue robot adventure',},
-    { name: 'Dofus', categories: 'Aventure • MMORPG', image: 'https://placehold.co/400x200.png', dataAiHint: 'green dragon character',},
+    { name: 'Waven', categories: 'Adventure • MMORPG', image: 'https://placehold.co/400x200.png', dataAiHint: 'blue robot adventure',},
+    { name: 'Dofus', categories: 'Adventure • MMORPG', image: 'https://placehold.co/400x200.png', dataAiHint: 'green dragon character',},
     { name: 'Extra Game', categories: 'Action • FPS', image: 'https://placehold.co/400x200.png', dataAiHint: 'futuristic city',},
 ];
 
@@ -119,7 +119,7 @@ const TournamentsGrid = () => (
       <Card key={i} className="border-border/50 bg-transparent overflow-hidden rounded-xl">
         <div className="relative h-24">
             <Image src={t.image} alt={t.name} fill className="object-cover" data-ai-hint={t.dataAiHint} />
-            {t.isOpen && <Badge className="absolute top-2 right-2 bg-primary/80 border-none text-xs">Ouvert</Badge>}
+            {t.isOpen && <Badge className="absolute top-2 right-2 bg-primary/80 border-none text-xs">Open</Badge>}
         </div>
         <CardContent className="p-3 bg-card">
             <h4 className="font-bold truncate">{t.name}</h4>
@@ -189,19 +189,19 @@ export default function HomePage() {
         <div className="space-y-10">
           <FeaturedEvent />
           <section>
-            <SectionHeader title="Évènements populaires" />
+            <SectionHeader title="Popular Events" />
             <PopularEvents />
           </section>
           <section>
-            <SectionHeader title="Les tournois" actionText="Tous les tournois" actionHref="/tournaments" />
+            <SectionHeader title="Tournaments" actionText="All tournaments" actionHref="/tournaments" />
             <TournamentsGrid />
           </section>
           <section>
-            <SectionHeader title="Les jeux" actionText="Tous les jeux" actionHref="#" />
+            <SectionHeader title="Games" actionText="All games" actionHref="#" />
             <GamesList />
           </section>
           <section>
-            <SectionHeader title="Top players" actionText="Classement complet" actionHref="#" />
+            <SectionHeader title="Top Players" actionText="Full Ranking" actionHref="#" />
             <TopPlayers />
           </section>
         </div>

@@ -19,7 +19,7 @@ type Match = {
 };
 
 const liveMatch: Match = {
-  tournament: '1001 Griffes',
+  tournament: '1001 Claws',
   game: 'Waven',
   team1: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
   team2: { name: 'Team', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'team logo' },
@@ -65,9 +65,9 @@ const recentMatches: Match[] = [
 
 const MatchCard = ({ match }: { match: Match }) => {
     const statusBadges = {
-        live: <Badge className="bg-primary/80 text-primary-foreground border-none">En live</Badge>,
-        victory: <Badge className="bg-green-500/80 text-green-50 border-none">Victoire</Badge>,
-        defeat: <Badge className="bg-red-500/80 text-red-50 border-none">Défaite</Badge>
+        live: <Badge className="bg-primary/80 text-primary-foreground border-none">Live</Badge>,
+        victory: <Badge className="bg-green-500/80 text-green-50 border-none">Victory</Badge>,
+        defeat: <Badge className="bg-red-500/80 text-red-50 border-none">Defeat</Badge>
     }
 
     return (
@@ -116,7 +116,7 @@ export default function ProfilePage() {
                     <MoreHorizontal className="h-5 w-5" />
                 </Button>
             </div>
-            <h1 className="absolute top-16 left-4 text-2xl font-bold text-white sm:top-6">Profil</h1>
+            <h1 className="absolute top-16 left-4 text-2xl font-bold text-white sm:top-6">Profile</h1>
         </div>
 
         {/* Profile Info Section */}
@@ -136,10 +136,10 @@ export default function ProfilePage() {
         <div className="px-4 mt-6">
              <Tabs defaultValue="matches" className="w-full">
                 <TabsList className="grid w-full grid-cols-4 bg-transparent p-0 h-auto rounded-lg">
-                    <TabsTrigger value="info" className="data-[state=active]:bg-card rounded-md">Informations</TabsTrigger>
+                    <TabsTrigger value="info" className="data-[state=active]:bg-card rounded-md">Information</TabsTrigger>
                     <TabsTrigger value="team" className="data-[state=active]:bg-card rounded-md">Team</TabsTrigger>
-                    <TabsTrigger value="matches" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Matchs</TabsTrigger>
-                    <TabsTrigger value="success" className="data-[state=active]:bg-card rounded-md">Succès</TabsTrigger>
+                    <TabsTrigger value="matches" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Matches</TabsTrigger>
+                    <TabsTrigger value="success" className="data-[state=active]:bg-card rounded-md">Achievements</TabsTrigger>
                 </TabsList>
                 <TabsContent value="matches" className="mt-6 space-y-6">
                     {/* Live Match */}
@@ -148,7 +148,7 @@ export default function ProfilePage() {
                             <span className="h-2 w-2 rounded-full bg-red-500 relative flex">
                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                             </span>
-                            En live
+                            Live
                         </h3>
                         <MatchCard match={liveMatch} />
                     </div>
@@ -156,8 +156,8 @@ export default function ProfilePage() {
                     {/* Recent Matches */}
                     <div>
                         <div className="flex justify-between items-baseline mb-3">
-                            <h3 className="text-lg font-semibold">Les matchs récents</h3>
-                            <span className="text-sm text-muted-foreground">{recentMatches.length} matchs</span>
+                            <h3 className="text-lg font-semibold">Recent Matches</h3>
+                            <span className="text-sm text-muted-foreground">{recentMatches.length} matches</span>
                         </div>
                         <div className="space-y-4">
                           {recentMatches.map((match, i) => <MatchCard key={i} match={match} />)}
@@ -165,13 +165,13 @@ export default function ProfilePage() {
                     </div>
                 </TabsContent>
                 <TabsContent value="info">
-                    <Card><CardContent><p className="text-center text-muted-foreground p-8">Informations not available.</p></CardContent></Card>
+                    <Card><CardContent><p className="text-center text-muted-foreground p-8">Information not available.</p></CardContent></Card>
                 </TabsContent>
                  <TabsContent value="team">
                     <Card><CardContent><p className="text-center text-muted-foreground p-8">Team details not available.</p></CardContent></Card>
                 </TabsContent>
                  <TabsContent value="success">
-                    <Card><CardContent><p className="text-center text-muted-foreground p-8">Succès not available.</p></CardContent></Card>
+                    <Card><CardContent><p className="text-center text-muted-foreground p-8">Achievements not available.</p></CardContent></Card>
                 </TabsContent>
             </Tabs>
         </div>

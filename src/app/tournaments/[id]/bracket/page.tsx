@@ -1,13 +1,11 @@
 "use client"
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, notFound } from 'next/navigation';
 import { mockTournaments } from '@/lib/data';
 import Bracket from '@/components/bracket';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, MoreHorizontal } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export default function BracketPage() {
   const params = useParams<{ id: string }>();
@@ -18,8 +16,6 @@ export default function BracketPage() {
   if (!tournament || !tournament.bracket || tournament.bracket.length === 0) {
     notFound();
   }
-
-  const [activeRoundName, setActiveRoundName] = useState(tournament.bracket[0].name);
 
   return (
     <div className="bg-background min-h-screen">
@@ -36,22 +32,7 @@ export default function BracketPage() {
                 </Button>
             </header>
 
-            <div className="flex justify-center mb-8">
-                <div className="flex gap-2 p-1 bg-card rounded-full">
-                {tournament.bracket.map(round => (
-                    <Button
-                    key={round.name}
-                    variant={activeRoundName === round.name ? 'default' : 'ghost'}
-                    className="rounded-full h-8 px-4 text-sm"
-                    onClick={() => setActiveRoundName(round.name)}
-                    >
-                    {round.name}
-                    </Button>
-                ))}
-                </div>
-            </div>
-
-            <Bracket tournament={tournament} activeRoundName={activeRoundName} />
+            <Bracket tournament={tournament} />
         </div>
     </div>
   );

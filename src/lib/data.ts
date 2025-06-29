@@ -47,15 +47,15 @@ export const mockTournaments: Tournament[] = [
         name: 'Quarter-finals',
         matches: [
           { id: 'm1', teams: [teams[0], teams[1]], scores: [2, 1], status: 'completed' },
-          { id: 'm2', teams: [teams[2], teams[3]], scores: [0, 0], status: 'live' },
-          { id: 'm3', teams: [teams[4], teams[5]], scores: [0, 0], status: 'pending' },
-          { id: 'm4', teams: [teams[6], teams[7]], scores: [0, 0], status: 'pending' },
+          { id: 'm2', teams: [teams[2], teams[3]], scores: [1, 1], status: 'live' },
+          { id: 'm3', teams: [teams[4], teams[5]], scores: [1, 1], status: 'live' },
+          { id: 'm4', teams: [teams[6], teams[7]], scores: [2, 0], status: 'completed' },
         ],
       },
       {
         name: 'Semi-finals',
         matches: [
-          { id: 'm5', teams: [teams[0], null], scores: [0, 0], status: 'pending' },
+          { id: 'm5', teams: [null, null], scores: [0, 0], status: 'pending' },
           { id: 'm6', teams: [null, null], scores: [0, 0], status: 'pending' },
         ],
       },

@@ -8,6 +8,7 @@ export interface Team {
 
 export interface Match {
   id: string;
+  name: string;
   teams: [Team | null, Team | null];
   scores: [number, number];
   status: 'pending' | 'live' | 'completed';

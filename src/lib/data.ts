@@ -46,22 +46,22 @@ export const mockTournaments: Tournament[] = [
       {
         name: 'Quarter-finals',
         matches: [
-          { id: 'm1', teams: [teams[0], teams[1]], scores: [2, 1], status: 'completed' },
-          { id: 'm2', teams: [teams[2], teams[3]], scores: [1, 1], status: 'live' },
-          { id: 'm3', teams: [teams[4], teams[5]], scores: [1, 1], status: 'live' },
-          { id: 'm4', teams: [teams[6], teams[7]], scores: [2, 0], status: 'completed' },
+          { id: 'qf1', name: 'Match 1', teams: [teams[0], teams[1]], scores: [2, 1], status: 'completed' },
+          { id: 'qf2', name: 'Match 2', teams: [teams[2], teams[3]], scores: [1, 1], status: 'live' },
+          { id: 'qf3', name: 'Match 3', teams: [teams[4], teams[5]], scores: [1, 1], status: 'live' },
+          { id: 'qf4', name: 'Match 4', teams: [teams[6], teams[7]], scores: [2, 0], status: 'completed' },
         ],
       },
       {
         name: 'Semi-finals',
         matches: [
-          { id: 'm5', teams: [null, null], scores: [0, 0], status: 'pending' },
-          { id: 'm6', teams: [null, null], scores: [0, 0], status: 'pending' },
+          { id: 'sf1', name: 'Match 1', teams: [null, null], scores: [0, 0], status: 'pending' },
+          { id: 'sf2', name: 'Match 2', teams: [null, null], scores: [0, 0], status: 'pending' },
         ],
       },
       {
         name: 'Finals',
-        matches: [{ id: 'm7', teams: [null, null], scores: [0, 0], status: 'pending' }],
+        matches: [{ id: 'f1', name: 'Final', teams: [null, null], scores: [0, 0], status: 'pending' }],
       },
     ],
   },

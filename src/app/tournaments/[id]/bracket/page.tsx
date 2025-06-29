@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { mockTournaments } from '@/lib/data';
 import Bracket from '@/components/bracket';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, MoreHorizontal } from 'lucide-react';
 
-export default function BracketPage({ params }: { params: { id: string } }) {
+export default function BracketPage() {
+  const params = useParams<{ id: string }>();
   const tournament = mockTournaments.find(t => t.id === params.id);
   
   if (!tournament || !tournament.bracket || tournament.bracket.length === 0) {

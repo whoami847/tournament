@@ -8,8 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Bracket from '@/components/bracket';
-import TournamentSummary from '@/components/tournament-summary';
-import { Calendar, Users, Trophy, Ticket, Book, Gamepad2, ShieldCheck } from 'lucide-react';
+import { Calendar, Users, Trophy, Ticket, Gamepad2, ShieldCheck } from 'lucide-react';
 
 export default function TournamentPage({ params }: { params: { id: string } }) {
   const tournament = mockTournaments.find(t => t.id === params.id);
@@ -37,8 +36,6 @@ export default function TournamentPage({ params }: { params: { id: string } }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-            <TournamentSummary tournament={tournament} />
-
             <Tabs defaultValue="bracket">
                 <TabsList>
                 <TabsTrigger value="bracket">Bracket</TabsTrigger>

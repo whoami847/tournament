@@ -27,7 +27,6 @@ export const mockTournaments: Tournament[] = [
     dataAiHint: 'fire battle',
     participants: teams.slice(0, 6),
     bracket: [],
-    events: ["Tournament announced", "Registrations opened", "6 of 16 teams registered"]
   },
   {
     id: 'ml-diamond-cup-s5',
@@ -43,7 +42,6 @@ export const mockTournaments: Tournament[] = [
     image: 'https://placehold.co/600x400.png',
     dataAiHint: 'fantasy landscape',
     participants: teams.slice(0, 8),
-    events: ["Round 1 Match 1: Cosmic Knights defeat Galaxy Predators 2-1", "Round 1 Match 2: Solar Flares vs Vortex Vipers is live now", "Schedule update: Semi-finals moved to tomorrow at 6 PM"],
     bracket: [
       {
         name: 'Quarter-finals',
@@ -82,7 +80,6 @@ export const mockTournaments: Tournament[] = [
     dataAiHint: 'cyborg agent',
     participants: teams.slice(0, 4),
     bracket: [],
-    events: ["Tournament announced", "Invited teams confirmed", "Open qualifiers begin next week"]
   },
   {
     id: 'codm-championship-2024',
@@ -99,6 +96,5 @@ export const mockTournaments: Tournament[] = [
     dataAiHint: 'modern soldier',
     participants: teams,
     bracket: [],
-    events: ["Finals: Vortex Vipers triumph over Solar Flares 3-2", "MVP of the tournament announced", "Thank you for participating!"]
   },
 ];

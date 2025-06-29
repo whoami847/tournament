@@ -32,5 +32,5 @@ export interface Tournament {
   participants: Team[];
   bracket: Round[];
   image: string;
-  events: string[];
+  dataAiHint?: string;
 }

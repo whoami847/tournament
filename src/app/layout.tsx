@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Toaster } from "@/components/ui/toaster"
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
+import BottomNav from '@/components/layout/bottom-nav';
 
 export const metadata: Metadata = {
   title: 'Esports HQ',
@@ -24,10 +25,11 @@ export default function RootLayout({
       </head>
       <body className={cn("font-body antialiased bg-background text-foreground min-h-screen flex flex-col")}>
         <Header />
-        <main className="flex-grow container mx-auto px-4 py-8">
+        <main className="flex-grow container mx-auto px-4 py-8 md:pb-8 pb-24">
           {children}
         </main>
         <Footer />
+        <BottomNav />
         <Toaster />
       </body>
     </html>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/icons";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, User } from "lucide-react";
 
 export default function Header() {
   return (
@@ -16,15 +16,20 @@ export default function Header() {
           </Link>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
-          <nav className="flex items-center space-x-2">
+          <nav className="hidden md:flex items-center space-x-2">
             <Button variant="ghost" asChild>
-              <Link href="/">Tournaments</Link>
+              <Link href="/tournaments">Tournaments</Link>
             </Button>
             <Button asChild>
               <Link href="/create-tournament">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Create
               </Link>
+            </Button>
+             <Button variant="ghost" size="icon" asChild>
+                <Link href="/profile">
+                    <User className="h-5 w-5" />
+                </Link>
             </Button>
           </nav>
         </div>

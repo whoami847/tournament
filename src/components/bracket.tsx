@@ -1,3 +1,5 @@
+"use client";
+
 import type { Match, Round, Team, Tournament } from '@/types';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,31 +14,31 @@ interface BracketProps {
 const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: number, isWinner?: boolean }) => {
   if (!team) {
     return (
-      <div className="flex items-center gap-3 p-2 h-[44px]">
-        <div className="h-8 w-8 rounded-full bg-muted/20 flex items-center justify-center">
+      <div className="flex items-center gap-2 p-2 h-[36px] w-full">
+        <div className="h-6 w-6 rounded-full bg-muted/20 flex items-center justify-center flex-shrink-0">
             <Swords className="h-4 w-4 text-muted-foreground" />
         </div>
-        <span className="text-muted-foreground text-sm">TBD</span>
+        <span className="text-muted-foreground text-xs">TBD</span>
       </div>
     );
   }
 
   return (
     <div className={cn(
-      "flex items-center justify-between p-2 rounded-md h-[44px]",
+      "flex items-center justify-between p-2 rounded-md h-[36px] w-full",
       isWinner && "bg-card-foreground/5"
     )}>
-      <div className="flex items-center gap-3">
-        <Avatar className="h-8 w-8">
+      <div className="flex items-center gap-2 overflow-hidden">
+        <Avatar className="h-6 w-6 flex-shrink-0">
           <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
           <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <span className={cn("text-sm font-medium", isWinner ? "text-foreground" : "text-muted-foreground")}>
+        <span className={cn("text-xs font-medium truncate", isWinner ? "text-foreground" : "text-muted-foreground")}>
           {team.name}
         </span>
       </div>
       {typeof score !== 'undefined' && (
-        <span className={cn("font-bold text-lg", isWinner ? "text-teal-400" : "text-muted-foreground")}>
+        <span className={cn("font-bold text-base", isWinner ? "text-teal-400" : "text-muted-foreground")}>
           {score}
         </span>
       )}
@@ -45,7 +47,7 @@ const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: num
 };
 
 const MatchCard = ({ match, isNextRound = false }: { match: Match | null, isNextRound?: boolean }) => {
-    if (!match) return <div className="bg-card/50 rounded-lg w-64 h-[104px] flex-shrink-0" />;
+    if (!match) return <div className="bg-card/50 rounded-lg w-full md:w-56 h-[100px] flex-shrink-0" />;
 
     const [team1, team2] = match.teams;
     const [score1, score2] = match.scores;
@@ -53,18 +55,18 @@ const MatchCard = ({ match, isNextRound = false }: { match: Match | null, isNext
     const winner2 = match.status === 'completed' && score2 > score1;
 
     return (
-        <div className="space-y-2">
-            <div className="flex justify-between items-center px-2">
-                <span className="text-sm text-muted-foreground">{match.name}</span>
+        <div className="space-y-2 w-full md:w-56">
+            <div className="flex justify-between items-center px-2 h-5">
+                <span className="text-xs text-muted-foreground">{match.name}</span>
                 {!isNextRound && match.status === 'live' && (
-                    <Badge variant="default" className="flex items-center gap-1.5 bg-primary/90 text-primary-foreground">
-                        <Video className="h-3 w-3" />
+                    <Badge variant="default" className="flex items-center gap-1 bg-primary/90 text-primary-foreground text-[10px] h-5">
+                        <Video className="h-2.5 w-2.5" />
                         Live
                     </Badge>
                 )}
             </div>
             <div className={cn(
-                "bg-card rounded-lg w-64 flex-shrink-0 relative border",
+                "bg-card rounded-lg flex-shrink-0 relative border",
                 isNextRound && "bg-card/50 border-dashed"
             )}>
                 <div className="p-1 space-y-1">
@@ -73,38 +75,6 @@ const MatchCard = ({ match, isNextRound = false }: { match: Match | null, isNext
                     <TeamDisplay team={team2} score={isNextRound ? undefined : score2} isWinner={!isNextRound && winner2} />
                 </div>
             </div>
-        </div>
-    );
-};
-
-const Matchup = ({
-  match1,
-  match2,
-  nextMatch
-}: {
-  match1: Match;
-  match2: Match | undefined;
-  nextMatch: Match | undefined;
-}) => {
-    return (
-        <div className="flex items-center">
-            <div className="flex flex-col gap-6">
-                <MatchCard match={match1} />
-                {match2 ? <MatchCard match={match2} /> : <div className="w-64 h-[124px]" />}
-            </div>
-            
-            {nextMatch && (
-                <>
-                    <div className="w-16 h-[124px] flex-shrink-0 flex items-center justify-center relative">
-                        <div className="w-[2px] h-full bg-border absolute left-1/2 -translate-x-1/2 top-0"></div>
-                        <div className="h-[2px] w-1/2 bg-border absolute right-0 top-1/4"></div>
-                        <div className="h-[2px] w-1/2 bg-border absolute right-0 bottom-1/4"></div>
-                        <div className="h-[2px] w-1/2 bg-border absolute left-1/2 top-1/2"></div>
-                        <div className="h-3 w-3 bg-background border-2 border-border rounded-sm rotate-45 absolute right-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"></div>
-                    </div>
-                    <MatchCard match={nextMatch} isNextRound={true} />
-                </>
-            )}
         </div>
     );
 };
@@ -140,32 +110,36 @@ export default function Bracket({ tournament, activeRoundName }: BracketProps) {
     }
 
   return (
-    <div className="w-full overflow-x-auto pb-8 flex justify-center">
-        <div className="flex items-start gap-8">
-            <div className="flex flex-col gap-8">
-                {matchups.map(({ match1, match2 }, index) => (
-                    <div key={index} className="flex flex-col gap-6">
-                        <MatchCard match={match1} />
-                        {match2 && <MatchCard match={match2} />}
-                    </div>
-                ))}
+    <div className="w-full overflow-x-auto pb-8 flex justify-start md:justify-center">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-4 p-4 md:p-0">
+          {matchups.map(({ match1, match2, nextMatch }, index) => (
+            <div key={index} className="flex items-center">
+              <div className="flex flex-col gap-4">
+                  <MatchCard match={match1} />
+                  {match2 ? <MatchCard match={match2} /> : <div className="w-full md:w-56 h-[100px]" />}
+              </div>
+              
+              {nextMatch && (
+                  <>
+                      <div className="w-8 md:w-12 h-[224px] flex-shrink-0 flex items-center justify-center relative">
+                          <div className="w-[2px] h-full bg-border absolute left-1/2 -translate-x-1/2 top-0"></div>
+                          <div className="h-[2px] w-1/2 bg-border absolute right-0 top-1/4"></div>
+                          <div className="h-[2px] w-1/2 bg-border absolute right-0 bottom-1/4"></div>
+                          <div className="h-[2px] w-1/2 bg-border absolute left-1/2 top-1/2"></div>
+                          <div className="h-3 w-3 bg-background border-2 border-border rounded-sm rotate-45 absolute right-0 top-1/2 -translate-y-1/2 z-10"></div>
+                      </div>
+                       <div className="hidden md:flex items-center">
+                         <MatchCard match={nextMatch} isNextRound={true} />
+                       </div>
+                  </>
+              )}
             </div>
-            {nextRound && (
-                <div className="flex flex-col pt-[78px] gap-[152px]">
-                   {matchups.map(({ nextMatch }, index) => (
-                        nextMatch && <div key={index} className="flex items-center">
-                           <div className="w-16 h-[124px] flex-shrink-0 flex items-center justify-center relative">
-                                <div className="w-[2px] h-full bg-border absolute left-1/2 -translate-x-1/2 top-0"></div>
-                                <div className="h-[2px] w-1/2 bg-border absolute right-0 top-1/4"></div>
-                                <div className="h-[2px] w-1/2 bg-border absolute right-0 bottom-1/4"></div>
-                                <div className="h-[2px] w-1/2 bg-border absolute left-1/2 top-1/2"></div>
-                                <div className="h-3 w-3 bg-background border-2 border-border rounded-sm rotate-45 absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 z-10"></div>
-                           </div>
-                           <MatchCard match={nextMatch} isNextRound={true} />
-                        </div>
-                   ))}
-                </div>
-            )}
+          ))}
+          <div className="flex flex-col gap-4 md:hidden">
+            {nextRound && matchups.map(({nextMatch}, index) => (
+              nextMatch && <MatchCard key={index} match={nextMatch} isNextRound={true}/>
+            ))}
+          </div>
         </div>
     </div>
   );

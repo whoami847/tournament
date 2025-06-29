@@ -1,5 +1,6 @@
 import { mockTournaments } from '@/lib/data';
 import Image from 'next/image';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import Bracket from '@/components/bracket';
 import { Calendar, Users, Trophy, Ticket, Gamepad2, ShieldCheck } from 'lucide-react';
 
 export default function TournamentPage({ params }: { params: { id: string } }) {
@@ -37,21 +37,20 @@ export default function TournamentPage({ params }: { params: { id: string } }) {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-              <Tabs defaultValue="bracket">
+              <Tabs defaultValue="participants">
                   <TabsList>
-                  <TabsTrigger value="bracket">Bracket</TabsTrigger>
                   <TabsTrigger value="participants">Participants</TabsTrigger>
+                  <TabsTrigger value="bracket">Bracket</TabsTrigger>
                   <TabsTrigger value="rules">Rules</TabsTrigger>
                   </TabsList>
                   <TabsContent value="bracket" className="mt-4">
                       <Card>
                           <CardHeader><CardTitle>Tournament Bracket</CardTitle></CardHeader>
-                          <CardContent>
-                              {tournament.bracket && tournament.bracket.length > 0 ? (
-                                  <Bracket rounds={tournament.bracket} />
-                              ) : (
-                                  <div className="text-center text-muted-foreground py-12">Bracket not available yet.</div>
-                              )}
+                          <CardContent className="text-center py-12">
+                               <p className="text-muted-foreground mb-4">The bracket is displayed in a dedicated view for a better experience.</p>
+                               <Button asChild size="lg">
+                                  <Link href={`/tournaments/${tournament.id}/bracket`}>View Full Bracket</Link>
+                               </Button>
                           </CardContent>
                       </Card>
                   </TabsContent>

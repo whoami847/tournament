@@ -7,6 +7,7 @@ import { mockTournaments } from '@/lib/data';
 import Bracket from '@/components/bracket';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, MoreHorizontal } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function BracketPage() {
   const params = useParams<{ id: string }>();

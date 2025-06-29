@@ -77,20 +77,20 @@ const Matchup = ({
   match2,
   nextMatch,
 }: {
-  match1: Match;
+  match1: Match | null;
   match2: Match | null;
   nextMatch: Match | null;
 }) => {
   return (
     <div className="flex items-center">
       <div className="flex flex-col gap-4">
-        <MatchCard match={match1} />
+        {match1 ? <MatchCard match={match1} /> : <div className="h-[100px] w-48 flex-shrink-0" />}
         {match2 ? <MatchCard match={match2} /> : <div className="h-[100px] w-48 flex-shrink-0" />}
       </div>
       {nextMatch && (
         <>
           <div className="relative mx-4 h-[124px] w-12 flex-shrink-0">
-            <div className="absolute left-0 top-[25%] h-0.5 w-6 bg-[#FFB74D]" />
+            {match1 && <div className="absolute left-0 top-[25%] h-0.5 w-6 bg-[#FFB74D]" />}
             {match2 && <div className="absolute left-0 top-[75%] h-0.5 w-6 bg-[#FFB74D]" />}
             <div className="absolute left-6 top-[25%] h-1/2 w-0.5 bg-[#FFB74D]" />
             <div className="absolute left-6 top-[50%] h-0.5 w-6 bg-[#FFB74D]" />
@@ -158,12 +158,19 @@ export default function Bracket({ tournament }: { tournament: Tournament }) {
                 if (roundIndex < processedBracket.length - 1) {
                   // For all rounds except the last, we render matchups in pairs
                   if (matchIndex % 2 !== 0) return null;
+                  
                   const nextMatch = processedBracket[roundIndex + 1]?.matches[Math.floor(matchIndex / 2)];
+                  
+                  // If we are in a round past the first, the base matches are duplicates.
+                  // Pass null to the matchup component to prevent re-rendering them.
+                  const match1 = roundIndex > 0 ? null : match;
+                  const match2 = roundIndex > 0 ? null : round.matches[matchIndex + 1];
+
                   return (
                     <Matchup
                       key={match.id}
-                      match1={match}
-                      match2={round.matches[matchIndex + 1]}
+                      match1={match1}
+                      match2={match2}
                       nextMatch={nextMatch}
                     />
                   );

@@ -89,11 +89,11 @@ const Matchup = ({
       </div>
       {nextMatch && (
         <>
-          <div className="relative mx-4 h-[124px] w-12 flex-shrink-0">
-            {match1 && <div className="absolute left-0 top-[25%] h-0.5 w-6 bg-[#FFB74D]" />}
-            {match2 && <div className="absolute left-0 top-[75%] h-0.5 w-6 bg-[#FFB74D]" />}
-            <div className="absolute left-6 top-[25%] h-1/2 w-0.5 bg-[#FFB74D]" />
-            <div className="absolute left-6 top-[50%] h-0.5 w-6 bg-[#FFB74D]" />
+          <div className="relative mx-2 h-[124px] w-8 flex-shrink-0">
+            {match1 && <div className="absolute left-0 top-[25%] h-0.5 w-4 bg-[#FFB74D]" />}
+            {match2 && <div className="absolute left-0 top-[75%] h-0.5 w-4 bg-[#FFB74D]" />}
+            <div className="absolute left-4 top-[25%] h-1/2 w-0.5 bg-[#FFB74D]" />
+            <div className="absolute left-4 top-[50%] h-0.5 w-4 bg-[#FFB74D]" />
           </div>
           <MatchCard match={nextMatch} />
         </>

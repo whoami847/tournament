@@ -84,14 +84,14 @@ const Matchup = ({
   return (
     <div className="flex items-center">
       <div className="flex flex-col gap-4">
-        {match1 ? <MatchCard match={match1} /> : <div className="h-[100px] w-48 flex-shrink-0" />}
-        {match2 ? <MatchCard match={match2} /> : <div className="h-[100px] w-48 flex-shrink-0" />}
+        <MatchCard match={match1} />
+        <MatchCard match={match2} />
       </div>
       {nextMatch && (
         <>
           <div className="relative h-[124px] w-6 flex-shrink-0">
-            {match1 && <div className="absolute left-0 top-[25%] h-0.5 w-3 bg-[#FFB74D]" />}
-            {match2 && <div className="absolute left-0 top-[75%] h-0.5 w-3 bg-[#FFB74D]" />}
+            <div className="absolute left-0 top-[25%] h-0.5 w-3 bg-[#FFB74D]" />
+            <div className="absolute left-0 top-[75%] h-0.5 w-3 bg-[#FFB74D]" />
             <div className="absolute left-3 top-[25%] h-1/2 w-0.5 bg-[#FFB74D]" />
             <div className="absolute left-3 top-[50%] h-0.5 w-3 bg-[#FFB74D]" />
           </div>
@@ -145,41 +145,35 @@ export default function Bracket({ tournament }: { tournament: Tournament }) {
   return (
     <div className="overflow-x-auto pb-4">
       <div className="flex items-start p-4">
-        {processedBracket.map((round, roundIndex) => (
-          <div key={round.name} className="flex-shrink-0">
-            <h2 className="text-lg font-bold mb-6 text-center">{round.name}</h2>
-            <div 
-              className="flex flex-col justify-around h-full"
-              style={{
-                gap: `${Math.pow(2, roundIndex + 1) * 1.2}rem`,
-                paddingTop: `${Math.pow(2, roundIndex) * 3 - 3}rem`,
-              }}
-            >
-              {round.matches.map((match, matchIndex) => {
-                if (roundIndex < processedBracket.length - 1) {
-                  // For all rounds except the last, we render matchups in pairs
-                  if (matchIndex % 2 !== 0) return null;
-                  
-                  const nextMatch = processedBracket[roundIndex + 1]?.matches[Math.floor(matchIndex / 2)];
-                  
-                  const match1 = roundIndex > 0 ? null : match;
-                  const match2 = roundIndex > 0 ? null : round.matches[matchIndex + 1];
+        {processedBracket.slice(0, -1).map((round, roundIndex) => (
+          <div key={round.name} className="flex flex-shrink-0">
+            <div className="flex-shrink-0">
+                <h2 className="text-lg font-bold mb-6 text-center">{round.name}</h2>
+                <div 
+                  className="flex flex-col justify-start h-full"
+                  style={{
+                    gap: `${Math.pow(2, roundIndex) * 4}rem`, 
+                    paddingTop: `${(Math.pow(2, roundIndex) - 1) * 6.5}rem`,
+                  }}
+                >
+                  {round.matches.map((match, matchIndex) => {
+                    if (matchIndex % 2 !== 0) return null;
+                    
+                    const nextMatch = processedBracket[roundIndex + 1]?.matches[Math.floor(matchIndex / 2)];
 
-                  return (
-                    <Matchup
-                      key={match.id}
-                      match1={match1}
-                      match2={match2}
-                      nextMatch={nextMatch}
-                    />
-                  );
-                } else {
-                  return null;
-                }
-              })}
+                    return (
+                      <Matchup
+                        key={match.id}
+                        match1={match}
+                        match2={round.matches[matchIndex + 1]}
+                        nextMatch={nextMatch}
+                      />
+                    );
+                  })}
+                </div>
             </div>
           </div>
-        )).slice(0, -1)}
+        ))}
       </div>
     </div>
   );

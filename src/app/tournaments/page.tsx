@@ -78,73 +78,66 @@ export default function TournamentsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Live Tournaments</h1>
-          <p className="text-muted-foreground mt-1">Discover and join tournaments from around the world.</p>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex justify-end">
-            <div className="w-full md:w-48">
-              <Select value={selectedGame} onValueChange={(value: Game | 'all') => setSelectedGame(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by game" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Games</SelectItem>
-                  {games.map(game => <SelectItem key={game} value={game}>{game}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+      <div className="space-y-4">
+        <div className="flex justify-end">
+          <div className="w-full md:w-48">
+            <Select value={selectedGame} onValueChange={(value: Game | 'all') => setSelectedGame(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by game" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Games</SelectItem>
+                {games.map(game => <SelectItem key={game} value={game}>{game}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
-          
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="flex items-center gap-2 p-1 bg-muted rounded-full flex-wrap">
-                    <Button variant={selectedStatus === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('all')}>All</Button>
-                    <Button variant={selectedStatus === 'live' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('live')}>Ongoing</Button>
-                    <Button variant={selectedStatus === 'upcoming' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('upcoming')}>Upcoming</Button>
-                    <Button variant={selectedStatus === 'completed' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('completed')}>Finished</Button>
-                </div>
-                <div className="flex items-center space-x-2">
-                <Switch id="bookmarks-only" checked={showBookmarkedOnly} onCheckedChange={setShowBookmarkedOnly} />
-                <Label htmlFor="bookmarks-only">My Bookmarks</Label>
-                </div>
-            </div>
+        </div>
+        
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-2 p-1 bg-muted rounded-full flex-wrap">
+                  <Button variant={selectedStatus === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('all')}>All</Button>
+                  <Button variant={selectedStatus === 'live' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('live')}>Ongoing</Button>
+                  <Button variant={selectedStatus === 'upcoming' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('upcoming')}>Upcoming</Button>
+                  <Button variant={selectedStatus === 'completed' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('completed')}>Finished</Button>
+              </div>
+              <div className="flex items-center space-x-2">
+              <Switch id="bookmarks-only" checked={showBookmarkedOnly} onCheckedChange={setShowBookmarkedOnly} />
+              <Label htmlFor="bookmarks-only">My Bookmarks</Label>
+              </div>
+          </div>
 
-            <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 p-1 bg-muted rounded-full self-start flex-wrap">
+                <Button variant={selectedFormat === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => handleFormatChange('all')}>All Modes</Button>
+                {formats.map(format => (
+                  <Button 
+                    key={format} 
+                    variant={selectedFormat === format ? 'default' : 'ghost'} 
+                    size="sm" 
+                    className="rounded-full h-8 px-4" 
+                    onClick={() => handleFormatChange(format)}
+                  >
+                    {format === 'LONE WOLF' ? 'Lone Wolf' : format}
+                  </Button>
+                ))}
+              </div>
+
+              {currentSubModes && (
                 <div className="flex items-center gap-2 p-1 bg-muted rounded-full self-start flex-wrap">
-                  <Button variant={selectedFormat === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => handleFormatChange('all')}>All Modes</Button>
-                  {formats.map(format => (
-                    <Button 
-                      key={format} 
-                      variant={selectedFormat === format ? 'default' : 'ghost'} 
-                      size="sm" 
-                      className="rounded-full h-8 px-4" 
-                      onClick={() => handleFormatChange(format)}
-                    >
-                      {format === 'LONE WOLF' ? 'Lone Wolf' : format}
-                    </Button>
+                  {currentSubModes.map(subMode => (
+                      <Button 
+                          key={subMode}
+                          variant={selectedSubMode === subMode ? 'default' : 'ghost'}
+                          size="sm"
+                          className="rounded-full h-8 px-4"
+                          onClick={() => setSelectedSubMode(subMode)}
+                      >
+                          {subMode === 'all' ? 'All Types' : subMode.charAt(0).toUpperCase() + subMode.slice(1)}
+                      </Button>
                   ))}
                 </div>
-
-                {currentSubModes && (
-                  <div className="flex items-center gap-2 p-1 bg-muted rounded-full self-start flex-wrap">
-                    {currentSubModes.map(subMode => (
-                        <Button 
-                            key={subMode}
-                            variant={selectedSubMode === subMode ? 'default' : 'ghost'}
-                            size="sm"
-                            className="rounded-full h-8 px-4"
-                            onClick={() => setSelectedSubMode(subMode)}
-                        >
-                            {subMode === 'all' ? 'All Types' : subMode.charAt(0).toUpperCase() + subMode.slice(1)}
-                        </Button>
-                    ))}
-                  </div>
-                )}
-            </div>
+              )}
           </div>
         </div>
 

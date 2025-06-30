@@ -13,6 +13,7 @@ import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type Format = 'all' | 'BR' | 'CS' | 'LONE WOLF' | '5v5';
+type SubMode = 'all' | 'solo' | 'duo' | 'squad';
 
 export default function TournamentsPage() {
   const searchParams = useSearchParams();
@@ -23,6 +24,7 @@ export default function TournamentsPage() {
   const [selectedGame, setSelectedGame] = useState<Game | 'all'>(gameFromQuery || 'all');
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'live' | 'upcoming' | 'completed'>(gameFromQuery ? 'upcoming' : 'all');
   const [selectedFormat, setSelectedFormat] = useState<Format>('all');
+  const [selectedSubMode, setSelectedSubMode] = useState<SubMode>('all');
   const [bookmarked, setBookmarked] = useState<Record<string, boolean>>({});
   const [showBookmarkedOnly, setShowBookmarkedOnly] = useState(false);
 
@@ -36,19 +38,49 @@ export default function TournamentsPage() {
     setBookmarked(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const handleFormatChange = (format: Format) => {
+    setSelectedFormat(format);
+    setSelectedSubMode('all');
+  };
+
   const filteredTournaments = useMemo(() => {
     return tournaments.filter(tournament => {
       const matchesSearch = tournament.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesGame = selectedGame === 'all' || tournament.game === selectedGame;
       const matchesStatus = selectedStatus === 'all' || tournament.status === selectedStatus;
-      const matchesFormat = selectedFormat === 'all' || tournament.format === selectedFormat;
       const matchesBookmark = !showBookmarkedOnly || !!bookmarked[tournament.id];
-      return matchesSearch && matchesGame && matchesStatus && matchesFormat && matchesBookmark;
+      
+      const matchesFormat = (() => {
+        if (selectedFormat === 'all') return true;
+        
+        // Handle formats without sub-modes like '5v5'
+        if (!['BR', 'CS', 'LONE WOLF'].includes(selectedFormat)) {
+            return tournament.format === selectedFormat;
+        }
+
+        // Handle formats with sub-modes
+        const [primaryMode, subMode] = tournament.format.split('_');
+
+        if (primaryMode !== selectedFormat) return false;
+        
+        if (selectedSubMode === 'all') return true;
+
+        return subMode?.toLowerCase() === selectedSubMode;
+      })();
+
+      return matchesSearch && matchesGame && matchesStatus && matchesBookmark && matchesFormat;
     });
-  }, [tournaments, searchTerm, selectedGame, selectedStatus, selectedFormat, showBookmarkedOnly, bookmarked]);
+  }, [tournaments, searchTerm, selectedGame, selectedStatus, selectedFormat, selectedSubMode, showBookmarkedOnly, bookmarked]);
   
   const games: Game[] = ['Free Fire', 'PUBG', 'Mobile Legends', 'COD: Mobile'];
-  const formats: Exclude<Format, 'all' | '5v5'>[] = ['BR', 'CS', 'LONE WOLF'];
+  const formats: Exclude<Format, 'all'>[] = ['BR', 'CS', 'LONE WOLF', '5v5'];
+  
+  const subModeOptions: { [key: string]: SubMode[] } = {
+    'BR': ['all', 'solo', 'duo', 'squad'],
+    'CS': ['all', 'solo', 'duo', 'squad'],
+    'LONE WOLF': ['all', 'solo', 'duo'],
+  };
+  const currentSubModes = subModeOptions[selectedFormat];
 
   return (
     <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
@@ -84,7 +116,7 @@ export default function TournamentsPage() {
           
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="flex items-center gap-2 p-1 bg-muted rounded-full">
+                <div className="flex items-center gap-2 p-1 bg-muted rounded-full flex-wrap">
                     <Button variant={selectedStatus === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('all')}>All</Button>
                     <Button variant={selectedStatus === 'live' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('live')}>Ongoing</Button>
                     <Button variant={selectedStatus === 'upcoming' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('upcoming')}>Upcoming</Button>
@@ -96,19 +128,37 @@ export default function TournamentsPage() {
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 p-1 bg-muted rounded-full self-start">
-              <Button variant={selectedFormat === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedFormat('all')}>All Modes</Button>
-              {formats.map(format => (
-                <Button 
-                  key={format} 
-                  variant={selectedFormat === format ? 'default' : 'ghost'} 
-                  size="sm" 
-                  className="rounded-full h-8 px-4" 
-                  onClick={() => setSelectedFormat(format)}
-                >
-                  {format === 'LONE WOLF' ? 'Lone Wolf' : format}
-                </Button>
-              ))}
+            <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 p-1 bg-muted rounded-full self-start flex-wrap">
+                  <Button variant={selectedFormat === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => handleFormatChange('all')}>All Modes</Button>
+                  {formats.map(format => (
+                    <Button 
+                      key={format} 
+                      variant={selectedFormat === format ? 'default' : 'ghost'} 
+                      size="sm" 
+                      className="rounded-full h-8 px-4" 
+                      onClick={() => handleFormatChange(format)}
+                    >
+                      {format === 'LONE WOLF' ? 'Lone Wolf' : format}
+                    </Button>
+                  ))}
+                </div>
+
+                {currentSubModes && (
+                  <div className="flex items-center gap-2 p-1 bg-muted rounded-full self-start flex-wrap">
+                    {currentSubModes.map(subMode => (
+                        <Button 
+                            key={subMode}
+                            variant={selectedSubMode === subMode ? 'default' : 'ghost'}
+                            size="sm"
+                            className="rounded-full h-8 px-4"
+                            onClick={() => setSelectedSubMode(subMode)}
+                        >
+                            {subMode === 'all' ? 'All Types' : subMode.charAt(0).toUpperCase() + subMode.slice(1)}
+                        </Button>
+                    ))}
+                  </div>
+                )}
             </div>
           </div>
         </div>

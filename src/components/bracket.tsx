@@ -5,7 +5,24 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import React from 'react';
-import { Video, Swords } from 'lucide-react';
+import { Video, Swords, Trophy } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+
+const ChampionCard = ({ team }: { team: Team }) => {
+    return (
+        <Card className="border-amber-400 border-2 shadow-lg shadow-amber-400/20 w-full max-w-xs bg-card">
+            <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+                <Trophy className="h-10 w-10 text-amber-400" />
+                <Avatar className="h-16 w-16 border-2 border-amber-400">
+                    <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
+                    <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <h3 className="text-xl font-bold">{team.name}</h3>
+                <p className="text-xs font-semibold uppercase tracking-wider text-amber-400">Tournament Champion</p>
+            </CardContent>
+        </Card>
+    )
+}
 
 const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: number, isWinner?: boolean }) => {
   if (!team) {
@@ -31,7 +48,7 @@ const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: num
         </span>
       </div>
       {typeof score !== 'undefined' && (
-        <span className={cn("font-bold text-sm", isWinner ? "text-chart-2" : "text-muted-foreground/50")}>
+        <span className={cn("font-bold text-sm", isWinner ? "text-primary" : "text-muted-foreground/50")}>
           {score}
         </span>
       )}
@@ -63,10 +80,10 @@ const MatchCard = ({ match }: { match: Match | null }) => {
 };
 
 const SingleMatchDisplay = ({ match }: { match: Match | null }) => {
-    if (!match) return <div className="w-full md:w-40 h-[92px]" />;
+    if (!match) return <div className="w-full md:w-48 h-[92px]" />;
     
     return (
-      <div className="w-full md:w-40">
+      <div className="w-full md:w-48">
         <div className="flex justify-between items-center mb-1 h-5">
           <p className="text-xs text-muted-foreground">{match.name}</p>
           {match.status === 'live' && (
@@ -83,7 +100,7 @@ const SingleMatchDisplay = ({ match }: { match: Match | null }) => {
 
 const Connector = () => {
     const CARD_HEIGHT = 72;
-    const GAP = 16; 
+    const GAP = 32; 
     const MATCH_DISPLAY_HEIGHT = CARD_HEIGHT + 20; // Card height + label height + margin
     const TOTAL_HEIGHT = MATCH_DISPLAY_HEIGHT * 2 + GAP;
     
@@ -104,12 +121,13 @@ const Connector = () => {
 
 export default function Bracket({ tournament, activeRoundName }: { tournament: Tournament, activeRoundName: string }) {
   
-  const processedBracket = React.useMemo(() => {
-    const newBracket: Round[] = JSON.parse(JSON.stringify(tournament.bracket));
-    const getWinner = (match: Match | null): Team | null => {
+  const getWinner = (match: Match | null): Team | null => {
       if (!match || match.status !== 'completed' || !match.teams[0] || !match.teams[1]) return null;
       return match.scores[0] > match.scores[1] ? match.teams[0] : match.teams[1];
-    };
+  };
+
+  const processedBracket = React.useMemo(() => {
+    const newBracket: Round[] = JSON.parse(JSON.stringify(tournament.bracket));
     for (let i = 0; i < newBracket.length - 1; i++) {
       const currentRound = newBracket[i];
       const nextRound = newBracket[i + 1];
@@ -151,6 +169,17 @@ export default function Bracket({ tournament, activeRoundName }: { tournament: T
   
   // Final Round (or any round with just one match)
   if (activeRound.matches.length === 1) {
+    const finalMatch = activeRound.matches[0];
+    if (finalMatch && finalMatch.status === 'completed') {
+        const winner = getWinner(finalMatch);
+        if (winner) {
+            return (
+                <div className="flex justify-center">
+                    <ChampionCard team={winner} />
+                </div>
+            )
+        }
+    }
     return (
       <div className="flex justify-center">
         <SingleMatchDisplay match={activeRound.matches[0]} />
@@ -166,7 +195,7 @@ export default function Bracket({ tournament, activeRoundName }: { tournament: T
 
             return (
                 <div key={index} className="flex items-center w-full justify-center">
-                    <div className="space-y-4">
+                    <div className="space-y-8">
                        <SingleMatchDisplay match={match1} />
                        <SingleMatchDisplay match={match2} />
                     </div>

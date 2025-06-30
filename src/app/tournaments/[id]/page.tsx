@@ -1,3 +1,5 @@
+'use client';
+
 import { mockTournaments } from '@/lib/data';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -6,10 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Award, KeyRound, Trophy, Users, Ticket, Map as MapIcon, Smartphone } from 'lucide-react';
+import { Award, KeyRound, Trophy, Users, Ticket, Map as MapIcon, Smartphone, CheckCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 const InfoRow = ({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: React.ReactNode }) => (
     <div className="flex items-center justify-between py-3 border-b border-border/50 last:border-b-0">
@@ -30,9 +34,21 @@ const getEntryType = (format: string) => {
 
 export default function TournamentPage({ params }: { params: { id: string } }) {
   const tournament = mockTournaments.find(t => t.id === params.id);
+  const { toast } = useToast();
+  const [isJoined, setIsJoined] = useState(false);
 
   if (!tournament) {
     notFound();
+  }
+
+  const isFull = tournament.teamsCount >= tournament.maxTeams;
+
+  const handleJoin = () => {
+    setIsJoined(true);
+    toast({
+      title: "Successfully Joined!",
+      description: `You have joined the "${tournament.name}" tournament. Good luck!`,
+    });
   }
 
   return (
@@ -83,7 +99,22 @@ export default function TournamentPage({ params }: { params: { id: string } }) {
                                   </div>
                               </div>
                               {tournament.status === 'upcoming' && (
-                                  <Button className="shrink-0 rounded-full font-bold">Join</Button>
+                                  <Button 
+                                    className="shrink-0 rounded-full font-bold"
+                                    onClick={handleJoin}
+                                    disabled={isJoined || isFull}
+                                  >
+                                    {isJoined ? (
+                                        <>
+                                            <CheckCircle className="mr-2 h-4 w-4" />
+                                            Joined
+                                        </>
+                                    ) : isFull ? (
+                                        'Full'
+                                    ) : (
+                                        'Join'
+                                    )}
+                                  </Button>
                               )}
                           </div>
                       </div>

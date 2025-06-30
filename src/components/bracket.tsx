@@ -150,20 +150,8 @@ const ChampionPlaceholder = () => (
 )
 
 const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: number, isWinner?: boolean }) => {
-  if (!team) {
-    return (
-      <div className="flex items-center gap-3 p-2 h-[42px] w-full">
-        <div className="h-8 w-8 rounded-md bg-muted/20 flex-shrink-0 flex items-center justify-center">
-          <Swords className="h-4 w-4 text-muted-foreground" />
-        </div>
-        <span className="text-muted-foreground text-sm">Team TBD</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center justify-between p-2 h-[42px] w-full">
-      <div className="flex items-center gap-3 overflow-hidden">
+  const teamNameAndAvatar = team ? (
+    <>
         <Avatar className="h-8 w-8 flex-shrink-0">
           <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
           <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
@@ -171,6 +159,20 @@ const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: num
         <span className={cn("text-sm truncate", isWinner ? "font-bold text-foreground" : "font-medium text-muted-foreground")}>
           {team.name}
         </span>
+    </>
+  ) : (
+    <>
+        <div className="h-8 w-8 rounded-md bg-muted/20 flex-shrink-0 flex items-center justify-center">
+            <Swords className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <span className="text-muted-foreground text-sm">Team TBD</span>
+    </>
+  );
+
+  return (
+    <div className="flex items-center justify-between p-2 h-[42px] w-full">
+      <div className="flex items-center gap-3 overflow-hidden">
+        {teamNameAndAvatar}
       </div>
       {typeof score !== 'undefined' && (
         <span className={cn("font-bold text-lg", isWinner ? "text-primary" : "text-muted-foreground/50")}>
@@ -182,16 +184,18 @@ const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: num
 };
 
 const MatchCard = ({ match }: { match: Match | null }) => {
-    if (!match) return <div className="bg-card rounded-lg w-full h-[88px] flex-shrink-0" />;
+    const team1 = match?.teams?.[0] ?? null;
+    const team2 = match?.teams?.[1] ?? null;
+    const score1 = match?.scores?.[0] ?? 0;
+    const score2 = match?.scores?.[1] ?? 0;
+    const status = match?.status ?? 'pending';
 
-    const [team1, team2] = match.teams;
-    const [score1, score2] = match.scores;
-    const winner1 = match.status === 'completed' && score1 > score2;
-    const winner2 = match.status === 'completed' && score2 > score1;
+    const winner1 = status === 'completed' && score1 > score2;
+    const winner2 = status === 'completed' && score2 > score1;
 
     // For pending/live matches, both teams are styled as "winners" to make them bold.
-    const displayTeam1AsWinner = winner1 || (match.status !== 'completed');
-    const displayTeam2AsWinner = winner2 || (match.status !== 'completed');
+    const displayTeam1AsWinner = winner1 || (status !== 'completed' && !!team1);
+    const displayTeam2AsWinner = winner2 || (status !== 'completed' && !!team2);
 
     return (
         <div className="bg-card rounded-lg w-full flex-shrink-0 border border-border/50 shadow-sm h-[88px]">
@@ -205,13 +209,11 @@ const MatchCard = ({ match }: { match: Match | null }) => {
 };
 
 const SingleMatchDisplay = ({ match }: { match: Match | null }) => {
-    if (!match) return <div className="w-full md:w-56 h-28" />;
-    
     return (
       <div className="w-full md:w-56">
         <div className="flex justify-between items-center mb-1 h-5">
-          <p className="text-xs text-muted-foreground">{match.name}</p>
-          {match.status === 'live' && (
+          <p className="text-xs text-muted-foreground">{match?.name ?? ''}</p>
+          {match?.status === 'live' && (
             <Badge variant="default" className="flex items-center gap-1 text-[10px] h-4 px-1.5 bg-red-500 border-none">
                 <Video className="h-2 w-2" />
                 Live

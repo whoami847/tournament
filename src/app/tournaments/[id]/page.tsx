@@ -3,7 +3,7 @@
 import { mockTournaments } from '@/lib/data';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,7 +30,8 @@ const getEntryType = (format: string) => {
   return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
 };
 
-export default function TournamentPage({ params }: { params: { id: string } }) {
+export default function TournamentPage() {
+  const params = useParams<{ id: string }>();
   const tournament = mockTournaments.find(t => t.id === params.id);
 
   if (!tournament) {

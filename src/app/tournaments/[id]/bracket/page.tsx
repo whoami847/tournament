@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from 'next/link';
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, MoreHorizontal } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import type { Tournament, Round, Match } from '@/types';
+import type { Tournament, Round, Match, Team } from '@/types';
 
 const roundAbbreviationMap: Record<string, string> = {
     'Finals': 'Finals',
@@ -22,6 +21,25 @@ const roundAbbreviationMap: Record<string, string> = {
 
 const generateUpcomingBracket = (tournament: Tournament): Round[] => {
     const { maxTeams, participants } = tournament;
+
+    const placeholderTeamNames = [
+        'Thunderbolts', 'Arctic Wolves', 'Desert Scorpions', 'Ironclad Legion', 
+        'Venomous Vipers', 'Rising Phoenix', 'Goliath Titans', 'Emerald Spectres',
+        'Steel Sentinels', 'Nightmare Knights', 'Inferno Squad', 'Cyclone Crew',
+        'Rogue Warriors', 'Phantom Phantoms', 'Savage Spartans', 'Digital Dynamos'
+    ];
+    
+    let teamNameCounter = 0;
+    const generatePlaceholderTeam = (): Team => {
+        const name = placeholderTeamNames[teamNameCounter % placeholderTeamNames.length];
+        const team: Team = {
+            id: `p-${teamNameCounter}`,
+            name: name,
+            avatar: 'https://placehold.co/40x40.png'
+        };
+        teamNameCounter++;
+        return team;
+    }
 
     // Ensure maxTeams is a power of 2, otherwise, a bracket is not possible
     if (maxTeams <= 1 || (maxTeams & (maxTeams - 1)) !== 0) {
@@ -63,15 +81,22 @@ const generateUpcomingBracket = (tournament: Tournament): Round[] => {
 
     const generatedRounds = rounds;
 
-    // Populate the first round with participants
+    // Populate the first round with participants, then placeholders
     if (generatedRounds.length > 0) {
         const firstRoundMatches = generatedRounds[0].matches;
         for (let i = 0; i < firstRoundMatches.length; i++) {
             const team1Index = i * 2;
             const team2Index = i * 2 + 1;
-            const team1 = participants[team1Index] || null;
-            const team2 = participants[team2Index] || null;
+            const team1 = participants[team1Index] || generatePlaceholderTeam();
+            const team2 = participants[team2Index] || generatePlaceholderTeam();
             firstRoundMatches[i].teams = [team1, team2];
+        }
+    }
+    
+    // Populate subsequent rounds with placeholder teams
+    for(let r = 1; r < generatedRounds.length; r++) {
+        for(let m = 0; m < generatedRounds[r].matches.length; m++) {
+            generatedRounds[r].matches[m].teams = [generatePlaceholderTeam(), generatePlaceholderTeam()];
         }
     }
 

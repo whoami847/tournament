@@ -14,13 +14,13 @@ export default function AdminDashboardPage() {
 
     return (
         <div>
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-3xl font-bold">Dashboard</h1>
-                <div className="flex items-center gap-2">
-                    <Button asChild>
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+                <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+                <div className="flex w-full sm:w-auto items-center gap-2">
+                    <Button asChild className="flex-1 sm:flex-auto">
                         <Link href="/admin/users">Users</Link>
                     </Button>
-                    <Button asChild>
+                    <Button asChild className="flex-1 sm:flex-auto">
                         <Link href="/admin/tournaments">Tournaments</Link>
                     </Button>
                 </div>

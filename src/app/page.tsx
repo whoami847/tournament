@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bell, ChevronRight, Users, DollarSign, Gamepad2 } from 'lucide-react';
+import { Bell, ChevronRight, Users, DollarSign, Gamepad2, Trophy } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Link from 'next/link';
 import { mockTournaments } from '@/lib/data';
@@ -209,10 +209,48 @@ const GameFilter = ({ selectedGame, onSelectGame }: { selectedGame: Game, onSele
     </div>
 );
 
+const TournamentsGrid = ({ tournaments }: { tournaments: Tournament[] }) => {
+    if (tournaments.length === 0) {
+        return (
+            <div className="text-center py-16 border border-dashed rounded-lg col-span-2">
+                <h3 className="text-xl font-medium">No Upcoming Matches</h3>
+                <p className="text-muted-foreground mt-2">Check back later or select another game.</p>
+            </div>
+        )
+    }
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {tournaments.map((t) => (
+                <Card key={t.id} className="border-border/50 hover:border-primary/50 transition-colors group">
+                     <Link href={`/tournaments/${t.id}`}>
+                        <div className="relative aspect-[16/10] bg-muted rounded-t-lg overflow-hidden">
+                            <Image src={t.image} alt={t.name} fill className="object-cover transition-transform group-hover:scale-105" data-ai-hint={t.dataAiHint as string} />
+                        </div>
+                    </Link>
+                    <CardContent className="p-3 bg-card rounded-b-lg">
+                        <h4 className="font-semibold truncate group-hover:text-primary transition-colors">{t.name}</h4>
+                        <p className="text-xs text-muted-foreground mb-2">{format(new Date(t.startDate), "dd.MM.yy '•' HH:mm")}</p>
+                        <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="font-normal gap-1"><Gamepad2 className="h-3 w-3" /> {t.format}</Badge>
+                            <Badge variant="secondary" className="font-normal gap-1"><Trophy className="h-3 w-3" /> ${t.prizePool}</Badge>
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    );
+};
+
 
 // --- MAIN PAGE COMPONENT ---
 export default function HomePage() {
   const [selectedUpcomingGame, setSelectedUpcomingGame] = useState<Game>('Free Fire');
+  
+  const upcomingTournaments = useMemo(() => {
+    return mockTournaments.filter(
+        t => t.status === 'upcoming' && t.game === selectedUpcomingGame
+    );
+  }, [selectedUpcomingGame]);
 
   return (
     <div className="bg-background text-foreground pb-24">
@@ -229,6 +267,9 @@ export default function HomePage() {
           <section>
             <SectionHeader title="Upcoming Matches" actionText="All tournaments" actionHref="/tournaments" />
             <GameFilter selectedGame={selectedUpcomingGame} onSelectGame={setSelectedUpcomingGame} />
+            <div className="mt-6">
+                <TournamentsGrid tournaments={upcomingTournaments} />
+            </div>
           </section>
           <section>
             <SectionHeader title="Our Supported Games" actionText="All games" actionHref="#" />

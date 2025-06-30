@@ -58,7 +58,6 @@ const topPlayersData = [
 ];
 
 const gameFilterData = [
-    { name: 'all' as const, displayName: 'All', image: 'https://placehold.co/400x400.png', dataAiHint: 'joystick collection' },
     { name: 'Free Fire' as Game, displayName: 'Free Fire', image: 'https://placehold.co/400x400.png', dataAiHint: 'fire character action' },
     { name: 'PUBG' as Game, displayName: 'PUBG', image: 'https://placehold.co/400x400.png', dataAiHint: 'soldier helmet' },
     { name: 'Mobile Legends' as Game, displayName: 'Mobile Legends', image: 'https://placehold.co/400x400.png', dataAiHint: 'fantasy characters' },

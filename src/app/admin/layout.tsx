@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Swords, Users, Settings } from 'lucide-react';
+import { LayoutDashboard, Swords, Users, Settings, GitPullRequest } from 'lucide-react';
 import {
   Sidebar,
   SidebarProvider,
@@ -14,15 +14,20 @@ import {
   SidebarMenuButton,
   SidebarInset,
   SidebarFooter,
+  SidebarMenuBadge,
 } from '@/components/ui/sidebar';
 import { Logo } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { mockJoinRequests } from '@/lib/admin-data';
+
+const pendingRequestsCount = mockJoinRequests.filter(req => req.status === 'pending').length;
 
 const adminNavItems = [
   { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/admin/tournaments', icon: Swords, label: 'Tournaments' },
   { href: '/admin/users', icon: Users, label: 'Users' },
+  { href: '/admin/requests', icon: GitPullRequest, label: 'Requests', badge: pendingRequestsCount > 0 ? pendingRequestsCount.toString() : undefined },
   { href: '/admin/settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -51,6 +56,7 @@ export default function AdminLayout({
                     <SidebarMenuButton isActive={pathname === item.href}>
                       <item.icon />
                       <span>{item.label}</span>
+                      {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>

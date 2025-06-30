@@ -1,7 +1,7 @@
 "use client";
 
 import Image from 'next/image';
-import { useRef } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import Autoplay from 'embla-carousel-autoplay';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Bell, ChevronRight, Users, DollarSign, Gamepad2 } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Link from 'next/link';
 import { mockTournaments } from '@/lib/data';
-import type { Tournament } from '@/types';
+import type { Tournament, Game } from '@/types';
 import { format } from 'date-fns';
 
 // --- MOCK DATA ---
@@ -41,7 +41,6 @@ const featuredEventsData = [
 ];
 
 const liveTournaments = mockTournaments.filter(t => t.status === 'live');
-const upcomingTournaments = mockTournaments.filter(t => t.status === 'upcoming');
 
 
 const gamesData = [
@@ -210,19 +209,56 @@ const TopPlayers = () => (
 
 // --- MAIN PAGE COMPONENT ---
 export default function HomePage() {
+  const [selectedUpcomingGame, setSelectedUpcomingGame] = useState<Game | 'all'>('all');
+
+  const upcomingTournaments = useMemo(() => {
+    return mockTournaments.filter(t => {
+      if (t.status !== 'upcoming') return false;
+      if (selectedUpcomingGame === 'all') return true;
+      return t.game === selectedUpcomingGame;
+    });
+  }, [selectedUpcomingGame]);
+
   return (
     <div className="bg-background text-foreground pb-24">
       <HomeHeader />
       <div className="container mx-auto px-4 mt-4">
         <div className="space-y-10">
           <FeaturedEvent />
-          <section>
-            <SectionHeader title="Live/Ongoing" />
-            <LiveEvents tournaments={liveTournaments} />
-          </section>
+          {liveTournaments.length > 0 && (
+            <section>
+              <SectionHeader title="Live/Ongoing" />
+              <LiveEvents tournaments={liveTournaments} />
+            </section>
+          )}
           <section>
             <SectionHeader title="Upcoming Matches" actionText="All tournaments" actionHref="/tournaments" />
-            <TournamentsGrid tournaments={upcomingTournaments} />
+             <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
+                <Button 
+                    variant={selectedUpcomingGame === 'all' ? 'default' : 'outline'}
+                    onClick={() => setSelectedUpcomingGame('all')}
+                    className="rounded-full shrink-0"
+                    size="sm"
+                >
+                    All
+                </Button>
+                {gamesData.map(game => (
+                    <Button
+                        key={game.name}
+                        variant={selectedUpcomingGame === game.name ? 'default' : 'outline'}
+                        onClick={() => setSelectedUpcomingGame(game.name as Game)}
+                        className="rounded-full shrink-0"
+                        size="sm"
+                    >
+                        {game.name}
+                    </Button>
+                ))}
+            </div>
+            {upcomingTournaments.length > 0 ? (
+                <TournamentsGrid tournaments={upcomingTournaments} />
+            ) : (
+                <p className="text-muted-foreground text-center py-8">No upcoming matches for this game.</p>
+            )}
           </section>
           <section>
             <SectionHeader title="Our Supported Games" actionText="All games" actionHref="#" />

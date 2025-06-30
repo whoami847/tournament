@@ -87,7 +87,7 @@ export default function AdminTournamentsPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem asChild>
-                                                    <Link href="/create-tournament">Edit</Link>
+                                                    <Link href={`/admin/tournaments/${tournament.id}/edit`}>Edit</Link>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem asChild>
                                                     <Link href={`/tournaments/${tournament.id}`}>View Details</Link>
@@ -122,7 +122,7 @@ export default function AdminTournamentsPage() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem asChild>
-                                            <Link href="/create-tournament">Edit</Link>
+                                            <Link href={`/admin/tournaments/${tournament.id}/edit`}>Edit</Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem asChild>
                                             <Link href={`/tournaments/${tournament.id}`}>View Details</Link>

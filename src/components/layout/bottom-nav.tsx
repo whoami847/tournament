@@ -23,6 +23,10 @@ export default function BottomNav() {
     return pathname.startsWith(href);
   };
 
+  if (pathname?.includes('/bracket')) {
+    return null;
+  }
+
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 p-2 z-50">
       <div className="bg-card/90 backdrop-blur-sm rounded-2xl w-full h-full border border-border shadow-lg">

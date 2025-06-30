@@ -37,9 +37,8 @@ export default function TournamentPage({ params }: { params: { id: string } }) {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-              <Tabs defaultValue="participants">
-                  <TabsList className="grid w-full grid-cols-3 bg-card rounded-full p-1 h-auto">
-                    <TabsTrigger value="participants" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Participants</TabsTrigger>
+              <Tabs defaultValue="bracket">
+                  <TabsList className="grid w-full grid-cols-2 bg-card rounded-full p-1 h-auto">
                     <TabsTrigger value="bracket" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Bracket</TabsTrigger>
                     <TabsTrigger value="rules" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Rules</TabsTrigger>
                   </TabsList>
@@ -51,14 +50,6 @@ export default function TournamentPage({ params }: { params: { id: string } }) {
                                <Button asChild size="lg">
                                   <Link href={`/tournaments/${tournament.id}/bracket`}>View Full Bracket</Link>
                                </Button>
-                          </CardContent>
-                      </Card>
-                  </TabsContent>
-                  <TabsContent value="participants" className="mt-4">
-                      <Card>
-                          <CardHeader><CardTitle>Registered Teams ({tournament.participants.length})</CardTitle></CardHeader>
-                          <CardContent>
-                              <p className="text-muted-foreground text-center py-12">Participants are shown in the bracket view.</p>
                           </CardContent>
                       </Card>
                   </TabsContent>

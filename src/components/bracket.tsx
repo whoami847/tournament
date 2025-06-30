@@ -243,9 +243,9 @@ const Connector = ({ isTopWinner, isBottomWinner }: { isTopWinner: boolean, isBo
     return (
       <div className="w-10 h-full flex-shrink-0 mx-2" style={{ height: `${TOTAL_HEIGHT}px` }}>
           <svg className="w-full h-full" viewBox={`0 0 40 ${TOTAL_HEIGHT}`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d={`M1 ${startY1} C 20,${startY1} 20,${endY} 32,${endY}`} stroke="hsl(var(--accent))" strokeWidth="2"/>
-              <path d={`M1 ${startY2} C 20,${startY2} 20,${endY} 32,${endY}`} stroke="hsl(var(--accent))" strokeWidth="2"/>
-              <path d={`M36 ${endY} L32 ${endY-4} L28 ${endY} L32 ${endY+4} Z`} fill="hsl(var(--accent))" />
+              <path d={`M1 ${startY1} C 20,${startY1} 20,${endY} 32,${endY}`} stroke="#FFB74D" strokeWidth="2"/>
+              <path d={`M1 ${startY2} C 20,${startY2} 20,${endY} 32,${endY}`} stroke="#FFB74D" strokeWidth="2"/>
+              <path d={`M36 ${endY} L32 ${endY-4} L28 ${endY} L32 ${endY+4} Z`} fill="#FFB74D" />
           </svg>
       </div>
     );

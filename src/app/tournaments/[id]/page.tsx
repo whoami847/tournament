@@ -6,16 +6,21 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Award, KeyRound } from 'lucide-react';
+import { Award, KeyRound, Trophy, Users, Ticket, Map as MapIcon, Smartphone } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
 
-const InfoBlock = ({ label, value }: { label: string; value: React.ReactNode }) => (
-  <div className="flex flex-col gap-1">
-    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
-    <p className="text-xl font-bold text-foreground">{value}</p>
-  </div>
+const InfoRow = ({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: React.ReactNode }) => (
+    <div className="flex items-center justify-between py-3 border-b border-border/50 last:border-b-0">
+        <div className="flex items-center gap-3">
+            <Icon className="h-5 w-5 text-primary" />
+            <span className="text-sm font-medium text-muted-foreground">{label}</span>
+        </div>
+        <span className="text-sm font-semibold text-foreground text-right">{value}</span>
+    </div>
 );
+
 
 const getEntryType = (format: string) => {
   const type = format.split('_')[1] || '';
@@ -58,14 +63,15 @@ export default function TournamentPage({ params }: { params: { id: string } }) {
                 <TabsContent value="info" className="mt-4">
                   <Card>
                     <CardContent className="p-6">
-                      <div className="grid grid-cols-3 gap-y-6 text-center">
-                        <InfoBlock label="Win Prize" value={`${tournament.prizePool} TK`} />
-                        <InfoBlock label="Entry Type" value={getEntryType(tournament.format)} />
-                        <InfoBlock label="Entry Fee" value={`${tournament.entryFee} TK`} />
-                        <InfoBlock label="Per Kill" value={`${tournament.perKillPrize || 0} TK`} />
-                        <InfoBlock label="Map" value={tournament.map || 'TBD'} />
-                        <InfoBlock label="Version" value={tournament.version || 'N/A'} />
+                      <div className="mb-8">
+                          <InfoRow icon={Trophy} label="Total Prize" value={`${tournament.prizePool} TK`} />
+                          <InfoRow icon={Award} label="Per Kill Prize" value={`${tournament.perKillPrize || 0} TK`} />
+                          <InfoRow icon={Ticket} label="Entry Fee" value={tournament.entryFee > 0 ? `${tournament.entryFee} TK` : 'Free'} />
+                          <InfoRow icon={Users} label="Team Format" value={getEntryType(tournament.format)} />
+                          <InfoRow icon={MapIcon} label="Map" value={tournament.map || 'TBD'} />
+                          <InfoRow icon={Smartphone} label="Game Version" value={tournament.version || 'N/A'} />
                       </div>
+
 
                       <div className="mt-8">
                           <div className="flex items-center gap-4">

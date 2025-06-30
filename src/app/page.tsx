@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, ChevronRight, Users, DollarSign, Gamepad2 } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Link from 'next/link';
+import { mockTournaments } from '@/lib/data';
+import type { Tournament } from '@/types';
 
 // --- MOCK DATA ---
 
@@ -37,18 +39,9 @@ const featuredEventsData = [
   }
 ];
 
-const popularEventsData = [
-  { name: 'Pro League Stage 2', date: 'Now • Live', game: 'Free Fire', image: 'https://placehold.co/300x400.png', dataAiHint: 'action game character running' },
-  { name: 'City Rumble', date: 'Now • Live', game: 'COD: Mobile', image: 'https://placehold.co/300x400.png', dataAiHint: 'soldier urban warfare' },
-  { name: 'Summer Split Finals', date: 'Today • 20:00', game: 'Mobile Legends', image: 'https://placehold.co/300x400.png', dataAiHint: 'fantasy characters battle' },
-];
+const liveTournaments = mockTournaments.filter(t => t.status === 'live');
+const upcomingTournaments = mockTournaments.filter(t => t.status === 'upcoming');
 
-const tournamentsData = [
-    { name: 'Free Fire City Open', date: '15.06.24 • 15:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'urban battle royale', tags: ['Squad', 'Cash Prize'], isOpen: true },
-    { name: 'PUBG Mobile Pro League', date: '20.06.24 • 21:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'esports arena logo', tags: ['Pro', 'Squad'], isOpen: true },
-    { name: 'MLBB Pro League', date: '04.07.24 • 21:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'MOBA game characters', tags: ['Pro', '5v5'], isOpen: true },
-    { name: 'COD:M World Champs', date: '18.08.24 • 19:00', image: 'https://placehold.co/400x300.png', dataAiHint: 'soldier aiming rifle', tags: ['5v5', 'Cash Prize'], isOpen: true },
-];
 
 const gamesData = [
     { name: 'Free Fire', categories: 'Battle Royale • Action', image: 'https://placehold.co/400x200.png', dataAiHint: 'fire character action',},
@@ -121,11 +114,11 @@ const FeaturedEvent = () => {
     );
 };
 
-const PopularEvents = () => (
+const LiveEvents = ({tournaments}: {tournaments: Tournament[]}) => (
     <div className="-mx-4">
         <Carousel opts={{ align: "start", loop: false }} className="w-full">
             <CarouselContent className="pl-4">
-                {popularEventsData.map((event, i) => (
+                {tournaments.map((event, i) => (
                     <CarouselItem key={i} className="basis-2/5">
                         <Card className="relative h-48 border-none overflow-hidden rounded-xl">
                             <Image src={event.image} alt={event.name} fill className="object-cover" data-ai-hint={event.dataAiHint} />
@@ -133,7 +126,7 @@ const PopularEvents = () => (
                             <CardContent className="absolute bottom-0 left-0 p-3 text-white w-full">
                                 <Badge className="mb-1 bg-red-500 text-white border-none font-bold animate-pulse">Live</Badge>
                                 <h4 className="font-bold truncate">{event.name}</h4>
-                                <p className="text-xs text-white/70">{event.date}</p>
+                                <p className="text-xs text-white/70">{event.startDate}</p>
                             </CardContent>
                             <Badge variant="secondary" className="absolute top-2 right-2 text-xs">{event.game}</Badge>
                         </Card>
@@ -151,25 +144,17 @@ const TournamentTag = ({ icon, text }: { icon: React.ReactNode, text: string }) 
     </div>
 );
 
-const TournamentsGrid = () => (
+const TournamentsGrid = ({tournaments}: {tournaments: Tournament[]}) => (
   <div className="grid grid-cols-2 gap-4">
-    {tournamentsData.map((t, i) => (
+    {tournaments.map((t, i) => (
       <Card key={i} className="border-border/50 bg-transparent overflow-hidden rounded-xl">
-        <div className="relative h-32">
-            <Image src={t.image} alt={t.name} fill className="object-cover" data-ai-hint={t.dataAiHint} />
-            {t.isOpen && <Badge className="absolute top-2 right-2 bg-primary/80 border-none text-xs">Open</Badge>}
+        <div className="relative h-40">
+            <Image src={t.image} alt={t.name} fill className="object-cover" data-ai-hint={t.dataAiHint as string} />
+            {t.status === 'upcoming' && <Badge className="absolute top-2 right-2 bg-primary/80 border-none text-xs">Open</Badge>}
         </div>
         <CardContent className="p-3 bg-card">
             <h4 className="font-bold truncate">{t.name}</h4>
-            <p className="text-xs text-muted-foreground mb-2">{t.date}</p>
-            <div className="flex gap-2">
-                {t.tags.map(tag => {
-                    let icon = <Users className="h-3 w-3" />;
-                    if (tag.toLowerCase().includes('cash')) icon = <DollarSign className="h-3 w-3" />;
-                    if (tag.toLowerCase().includes('casual')) icon = <Gamepad2 className="h-3 w-3" />;
-                    return <TournamentTag key={tag} icon={icon} text={tag} />
-                })}
-            </div>
+            <p className="text-xs text-muted-foreground mb-2">{t.startDate}</p>
         </CardContent>
       </Card>
     ))}
@@ -228,11 +213,11 @@ export default function HomePage() {
           <FeaturedEvent />
           <section>
             <SectionHeader title="Live/Ongoing" />
-            <PopularEvents />
+            <LiveEvents tournaments={liveTournaments} />
           </section>
           <section>
             <SectionHeader title="Upcoming Matches" actionText="All tournaments" actionHref="/tournaments" />
-            <TournamentsGrid />
+            <TournamentsGrid tournaments={upcomingTournaments} />
           </section>
           <section>
             <SectionHeader title="Our Supported Games" actionText="All games" actionHref="#" />

@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Match, Round, Team, Tournament } from '@/types';
@@ -75,8 +76,8 @@ const RoundColumn = ({ round, vSpace, paddingTop }: { round: Round; vSpace: numb
     <div className="flex flex-col items-center flex-shrink-0">
       <h3 className="text-base font-bold uppercase tracking-wider text-muted-foreground h-8 flex items-center mb-4">{round.name}</h3>
       <div className="flex flex-col" style={{ gap: `${vSpace}px`, paddingTop: `${paddingTop}px` }}>
-        {round.matches.map((match) => (
-          <MatchCard key={match.id} match={match} />
+        {round.matches.map((match, index) => (
+          <MatchCard key={match?.id || index} match={match} />
         ))}
       </div>
     </div>
@@ -86,26 +87,52 @@ const RoundColumn = ({ round, vSpace, paddingTop }: { round: Round; vSpace: numb
 const Connector = ({ height, topY, bottomY, targetY }: { height: number; topY: number; bottomY: number; targetY: number; }) => (
     <div className="w-12 flex-shrink-0" style={{ height: `${height}px` }}>
         <svg className="w-full h-full" viewBox={`0 0 48 ${height}`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d={`M1 ${topY} C 24,${topY} 24,${targetY} 48,${targetY}`} stroke="#FFB74D" strokeWidth="2"/>
-            <path d={`M1 ${bottomY} C 24,${bottomY} 24,${targetY} 48,${targetY}`} stroke="#FFB74D" strokeWidth="2"/>
+            <path d={`M1 ${topY} C 24,${topY} 24,${targetY} 36,${targetY}`} stroke="#FFB74D" strokeWidth="2"/>
+            <path d={`M1 ${bottomY} C 24,${bottomY} 24,${targetY} 36,${targetY}`} stroke="#FFB74D" strokeWidth="2"/>
+            <path d={`M36 ${targetY} H 48`} stroke="#FFB74D" strokeWidth="2"/>
+            <path d={`M36 ${targetY} L39 ${targetY-3} L42 ${targetY} L39 ${targetY+3} Z`} fill="#FFB74D" />
         </svg>
     </div>
 );
 
-const ConnectorColumn = ({ vSpace, numMatches }: { vSpace: number; numMatches: number }) => {
+const ConnectorColumn = ({ vSpace, numMatches, matches }: { vSpace: number; numMatches: number; matches: (Match | null)[] }) => {
   const CARD_HEIGHT = 108;
   const unitHeight = CARD_HEIGHT * 2 + vSpace;
-  const topY = CARD_HEIGHT / 2;
-  const bottomY = CARD_HEIGHT + vSpace + (CARD_HEIGHT / 2);
   const targetY = unitHeight / 2;
+
+  // Y position for a winner in the top half of a card (approximated)
+  const winnerTopHalfY = CARD_HEIGHT * 0.33;
+  // Y position for a winner in the bottom half of a card (approximated)
+  const winnerBottomHalfY = CARD_HEIGHT * 0.66;
   
   return (
     <div className="flex flex-col items-center flex-shrink-0">
       <h3 className="h-8 mb-4">&nbsp;</h3>
       <div className="flex flex-col">
-        {Array.from({ length: numMatches / 2 }).map((_, i) => (
-          <Connector key={i} height={unitHeight} topY={topY} bottomY={bottomY} targetY={targetY} />
-        ))}
+        {Array.from({ length: numMatches / 2 }).map((_, i) => {
+          const topMatch = matches[i * 2];
+          const bottomMatch = matches[i * 2 + 1];
+          
+          let topPathY;
+          if (topMatch?.status === 'completed') {
+            const winnerIsBottomTeam = topMatch.scores[0] < topMatch.scores[1];
+            topPathY = winnerIsBottomTeam ? winnerBottomHalfY : winnerTopHalfY;
+          } else {
+            topPathY = CARD_HEIGHT / 2; // Default to center
+          }
+
+          let bottomPathY;
+          if (bottomMatch?.status === 'completed') {
+            const winnerIsTopTeam = bottomMatch.scores[0] > bottomMatch.scores[1];
+            bottomPathY = (CARD_HEIGHT + vSpace) + (winnerIsTopTeam ? winnerTopHalfY : winnerBottomHalfY);
+          } else {
+            bottomPathY = (CARD_HEIGHT + vSpace) + (CARD_HEIGHT / 2); // Default to center
+          }
+
+          return (
+            <Connector key={i} height={unitHeight} topY={topPathY} bottomY={bottomPathY} targetY={targetY} />
+          );
+        })}
       </div>
     </div>
   );
@@ -170,7 +197,8 @@ export default function Bracket({ tournament }: { tournament: Tournament }) {
                 {roundIndex < processedBracket.length - 1 && (
                   <ConnectorColumn 
                     vSpace={vSpace} 
-                    numMatches={round.matches.length} 
+                    numMatches={round.matches.length}
+                    matches={round.matches}
                   />
                 )}
               </React.Fragment>

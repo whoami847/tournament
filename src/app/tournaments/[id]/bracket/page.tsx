@@ -11,6 +11,13 @@ import { cn } from '@/lib/utils';
 import type { Tournament, Round, Match, Team } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 
 const roundAbbreviationMap: Record<string, string> = {
@@ -117,7 +124,7 @@ export default function BracketPage() {
     notFound();
   }
 
-  const isSoloTournament = tournament.format.includes('SOLO');
+  const isSoloTournament = tournament.format.toLowerCase().includes('solo');
 
   const bracketData = useMemo(() => {
     if (tournament.status === 'upcoming' && !isSoloTournament) {
@@ -151,9 +158,19 @@ export default function BracketPage() {
                 </Link>
                 </Button>
                 <h1 className="text-xl font-bold">Bracket</h1>
-                <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-6 w-6" />
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-6 w-6" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem>Share Bracket</DropdownMenuItem>
+                        <DropdownMenuItem>View Rules</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>Report an issue</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </header>
             <p className="text-muted-foreground text-center">The bracket for this tournament is not available yet.</p>
         </div>
@@ -173,9 +190,19 @@ export default function BracketPage() {
                 </Link>
                 </Button>
                 <h1 className="text-xl font-bold">Bracket</h1>
-                <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-6 w-6" />
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-6 w-6" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem>Share Bracket</DropdownMenuItem>
+                        <DropdownMenuItem>View Rules</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>Report an issue</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </header>
 
             {isSoloTournament ? (

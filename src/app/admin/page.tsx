@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Swords, Gamepad2, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function AdminDashboardPage() {
     // In a real app, these values would come from a database.
@@ -12,7 +14,18 @@ export default function AdminDashboardPage() {
 
     return (
         <div>
-            <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+            <div className="flex items-center justify-between mb-6">
+                <h1 className="text-3xl font-bold">Dashboard</h1>
+                <div className="flex items-center gap-2">
+                    <Button asChild>
+                        <Link href="/admin/users">Users</Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/admin/tournaments">Tournaments</Link>
+                    </Button>
+                </div>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

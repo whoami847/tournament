@@ -92,11 +92,15 @@ export default {
           '0%, 100%': { borderColor: 'hsl(var(--primary) / 0.5)' },
           '50%': { borderColor: 'hsl(var(--primary))' },
         },
+        'border-spin': {
+          '100%': { transform: 'rotate(360deg)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'border-shine': 'border-shine 2s linear infinite',
+        'border-spin': 'border-spin 4s linear infinite',
       },
     },
   },

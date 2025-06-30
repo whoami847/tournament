@@ -149,38 +149,59 @@ export const ChampionPlaceholder = () => (
     </Card>
 )
 
-const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: number, isWinner?: boolean }) => {
+const TeamDisplay = ({ team, score, isWinner, isLoser }: { team: Team | null, score?: number, isWinner?: boolean, isLoser?: boolean }) => {
   const teamNameAndAvatar = team ? (
     <>
-        <Avatar className="h-6 w-6 flex-shrink-0">
+        <Avatar className="h-5 w-5 flex-shrink-0">
           <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
           <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <span className={cn("text-xs truncate", isWinner ? "font-bold text-foreground" : "font-medium text-muted-foreground")}>
+        <span className={cn(
+            "text-xs truncate", 
+            isWinner ? "font-bold text-foreground" : "font-medium text-muted-foreground",
+            isLoser && "font-medium text-destructive/80 opacity-70"
+        )}>
           {team.name}
         </span>
     </>
   ) : (
     <>
-        <div className="h-6 w-6 rounded-md bg-muted/20 flex-shrink-0 flex items-center justify-center">
-            <Swords className="h-4 w-4 text-muted-foreground" />
+        <div className="h-5 w-5 rounded-md bg-muted/20 flex-shrink-0 flex items-center justify-center">
+            <Swords className="h-3 w-3 text-muted-foreground" />
         </div>
         <span className="text-muted-foreground text-xs">Team TBD</span>
     </>
   );
 
-  return (
-    <div className="flex items-center justify-between p-2 h-9 w-full">
-      <div className="flex items-center gap-3 overflow-hidden">
-        {teamNameAndAvatar}
+  const teamRowContent = (
+      <div className="flex items-center justify-between p-2 h-9 w-full">
+          <div className="flex items-center gap-2 overflow-hidden">
+            {teamNameAndAvatar}
+          </div>
+          {typeof score !== 'undefined' && (
+            <span className={cn(
+              "font-bold text-sm", 
+              isWinner ? "text-amber-400" : "text-muted-foreground/50",
+              isLoser && "text-destructive/80 opacity-70"
+            )}>
+              {score}
+            </span>
+          )}
       </div>
-      {typeof score !== 'undefined' && (
-        <span className={cn("font-bold text-base", isWinner ? "text-primary" : "text-muted-foreground/50")}>
-          {score}
-        </span>
-      )}
-    </div>
   );
+
+  if (isWinner) {
+    return (
+        <div className="relative p-[1.5px] overflow-hidden rounded-md">
+            <div className="absolute inset-0 animate-border-spin bg-[conic-gradient(from_180deg_at_50%_50%,#fcd34d_0deg,#b45309_180deg,#fcd34d_360deg)]" />
+            <div className="relative bg-card rounded-[calc(var(--radius)-3px)]">
+                {teamRowContent}
+            </div>
+        </div>
+    );
+  }
+
+  return teamRowContent;
 };
 
 const MatchCard = ({ match }: { match: Match | null }) => {
@@ -190,29 +211,46 @@ const MatchCard = ({ match }: { match: Match | null }) => {
     const score2 = match?.scores?.[1] ?? 0;
     const status = match?.status ?? 'pending';
 
-    const winner1 = status === 'completed' && score1 > score2;
-    const winner2 = status === 'completed' && score2 > score1;
+    const isCompleted = status === 'completed';
+    const winner1 = isCompleted && score1 > score2;
+    const winner2 = isCompleted && score2 > score1;
+    const loser1 = isCompleted && score1 < score2;
+    const loser2 = isCompleted && score2 > score1;
 
-    // For pending/live matches, both teams are styled as "winners" to make them bold.
-    const displayTeam1AsWinner = winner1 || (status !== 'completed' && !!team1);
-    const displayTeam2AsWinner = winner2 || (status !== 'completed' && !!team2);
+    const MatchContent = ({ showWinnerAnimation }: { showWinnerAnimation: boolean }) => (
+        <div className="p-0">
+            <TeamDisplay team={team1} score={score1} isWinner={showWinnerAnimation && winner1} isLoser={loser1} />
+            <div className="border-t border-border/50 mx-2"></div>
+            <TeamDisplay team={team2} score={score2} isWinner={showWinnerAnimation && winner2} isLoser={loser2} />
+        </div>
+    );
+    
+    const cardHeight = 'h-[73px]';
+    const animatedCardHeight = 'h-[76px]';
+
+    if (isCompleted) {
+        return (
+            <div className={cn("bg-card rounded-lg w-full flex-shrink-0 border border-transparent shadow-sm", animatedCardHeight)}>
+                <MatchContent showWinnerAnimation={true} />
+            </div>
+        );
+    }
 
     return (
-        <div className="bg-card rounded-lg w-full flex-shrink-0 border border-border/50 shadow-sm h-[76px]">
-            <div className="p-0">
-                <TeamDisplay team={team1} score={score1} isWinner={displayTeam1AsWinner} />
-                <div className="border-t border-border/50 mx-2"></div>
-                <TeamDisplay team={team2} score={score2} isWinner={displayTeam2AsWinner} />
-            </div>
+        <div className={cn("relative p-[1.5px] rounded-lg overflow-hidden w-full", animatedCardHeight)}>
+             <div className="absolute inset-0 animate-border-spin bg-[conic-gradient(from_180deg_at_50%_50%,hsl(var(--muted-foreground))_0deg,hsl(var(--primary-foreground))_180deg,hsl(var(--muted-foreground))_360deg)]" />
+             <div className={cn("relative z-10 bg-card rounded-[calc(var(--radius)-2px)] h-full")}>
+                 <MatchContent showWinnerAnimation={false} />
+             </div>
         </div>
     );
 };
 
 const SingleMatchDisplay = ({ match }: { match: Match | null }) => {
     return (
-      <div className="w-full md:w-48">
+      <div className="w-full md:w-44">
         <div className="flex justify-between items-center mb-1 h-5">
-          <p className="text-xs text-muted-foreground">{match?.name ?? ''}</p>
+          <p className="text-[10px] text-muted-foreground">{match?.name ?? ''}</p>
           {match?.status === 'live' && (
             <Badge variant="default" className="flex items-center gap-1 text-[10px] h-4 px-1.5 bg-red-500 border-none">
                 <Video className="h-2 w-2" />
@@ -243,9 +281,9 @@ const Connector = ({ isTopWinner, isBottomWinner }: { isTopWinner: boolean, isBo
     return (
       <div className="w-8 h-full flex-shrink-0 mx-2" style={{ height: `${TOTAL_HEIGHT}px` }}>
           <svg className="w-full h-full" viewBox={`0 0 32 ${TOTAL_HEIGHT}`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d={`M1 ${startY1} C 16,${startY1} 16,${endY} 28,${endY}`} stroke="hsl(var(--accent))" strokeWidth="2"/>
-              <path d={`M1 ${startY2} C 16,${startY2} 16,${endY} 28,${endY}`} stroke="hsl(var(--accent))" strokeWidth="2"/>
-              <path d={`M32 ${endY} L28 ${endY-4} L24 ${endY} L28 ${endY+4} Z`} fill="hsl(var(--accent))" />
+              <path d={`M1 ${startY1} C 16,${startY1} 16,${endY} 28,${endY}`} stroke="#FFB74D" strokeWidth="2"/>
+              <path d={`M1 ${startY2} C 16,${startY2} 16,${endY} 28,${endY}`} stroke="#FFB74D" strokeWidth="2"/>
+              <path d={`M32 ${endY} L28 ${endY-4} L24 ${endY} L28 ${endY+4} Z`} fill="#FFB74D" />
           </svg>
       </div>
     );

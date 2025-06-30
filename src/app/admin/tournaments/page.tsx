@@ -11,12 +11,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import type { Tournament } from '@/types';
 
 export default function AdminTournamentsPage() {
-    const [selectedStatus, setSelectedStatus] = useState<'all' | 'live' | 'upcoming' | 'completed'>('all');
+    const [selectedStatus, setSelectedStatus] = useState<'live' | 'upcoming' | 'completed'>('upcoming');
 
     const filteredTournaments = useMemo(() => {
-        if (selectedStatus === 'all') {
-            return mockTournaments;
-        }
         return mockTournaments.filter((tournament: Tournament) => tournament.status === selectedStatus);
     }, [selectedStatus]);
 
@@ -34,7 +31,6 @@ export default function AdminTournamentsPage() {
             </CardHeader>
             <CardContent>
                 <div className="flex items-center gap-2 p-1 bg-muted rounded-full flex-wrap mb-6 self-start">
-                    <Button variant={selectedStatus === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('all')}>All</Button>
                     <Button variant={selectedStatus === 'upcoming' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4 capitalize" onClick={() => setSelectedStatus('upcoming')}>Upcoming</Button>
                     <Button variant={selectedStatus === 'live' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4 capitalize" onClick={() => setSelectedStatus('live')}>Live</Button>
                     <Button variant={selectedStatus === 'completed' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4 capitalize" onClick={() => setSelectedStatus('completed')}>Completed</Button>

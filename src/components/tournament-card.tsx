@@ -81,7 +81,7 @@ export default function TournamentCard({ tournament, isBookmarked, onBookmarkTog
             )}
           </div>
         </CardContent>
-        <CardFooter className="p-4 pt-0 flex justify-between items-center">
+        <CardFooter className="p-4 flex items-center">
           {tournament.status === 'upcoming' ? (
             <Countdown targetDate={tournament.startDate} />
           ) : (

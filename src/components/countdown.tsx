@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { differenceInSeconds, intervalToDuration } from 'date-fns';
+import { differenceInSeconds } from 'date-fns';
+import { Clock } from 'lucide-react';
 
 const Countdown = ({ targetDate }: { targetDate: string }) => {
   const calculateTimeLeft = () => {
@@ -9,24 +10,27 @@ const Countdown = ({ targetDate }: { targetDate: string }) => {
     const now = new Date();
     
     if (isNaN(target.getTime()) || target <= now) {
-      return { total: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+      return { total: 0, hours: 0, minutes: 0, seconds: 0 };
     }
 
-    const duration = intervalToDuration({ start: now, end: target });
     const totalSeconds = differenceInSeconds(target, now);
+    
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
     
     return {
       total: totalSeconds,
-      days: duration.days || 0,
-      hours: duration.hours || 0,
-      minutes: duration.minutes || 0,
-      seconds: duration.seconds || 0,
+      hours,
+      minutes,
+      seconds,
     };
   };
 
-  const [timeLeft, setTimeLeft] = useState({ total: 0, days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [timeLeft, setTimeLeft] = useState({ total: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
+    // Set initial time left on mount to avoid hydration mismatch
     setTimeLeft(calculateTimeLeft());
   }, []);
 
@@ -41,44 +45,22 @@ const Countdown = ({ targetDate }: { targetDate: string }) => {
     return () => clearInterval(timer);
   }, [targetDate, timeLeft.total]);
 
-  const formatCountdown = () => {
-    if (timeLeft.total <= 0) {
-      return "Starting soon";
-    }
+  const pad = (num: number) => num.toString().padStart(2, '0');
 
-    const parts: string[] = [];
-    if (timeLeft.days > 0) {
-      parts.push(`${timeLeft.days}d`);
-      if (timeLeft.hours > 0) {
-        parts.push(`${timeLeft.hours}h`);
-      }
-    } else if (timeLeft.hours > 0) {
-      parts.push(`${timeLeft.hours}h`);
-      if (timeLeft.minutes > 0) {
-        parts.push(`${timeLeft.minutes}m`);
-      }
-    } else if (timeLeft.minutes > 0) {
-      parts.push(`${timeLeft.minutes}m`);
-      if (timeLeft.seconds > 0) {
-        parts.push(`${timeLeft.seconds}s`);
-      }
-    } else {
-      parts.push(`${timeLeft.seconds}s`);
-    }
-
-    return `Starting in ${parts.join(' ')}`;
-  };
-
-  const displayString = formatCountdown();
+  if (timeLeft.total <= 0) {
+      return (
+        <div className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-3 py-2 text-sm font-bold text-white">
+            <span>STARTING SOON</span>
+        </div>
+      );
+  }
 
   return (
-    <div className="flex items-center gap-2">
-      <div
-        className={`h-2.5 w-2.5 rounded-full bg-blue-500 ${
-          timeLeft.total <= 0 ? '' : 'animate-pulse'
-        }`}
-      ></div>
-      <span className="text-sm font-medium capitalize">{displayString}</span>
+    <div className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-3 py-2 text-sm font-bold text-white">
+      <Clock className="h-4 w-4" />
+      <span>
+        STARTS IN - {pad(timeLeft.hours)}h:{pad(timeLeft.minutes)}m:{pad(timeLeft.seconds)}s
+      </span>
     </div>
   );
 };

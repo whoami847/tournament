@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useMemo } from 'react';
 import { mockTournaments } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,8 +8,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import type { Tournament } from '@/types';
 
 export default function AdminTournamentsPage() {
+    const [selectedStatus, setSelectedStatus] = useState<'all' | 'live' | 'upcoming' | 'completed'>('all');
+
+    const filteredTournaments = useMemo(() => {
+        if (selectedStatus === 'all') {
+            return mockTournaments;
+        }
+        return mockTournaments.filter((tournament: Tournament) => tournament.status === selectedStatus);
+    }, [selectedStatus]);
+
     const statusVariantMap: { [key: string]: 'default' | 'secondary' | 'destructive' } = {
         upcoming: 'secondary',
         live: 'default',
@@ -20,6 +33,13 @@ export default function AdminTournamentsPage() {
                 <CardDescription>Manage all tournaments in the app.</CardDescription>
             </CardHeader>
             <CardContent>
+                <div className="flex items-center gap-2 p-1 bg-muted rounded-full flex-wrap mb-6 self-start">
+                    <Button variant={selectedStatus === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('all')}>All</Button>
+                    <Button variant={selectedStatus === 'upcoming' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4 capitalize" onClick={() => setSelectedStatus('upcoming')}>Upcoming</Button>
+                    <Button variant={selectedStatus === 'live' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4 capitalize" onClick={() => setSelectedStatus('live')}>Live</Button>
+                    <Button variant={selectedStatus === 'completed' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4 capitalize" onClick={() => setSelectedStatus('completed')}>Completed</Button>
+                </div>
+
                 {/* Desktop Table */}
                 <div className="hidden md:block">
                     <Table>
@@ -34,7 +54,7 @@ export default function AdminTournamentsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {mockTournaments.map((tournament) => (
+                            {filteredTournaments.map((tournament) => (
                                 <TableRow key={tournament.id}>
                                     <TableCell className="font-medium">{tournament.name}</TableCell>
                                     <TableCell>{tournament.game}</TableCell>
@@ -68,7 +88,7 @@ export default function AdminTournamentsPage() {
 
                 {/* Mobile Card List */}
                 <div className="md:hidden space-y-4">
-                     {mockTournaments.map((tournament) => (
+                     {filteredTournaments.map((tournament) => (
                         <div key={tournament.id} className="bg-muted/20 p-4 rounded-lg border">
                             <div className="flex justify-between items-start">
                                 <div>

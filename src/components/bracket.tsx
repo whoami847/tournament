@@ -20,7 +20,7 @@ const SoloPlayerCard = ({ player }: { player: Team }) => (
     </div>
 );
 
-const processBracketForWinners = (bracket: Round[]): Round[] => {
+export const processBracketForWinners = (bracket: Round[]): Round[] => {
     const newBracket: Round[] = JSON.parse(JSON.stringify(bracket));
 
     const getMatchWinner = (match: Match): Team | null => {
@@ -120,7 +120,7 @@ export const SoloBracket = ({ tournament }: { tournament: Tournament }) => {
 
 // --- TEAM BRACKET COMPONENTS ---
 
-const ChampionCard = ({ team }: { team: Team }) => {
+export const ChampionCard = ({ team }: { team: Team }) => {
     return (
         <Card className="border-amber-400 border-2 shadow-lg shadow-amber-400/20 w-full max-w-xs bg-card">
             <CardContent className="p-4 flex flex-col items-center text-center gap-2">
@@ -136,7 +136,7 @@ const ChampionCard = ({ team }: { team: Team }) => {
     )
 }
 
-const ChampionPlaceholder = () => (
+export const ChampionPlaceholder = () => (
     <Card className="border-primary/50 border-2 border-dashed shadow-lg shadow-primary/10 w-full max-w-xs bg-card">
         <CardContent className="p-4 flex flex-col items-center text-center gap-2">
             <Trophy className="h-10 w-10 text-primary/50" />
@@ -243,9 +243,9 @@ const Connector = ({ isTopWinner, isBottomWinner }: { isTopWinner: boolean, isBo
     return (
       <div className="w-8 h-full flex-shrink-0 mx-2" style={{ height: `${TOTAL_HEIGHT}px` }}>
           <svg className="w-full h-full" viewBox={`0 0 32 ${TOTAL_HEIGHT}`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d={`M1 ${startY1} C 16,${startY1} 16,${endY} 28,${endY}`} stroke="#FFB74D" strokeWidth="2"/>
-              <path d={`M1 ${startY2} C 16,${startY2} 16,${endY} 28,${endY}`} stroke="#FFB74D" strokeWidth="2"/>
-              <path d={`M32 ${endY} L28 ${endY-4} L24 ${endY} L28 ${endY+4} Z`} fill="#FFB74D" />
+              <path d={`M1 ${startY1} C 16,${startY1} 16,${endY} 28,${endY}`} stroke="hsl(var(--accent))" strokeWidth="2"/>
+              <path d={`M1 ${startY2} C 16,${startY2} 16,${endY} 28,${endY}`} stroke="hsl(var(--accent))" strokeWidth="2"/>
+              <path d={`M32 ${endY} L28 ${endY-4} L24 ${endY} L28 ${endY+4} Z`} fill="hsl(var(--accent))" />
           </svg>
       </div>
     );
@@ -266,26 +266,8 @@ export default function Bracket({ tournament, bracket, activeRoundName }: { tour
   };
 
   const processedBracket = React.useMemo(() => {
-    if (tournament.status === 'upcoming') {
-        return bracket;
-    }
-    const newBracket: Round[] = JSON.parse(JSON.stringify(bracket));
-    for (let i = 0; i < newBracket.length - 1; i++) {
-      const currentRound = newBracket[i];
-      const nextRound = newBracket[i + 1];
-      for (let j = 0; j < currentRound.matches.length; j++) {
-        const winner = getWinner(currentRound.matches[j]);
-        if (winner) {
-            const nextMatchIndex = Math.floor(j / 2);
-            const teamIndexInNextMatch = j % 2;
-            if (nextRound.matches[nextMatchIndex] && nextRound.matches[nextMatchIndex].teams[teamIndexInNextMatch] === null) {
-               nextRound.matches[nextMatchIndex].teams[teamIndexInNextMatch] = winner;
-            }
-        }
-      }
-    }
-    return newBracket;
-  }, [bracket, tournament.status]);
+    return processBracketForWinners(bracket);
+  }, [bracket]);
 
   const activeRoundIndex = processedBracket.findIndex(r => r.name === activeRoundName);
   const activeRound = processedBracket[activeRoundIndex];
@@ -312,26 +294,6 @@ export default function Bracket({ tournament, bracket, activeRoundName }: { tour
   // Final Round (or any round with just one match)
   if (activeRound.matches.length === 1) {
     const finalMatch = activeRound.matches[0];
-    
-    if (finalMatch && finalMatch.status === 'completed') {
-        const winner = getWinner(finalMatch);
-        if (winner) {
-            return (
-                <div className="flex justify-center">
-                    <ChampionCard team={winner} />
-                </div>
-            )
-        }
-    }
-
-    if (finalMatch && finalMatch.status === 'pending' && activeRound.name === 'Finals') {
-      return (
-        <div className="flex justify-center">
-          <ChampionPlaceholder />
-        </div>
-      );
-    }
-    
     return (
       <div className="flex justify-center">
         <SingleMatchDisplay match={finalMatch} />

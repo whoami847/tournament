@@ -3,12 +3,15 @@
 import Link from 'next/link';
 import { useParams, notFound } from 'next/navigation';
 import { mockTournaments } from '@/lib/data';
-import Bracket, { SoloBracket } from '@/components/bracket';
+import Bracket, { SoloBracket, processBracketForWinners, ChampionCard, ChampionPlaceholder } from '@/components/bracket';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, MoreHorizontal } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Trophy, GitBranch } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import type { Tournament, Round, Match, Team } from '@/types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 
 const roundAbbreviationMap: Record<string, string> = {
     'Finals': 'Finals',
@@ -117,11 +120,25 @@ export default function BracketPage() {
   const isSoloTournament = tournament.format.includes('SOLO');
 
   const bracketData = useMemo(() => {
-    if (tournament.status === 'upcoming') {
+    if (tournament.status === 'upcoming' && !isSoloTournament) {
         return generateUpcomingBracket(tournament);
     }
     return tournament.bracket;
-  }, [tournament]);
+  }, [tournament, isSoloTournament]);
+
+  const winner = useMemo(() => {
+    if (tournament.status !== 'completed' || !bracketData || bracketData.length === 0) {
+        return null;
+    }
+    const processed = processBracketForWinners(bracketData);
+    const finalRound = processed[processed.length - 1];
+    if (!finalRound || finalRound.matches.length !== 1) return null;
+    const finalMatch = finalRound.matches[0];
+    if (finalMatch.status !== 'completed' || !finalMatch.teams[0] || !finalMatch.teams[1]) return null;
+    const [team1, team2] = finalMatch.teams;
+    const [score1, score2] = finalMatch.scores;
+    return score1 > score2 ? team1 : team2;
+  }, [tournament.status, bracketData]);
 
 
   if (!isSoloTournament && (!bracketData || bracketData.length === 0)) {
@@ -164,29 +181,51 @@ export default function BracketPage() {
             {isSoloTournament ? (
                 <SoloBracket tournament={tournament} />
             ) : (
-                <>
-                    <div className="flex justify-center mb-8">
-                        <div className="inline-flex items-center justify-center rounded-full bg-card p-1 text-card-foreground">
-                            {roundNames.map(name => (
-                            <Button
-                                key={name}
-                                variant="ghost"
-                                size="sm"
-                                className={cn(
-                                "rounded-full h-8 px-4 font-semibold",
-                                activeRoundName === name 
-                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                                    : 'text-muted-foreground hover:bg-accent/50'
-                                )}
-                                onClick={() => setActiveRoundName(name)}
-                            >
-                                {roundAbbreviationMap[name] || name}
-                            </Button>
-                            ))}
+                <Tabs defaultValue="bracket" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 bg-card p-1 rounded-full h-auto">
+                        <TabsTrigger value="bracket" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
+                            <GitBranch className="h-4 w-4" />
+                            Bracket
+                        </TabsTrigger>
+                        <TabsTrigger value="winner" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
+                            <Trophy className="h-4 w-4" />
+                            Winner
+                        </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="bracket" className="mt-6">
+                        <div className="flex justify-center mb-8">
+                            <div className="inline-flex items-center justify-center rounded-full bg-card p-1 text-card-foreground">
+                                {roundNames.map(name => (
+                                <Button
+                                    key={name}
+                                    variant="ghost"
+                                    size="sm"
+                                    className={cn(
+                                    "rounded-full h-8 px-4 font-semibold",
+                                    activeRoundName === name 
+                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                                        : 'text-muted-foreground hover:bg-accent/50'
+                                    )}
+                                    onClick={() => setActiveRoundName(name)}
+                                >
+                                    {roundAbbreviationMap[name] || name}
+                                </Button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                    <Bracket tournament={tournament} bracket={bracketData} activeRoundName={activeRoundName} />
-                </>
+                        <Bracket tournament={tournament} bracket={bracketData} activeRoundName={activeRoundName} />
+                    </TabsContent>
+                    <TabsContent value="winner" className="mt-6">
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Tournament Winner</CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex justify-center items-center py-16">
+                               {winner ? <ChampionCard team={winner} /> : <ChampionPlaceholder />}
+                            </CardContent>
+                         </Card>
+                    </TabsContent>
+                </Tabs>
             )}
         </div>
     </div>

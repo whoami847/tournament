@@ -25,6 +25,19 @@ const ChampionCard = ({ team }: { team: Team }) => {
     )
 }
 
+const ChampionPlaceholder = () => (
+    <Card className="border-primary/50 border-2 border-dashed shadow-lg shadow-primary/10 w-full max-w-xs bg-card">
+        <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+            <Trophy className="h-10 w-10 text-primary/50" />
+            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                <span className="text-2xl font-bold text-muted-foreground">?</span>
+            </div>
+            <h3 className="text-xl font-bold">Future Champion</h3>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary/50">Winner of the Finals</p>
+        </CardContent>
+    </Card>
+)
+
 const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: number, isWinner?: boolean }) => {
   if (!team) {
     return (
@@ -186,6 +199,7 @@ export default function Bracket({ tournament, bracket, activeRoundName }: { tour
   // Final Round (or any round with just one match)
   if (activeRound.matches.length === 1) {
     const finalMatch = activeRound.matches[0];
+    
     if (finalMatch && finalMatch.status === 'completed') {
         const winner = getWinner(finalMatch);
         if (winner) {
@@ -196,9 +210,18 @@ export default function Bracket({ tournament, bracket, activeRoundName }: { tour
             )
         }
     }
+
+    if (finalMatch && finalMatch.status === 'pending' && activeRound.name === 'Finals') {
+      return (
+        <div className="flex justify-center">
+          <ChampionPlaceholder />
+        </div>
+      );
+    }
+    
     return (
       <div className="flex justify-center">
-        <SingleMatchDisplay match={activeRound.matches[0]} />
+        <SingleMatchDisplay match={finalMatch} />
       </div>
     )
   }

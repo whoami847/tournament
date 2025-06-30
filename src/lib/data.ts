@@ -32,6 +32,9 @@ export const mockTournaments: Tournament[] = [
     participants: teams.slice(0, 16),
     format: 'CS_SQUAD',
     bracket: [],
+    perKillPrize: 10,
+    map: 'Bermuda',
+    version: 'Mobile',
   },
   {
     id: 'codm-battle-arena',
@@ -69,7 +72,10 @@ export const mockTournaments: Tournament[] = [
         name: 'Finals',
         matches: [{ id: 'codm-f1', name: 'Final', teams: [null, null], scores: [0, 0], status: 'pending' }]
       }
-    ]
+    ],
+    perKillPrize: 5,
+    map: 'Shipment',
+    version: 'Mobile',
   },
   {
     id: 'ff-masters-2024',
@@ -87,6 +93,9 @@ export const mockTournaments: Tournament[] = [
     participants: teams.slice(0, 6),
     format: 'BR_SQUAD',
     bracket: [],
+    perKillPrize: 20,
+    map: 'Kalahari',
+    version: 'Mobile',
   },
    {
     id: 'ff-clash-cup',
@@ -104,6 +113,9 @@ export const mockTournaments: Tournament[] = [
     participants: teams.slice(0,8),
     format: 'CS_SQUAD',
     bracket: [],
+    perKillPrize: 5,
+    map: 'Bermuda',
+    version: 'Mobile',
   },
   {
     id: 'ff-lone-wolf-challenge',
@@ -119,8 +131,11 @@ export const mockTournaments: Tournament[] = [
     image: 'https://placehold.co/600x400.png',
     dataAiHint: 'one versus one',
     participants: teams.slice(0,12),
-    format: 'LW_SOLO',
+    format: 'LONE_WOLF_SOLO',
     bracket: [],
+    perKillPrize: 10,
+    map: 'Iron Cage',
+    version: 'Mobile',
   },
   {
     id: 'lw-duo-deathmatch',
@@ -136,8 +151,11 @@ export const mockTournaments: Tournament[] = [
     image: 'https://placehold.co/600x400.png',
     dataAiHint: 'versus fight',
     participants: teams.slice(0, 12).map((t, i) => ({ ...t, id: `lw_d_t${i}`})),
-    format: 'LW_DUO',
+    format: 'LONE_WOLF_DUO',
     bracket: [],
+    perKillPrize: 10,
+    map: 'Iron Cage',
+    version: 'Mobile',
   },
   {
     id: 'cs-duo-challenge',
@@ -155,6 +173,9 @@ export const mockTournaments: Tournament[] = [
     participants: teams.slice(0, 12).map((t, i) => ({ ...t, id: `d_t${i}`})),
     format: 'CS_DUO',
     bracket: [],
+    perKillPrize: 5,
+    map: 'Bermuda',
+    version: 'Mobile',
   },
   {
     id: 'cs-solo-showdown',
@@ -172,6 +193,9 @@ export const mockTournaments: Tournament[] = [
     participants: teams.slice(0,16),
     format: 'CS_SOLO',
     bracket: [],
+    perKillPrize: 10,
+    map: 'Bermuda',
+    version: 'Mobile',
   },
   {
     id: 'br-solo-showdown',
@@ -189,6 +213,9 @@ export const mockTournaments: Tournament[] = [
     participants: teams.slice(0, 12).map((t, i) => ({ ...t, id: `s_t${i}`})),
     format: 'BR_SOLO',
     bracket: [],
+    perKillPrize: 15,
+    map: 'Erangel',
+    version: 'Mobile',
   },
     {
     id: 'br-duo-brawl',
@@ -206,6 +233,9 @@ export const mockTournaments: Tournament[] = [
     participants: teams.slice(0,16),
     format: 'BR_DUO',
     bracket: [],
+    perKillPrize: 10,
+    map: 'Miramar',
+    version: 'Mobile',
   },
   {
     id: 'ml-diamond-cup-s5',
@@ -244,6 +274,9 @@ export const mockTournaments: Tournament[] = [
         matches: [{ id: 'f1', name: 'Final', teams: [null, null], scores: [3, 2], status: 'completed' }],
       },
     ],
+    perKillPrize: 0,
+    map: 'Land of Dawn',
+    version: 'Mobile',
   },
   {
     id: 'lw-legends-s1',
@@ -259,7 +292,7 @@ export const mockTournaments: Tournament[] = [
     image: 'https://placehold.co/600x400.png',
     dataAiHint: 'wolf lone dark',
     participants: teams.slice(0, 8),
-    format: 'LW_SOLO',
+    format: 'LONE_WOLF_SOLO',
     bracket: [
       {
         name: 'Quarter-finals',
@@ -282,6 +315,9 @@ export const mockTournaments: Tournament[] = [
         matches: [{ id: 'lw-s1-f1', name: 'Final', teams: [null, null], scores: [2, 3], status: 'completed' }],
       },
     ],
+    perKillPrize: 15,
+    map: 'Iron Cage',
+    version: 'Mobile',
   },
   {
     id: 'pubg-mobile-club-open',
@@ -299,6 +335,9 @@ export const mockTournaments: Tournament[] = [
     participants: teams.slice(0, 12),
     format: 'BR_SQUAD',
     bracket: [],
+    perKillPrize: 100,
+    map: 'Sanhok',
+    version: 'Mobile',
   },
   {
     id: 'codm-championship-2024',
@@ -316,5 +355,8 @@ export const mockTournaments: Tournament[] = [
     participants: teams,
     format: 'CS_SQUAD',
     bracket: [],
+    perKillPrize: 20,
+    map: 'Crossfire',
+    version: 'Mobile',
   },
 ];

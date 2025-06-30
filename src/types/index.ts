@@ -35,4 +35,7 @@ export interface Tournament {
   image: string;
   dataAiHint?: string;
   format: string;
+  perKillPrize?: number;
+  map?: string;
+  version?: string;
 }

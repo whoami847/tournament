@@ -2,13 +2,26 @@ import { mockTournaments } from '@/lib/data';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar, Users, Trophy, Ticket, Gamepad2, ShieldCheck } from 'lucide-react';
+import { Award, KeyRound } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Progress } from '@/components/ui/progress';
+
+const InfoBlock = ({ label, value }: { label: string; value: React.ReactNode }) => (
+  <div className="flex flex-col gap-1">
+    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
+    <p className="text-xl font-bold text-foreground">{value}</p>
+  </div>
+);
+
+const getEntryType = (format: string) => {
+  const type = format.split('_')[1] || '';
+  if (!type) return 'N/A';
+  return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+};
 
 export default function TournamentPage({ params }: { params: { id: string } }) {
   const tournament = mockTournaments.find(t => t.id === params.id);
@@ -43,26 +56,72 @@ export default function TournamentPage({ params }: { params: { id: string } }) {
                   <TabsTrigger value="rules" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Rules</TabsTrigger>
                 </TabsList>
                 <TabsContent value="info" className="mt-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Tournament Info</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4 text-sm">
-                            <div className="flex items-center gap-3"><Calendar className="h-5 w-5 text-primary" /> <span>{format(new Date(tournament.startDate), 'MMMM dd, yyyy @ h:mm a')}</span></div>
-                            <div className="flex items-center gap-3"><Gamepad2 className="h-5 w-5 text-primary" /> <span>{tournament.game}</span></div>
-                            <div className="flex items-center gap-3"><Users className="h-5 w-5 text-primary" /> <span>{tournament.teamsCount} / {tournament.maxTeams} teams registered</span></div>
-                            <div className="flex items-center gap-3"><Trophy className="h-5 w-5 text-primary" /> <span>${tournament.prizePool} Prize Pool</span></div>
-                            <div className="flex items-center gap-3"><Ticket className="h-5 w-5 text-primary" /> <span>${tournament.entryFee} Entry Fee</span></div>
-                            <div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary" /> <span className="capitalize">{tournament.status}</span></div>
-                        </CardContent>
-                    </Card>
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="grid grid-cols-3 gap-y-6 text-center">
+                        <InfoBlock label="Win Prize" value={`${tournament.prizePool} TK`} />
+                        <InfoBlock label="Entry Type" value={getEntryType(tournament.format)} />
+                        <InfoBlock label="Entry Fee" value={`${tournament.entryFee} TK`} />
+                        <InfoBlock label="Per Kill" value={`${tournament.perKillPrize || 0} TK`} />
+                        <InfoBlock label="Map" value={tournament.map || 'TBD'} />
+                        <InfoBlock label="Version" value={tournament.version || 'N/A'} />
+                      </div>
+
+                      <div className="mt-8">
+                          <div className="flex items-center gap-4">
+                              <div className="w-full">
+                                  <Progress value={(tournament.teamsCount / tournament.maxTeams) * 100} className="h-3 bg-primary/20" />
+                                  <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
+                                      <span>Only {tournament.maxTeams - tournament.teamsCount} spots are left</span>
+                                      <span>{tournament.teamsCount}/{tournament.maxTeams}</span>
+                                  </div>
+                              </div>
+                              {tournament.status === 'upcoming' && (
+                                  <Button className="shrink-0 rounded-full font-bold">Join</Button>
+                              )}
+                          </div>
+                      </div>
+
+                      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Accordion type="single" collapsible>
+                            <AccordionItem value="room-details" className="border-b-0">
+                                <AccordionTrigger className="bg-muted hover:no-underline rounded-md px-4 py-2.5 text-sm font-semibold border hover:border-primary/50">
+                                    <div className="flex items-center gap-2">
+                                        <KeyRound className="h-4 w-4 text-primary" />
+                                        Room Details
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="p-4 bg-muted/50 rounded-b-md text-sm text-muted-foreground">
+                                    <p>Room ID and password will be shared with registered participants 15 minutes before the match starts via the app.</p>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+                        <Accordion type="single" collapsible>
+                            <AccordionItem value="prize-details" className="border-b-0">
+                                <AccordionTrigger className="bg-muted hover:no-underline rounded-md px-4 py-2.5 text-sm font-semibold border hover:border-primary/50">
+                                    <div className="flex items-center gap-2">
+                                        <Award className="h-4 w-4 text-primary" />
+                                        Total Prize Details
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="p-4 bg-muted/50 rounded-b-md text-sm text-muted-foreground">
+                                    <ul className="list-disc list-inside space-y-1 font-medium text-foreground/80">
+                                        <li>1st Place: {Math.round(parseInt(tournament.prizePool.replace(/,/g, '')) * 0.5)} TK</li>
+                                        <li>2nd Place: {Math.round(parseInt(tournament.prizePool.replace(/,/g, '')) * 0.3)} TK</li>
+                                        <li>3rd Place: {Math.round(parseInt(tournament.prizePool.replace(/,/g, '')) * 0.2)} TK</li>
+                                    </ul>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </TabsContent>
                 <TabsContent value="bracket" className="mt-4">
                     <Card>
-                        <CardHeader><CardTitle>Tournament Bracket</CardTitle></CardHeader>
                         <CardContent className="text-center py-12">
                              <p className="text-muted-foreground mb-4">The bracket is displayed in a dedicated view for a better experience.</p>
-                             <Button asChild size="lg">
+                             <Button asChild size="lg" className="rounded-full">
                                 <Link href={`/tournaments/${tournament.id}/bracket`}>View Full Bracket</Link>
                              </Button>
                         </CardContent>
@@ -70,23 +129,12 @@ export default function TournamentPage({ params }: { params: { id: string } }) {
                 </TabsContent>
                 <TabsContent value="rules" className="mt-4">
                     <Card>
-                        <CardHeader><CardTitle>Rules & Regulations</CardTitle></CardHeader>
-                        <CardContent className="prose prose-invert prose-p:text-muted-foreground">
+                        <CardContent className="prose prose-invert prose-p:text-muted-foreground p-6">
                             <p>{tournament.rules}</p>
                         </CardContent>
                     </Card>
                 </TabsContent>
             </Tabs>
-
-            {tournament.status === 'upcoming' && (
-              <Button 
-                variant="outline"
-                size="lg" 
-                className="w-full text-lg h-12 bg-transparent border-2 border-primary/50 hover:bg-primary/10 hover:animate-border-shine mt-8"
-              >
-                  Join Tournament
-              </Button>
-            )}
         </div>
       </div>
     </div>

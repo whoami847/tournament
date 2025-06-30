@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-type Format = 'all' | 'BR' | 'CS' | 'LONE WOLF' | '5v5';
+type Format = 'all' | 'BR' | 'CS' | 'LONE WOLF';
 type SubMode = 'all' | 'solo' | 'duo' | 'squad';
 
 export default function TournamentsPage() {
@@ -73,7 +73,7 @@ export default function TournamentsPage() {
   }, [tournaments, searchTerm, selectedGame, selectedStatus, selectedFormat, selectedSubMode, showBookmarkedOnly, bookmarked]);
   
   const games: Game[] = ['Free Fire', 'PUBG', 'Mobile Legends', 'COD: Mobile'];
-  const formats: Exclude<Format, 'all'>[] = ['BR', 'CS', 'LONE WOLF', '5v5'];
+  const formats: Exclude<Format, 'all'>[] = ['BR', 'CS', 'LONE WOLF'];
   
   const subModeOptions: { [key: string]: SubMode[] } = {
     'BR': ['all', 'solo', 'duo', 'squad'],

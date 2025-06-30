@@ -1,8 +1,17 @@
+"use client"
+
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, User, Gamepad2, Globe, Calendar, Users, Shield, Trophy, Star, Flame } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -135,9 +144,19 @@ export default function ProfilePage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
             <div className="absolute top-14 right-4 sm:top-4">
-                <Button variant="ghost" size="icon" className="bg-black/20 hover:bg-black/40">
-                    <MoreHorizontal className="h-5 w-5" />
-                </Button>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="bg-black/20 hover:bg-black/40 text-white hover:text-white">
+                            <MoreHorizontal className="h-5 w-5" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem>Edit Profile</DropdownMenuItem>
+                        <DropdownMenuItem>Settings</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">Log Out</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
             <h1 className="absolute top-16 left-4 text-2xl font-bold text-white sm:top-6">Profile</h1>
         </div>

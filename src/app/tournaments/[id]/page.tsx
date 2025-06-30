@@ -3,7 +3,7 @@
 import { mockTournaments } from '@/lib/data';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound, useParams, useRouter } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,7 +32,6 @@ const getEntryType = (format: string) => {
 
 export default function TournamentPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
   const tournament = mockTournaments.find(t => t.id === params.id);
 
   if (!tournament) {
@@ -40,12 +39,6 @@ export default function TournamentPage() {
   }
 
   const isFull = tournament.teamsCount >= tournament.maxTeams;
-
-  const handleJoin = () => {
-    if (tournament) {
-      router.push(`/tournaments/${tournament.id}/join`);
-    }
-  }
 
   return (
     <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
@@ -96,11 +89,13 @@ export default function TournamentPage() {
                               </div>
                               {tournament.status === 'upcoming' && (
                                   <Button 
+                                    asChild
                                     className="shrink-0 rounded-full font-bold"
                                     disabled={isFull}
-                                    onClick={handleJoin}
                                   >
+                                    <Link href={`/tournaments/${tournament.id}/join`}>
                                       {isFull ? 'Full' : 'Join Now'}
+                                    </Link>
                                   </Button>
                               )}
                           </div>

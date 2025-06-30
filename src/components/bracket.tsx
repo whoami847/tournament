@@ -10,28 +10,28 @@ import { Video, Swords } from 'lucide-react';
 const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: number, isWinner?: boolean }) => {
   if (!team) {
     return (
-      <div className="flex items-center gap-2 p-2 h-[44px] w-full">
-        <div className="h-7 w-7 rounded-md bg-muted/20 flex-shrink-0 flex items-center justify-center">
-          <Swords className="h-4 w-4 text-muted-foreground" />
+      <div className="flex items-center gap-2 p-2 h-[32px] w-full">
+        <div className="h-5 w-5 rounded-md bg-muted/20 flex-shrink-0 flex items-center justify-center">
+          <Swords className="h-3 w-3 text-muted-foreground" />
         </div>
-        <span className="text-muted-foreground text-sm">Team TBD</span>
+        <span className="text-muted-foreground text-[11px]">Team TBD</span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-between p-2 h-[44px] w-full">
+    <div className="flex items-center justify-between p-2 h-[32px] w-full">
       <div className="flex items-center gap-2 overflow-hidden">
-        <Avatar className="h-7 w-7 flex-shrink-0">
+        <Avatar className="h-5 w-5 flex-shrink-0">
           <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
           <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <span className={cn("text-sm font-medium truncate", isWinner ? "text-foreground" : "text-muted-foreground")}>
+        <span className={cn("text-[11px] font-medium truncate", isWinner ? "text-foreground" : "text-muted-foreground")}>
           {team.name}
         </span>
       </div>
       {typeof score !== 'undefined' && (
-        <span className={cn("font-bold text-base", isWinner ? "text-chart-2" : "text-muted-foreground/50")}>
+        <span className={cn("font-bold text-xs", isWinner ? "text-chart-2" : "text-muted-foreground/50")}>
           {score}
         </span>
       )}
@@ -40,7 +40,7 @@ const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: num
 };
 
 const MatchCard = ({ match }: { match: Match | null }) => {
-    if (!match) return <div className="bg-card rounded-lg w-full h-[88px] flex-shrink-0" />;
+    if (!match) return <div className="bg-card rounded-lg w-full h-[64px] flex-shrink-0" />;
 
     const [team1, team2] = match.teams;
     const [score1, score2] = match.scores;
@@ -48,7 +48,7 @@ const MatchCard = ({ match }: { match: Match | null }) => {
     const winner2 = match.status === 'completed' && score2 > score1;
 
     return (
-        <div className="bg-card rounded-lg w-full flex-shrink-0 border border-transparent shadow-sm h-[88px]">
+        <div className="bg-card rounded-lg w-full flex-shrink-0 border border-transparent shadow-sm h-[64px]">
             <div className="p-0">
                 <TeamDisplay team={team1} score={score1} isWinner={winner1} />
                 <div className="border-t border-border/50 mx-2"></div>
@@ -59,14 +59,14 @@ const MatchCard = ({ match }: { match: Match | null }) => {
 };
 
 const SingleMatchDisplay = ({ match }: { match: Match | null }) => {
-    if (!match) return <div className="w-full md:w-44 h-[112px]" />;
+    if (!match) return <div className="w-full md:w-36 h-[84px]" />;
     
     return (
-      <div className="w-full md:w-44">
-        <div className="flex justify-between items-center mb-1 h-5">
-          <p className="text-xs text-muted-foreground">{match.name}</p>
+      <div className="w-full md:w-36">
+        <div className="flex justify-between items-center mb-1 h-4">
+          <p className="text-[10px] text-muted-foreground">{match.name}</p>
           {match.status === 'live' && (
-            <Badge variant="default" className="flex items-center gap-1 text-[10px] h-4 px-1.5">
+            <Badge variant="default" className="flex items-center gap-1 text-[10px] h-4 px-1.5 bg-red-500 border-none">
                 <Video className="h-2 w-2" />
                 Live
             </Badge>
@@ -78,9 +78,9 @@ const SingleMatchDisplay = ({ match }: { match: Match | null }) => {
 }
 
 const Connector = () => {
-    const CARD_HEIGHT = 88;
-    const GAP = 28; 
-    const MATCH_DISPLAY_HEIGHT = CARD_HEIGHT + 24; // Card height + label and margin
+    const CARD_HEIGHT = 64;
+    const GAP = 16; 
+    const MATCH_DISPLAY_HEIGHT = CARD_HEIGHT + 20; // Card height + label height + margin
     const TOTAL_HEIGHT = MATCH_DISPLAY_HEIGHT * 2 + GAP;
     
     const startY1 = MATCH_DISPLAY_HEIGHT / 2;
@@ -88,11 +88,11 @@ const Connector = () => {
     const endY = TOTAL_HEIGHT / 2;
     
     return (
-      <div className="w-10 h-full flex-shrink-0 mx-1" style={{ height: `${TOTAL_HEIGHT}px` }}>
-          <svg className="w-full h-full" viewBox={`0 0 40 ${TOTAL_HEIGHT}`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d={`M1 ${startY1} C 20,${startY1} 20,${endY} 30,${endY}`} stroke="hsl(var(--border))" strokeWidth="2"/>
-              <path d={`M1 ${startY2} C 20,${startY2} 20,${endY} 30,${endY}`} stroke="hsl(var(--border))" strokeWidth="2"/>
-              <path d={`M35 ${endY} L30 ${endY-4} L25 ${endY} L30 ${endY+4} Z`} fill="hsl(var(--border))" />
+      <div className="w-8 h-full flex-shrink-0 mx-1" style={{ height: `${TOTAL_HEIGHT}px` }}>
+          <svg className="w-full h-full" viewBox={`0 0 32 ${TOTAL_HEIGHT}`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d={`M1 ${startY1} C 16,${startY1} 16,${endY} 24,${endY}`} stroke="hsl(var(--border))" strokeWidth="2"/>
+              <path d={`M1 ${startY2} C 16,${startY2} 16,${endY} 24,${endY}`} stroke="hsl(var(--border))" strokeWidth="2"/>
+              <path d={`M28 ${endY} L24 ${endY-3} L20 ${endY} L24 ${endY+3} Z`} fill="hsl(var(--border))" />
           </svg>
       </div>
     );
@@ -162,7 +162,7 @@ export default function Bracket({ tournament, activeRoundName }: { tournament: T
 
             return (
                 <div key={index} className="flex items-center w-full justify-center">
-                    <div className="space-y-7">
+                    <div className="space-y-4">
                        <SingleMatchDisplay match={match1} />
                        <SingleMatchDisplay match={match2} />
                     </div>

@@ -38,7 +38,7 @@ export default function BracketPage() {
             </header>
 
             <div className="flex justify-center mb-6">
-                <div className="bg-card p-1 rounded-full flex items-center space-x-1">
+                <div className="bg-card p-1 rounded-full flex flex-wrap items-center justify-center gap-1">
                     {tournament.bracket.map((round: Round) => (
                         <Button 
                             key={round.name}

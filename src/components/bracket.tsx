@@ -9,8 +9,8 @@ import React from 'react';
 const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: number, isWinner?: boolean }) => {
   if (!team) {
     return (
-      <div className="flex items-center gap-3 p-2 h-[44px] w-full">
-        <div className="h-7 w-7 rounded-md bg-muted/20 flex-shrink-0" />
+      <div className="flex items-center gap-2 md:gap-3 p-2 h-[40px] md:h-[44px] w-full">
+        <div className="h-6 md:h-7 w-6 md:w-7 rounded-md bg-muted/20 flex-shrink-0" />
         <span className="text-muted-foreground text-sm">TBD</span>
       </div>
     );
@@ -18,20 +18,20 @@ const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: num
 
   return (
     <div className={cn(
-      "flex items-center justify-between p-2 h-[44px] w-full",
+      "flex items-center justify-between p-2 h-[40px] md:h-[44px] w-full",
       isWinner && "bg-primary/10"
     )}>
-      <div className="flex items-center gap-3 overflow-hidden">
-        <Avatar className="h-7 w-7 flex-shrink-0">
+      <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
+        <Avatar className="h-6 md:h-7 w-6 md:w-7 flex-shrink-0">
           <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
           <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <span className={cn("text-sm font-medium truncate", isWinner ? "text-foreground" : "text-muted-foreground")}>
+        <span className={cn("text-xs md:text-sm font-medium truncate", isWinner ? "text-foreground" : "text-muted-foreground")}>
           {team.name}
         </span>
       </div>
       {typeof score !== 'undefined' && (
-        <span className={cn("font-bold text-lg", isWinner ? "text-primary" : "text-muted-foreground/50")}>
+        <span className={cn("font-bold text-base md:text-lg", isWinner ? "text-primary" : "text-muted-foreground/50")}>
           {score}
         </span>
       )}
@@ -40,7 +40,7 @@ const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: num
 };
 
 const MatchCard = ({ match }: { match: Match | null }) => {
-    if (!match) return <div className="bg-card/50 rounded-lg w-64 h-[108px] flex-shrink-0" />;
+    if (!match) return <div className="bg-card/50 rounded-lg w-56 md:w-64 h-[100px] md:h-[108px] flex-shrink-0" />;
 
     const [team1, team2] = match.teams;
     const [score1, score2] = match.scores;
@@ -48,9 +48,9 @@ const MatchCard = ({ match }: { match: Match | null }) => {
     const winner2 = match.status === 'completed' && score2 > score1;
 
     return (
-        <div className="bg-card rounded-lg w-64 flex-shrink-0 border border-border/50 shadow-sm">
-             <div className="flex justify-between items-center px-3 py-1 border-b border-border/50">
-                <span className="text-xs text-muted-foreground">{match.name}</span>
+        <div className="bg-card rounded-lg w-56 md:w-64 flex-shrink-0 border border-border/50 shadow-sm h-[100px] md:h-[108px]">
+             <div className="flex justify-between items-center px-2 md:px-3 py-1 border-b border-border/50">
+                <span className="text-[11px] md:text-xs text-muted-foreground">{match.name}</span>
                 {match.status === 'live' && (
                     <Badge variant="default" className="flex items-center gap-1 bg-red-500 text-white text-[10px] h-5 px-1.5 border-none">
                         <span className="relative flex h-1.5 w-1.5">
@@ -71,11 +71,11 @@ const MatchCard = ({ match }: { match: Match | null }) => {
 };
 
 const Connector = () => (
-    <div className="w-16 h-[240px] flex-shrink-0 flex items-center justify-center relative">
-         <svg width="100%" height="100%" viewBox="0 0 64 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M1 54 C 24,54 24,120 40,120" stroke="#FFB74D" strokeWidth="2" />
-            <path d="M1 186 C 24,186 24,120 40,120" stroke="#FFB74D" strokeWidth="2" />
-            <path d="M48 120 H64" stroke="#FFB74D" strokeWidth="2"/>
+    <div className="w-12 md:w-16 h-[216px] md:h-[240px] flex-shrink-0 flex items-center justify-center relative">
+         <svg className="w-full h-full" viewBox="0 0 64 240" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 54 C 24,54 24,120 40,120" stroke="#FFB74D" strokeWidth="2" vectorEffect="non-scaling-stroke"/>
+            <path d="M1 186 C 24,186 24,120 40,120" stroke="#FFB74D" strokeWidth="2" vectorEffect="non-scaling-stroke"/>
+            <path d="M48 120 H64" stroke="#FFB74D" strokeWidth="2" vectorEffect="non-scaling-stroke"/>
             <path d="M44 116 L48 120 L44 124 L40 120 Z" fill="#FFB74D" />
         </svg>
     </div>
@@ -85,7 +85,7 @@ const Connector = () => (
 const Matchup = ({ match1, match2, nextMatch }: { match1: Match, match2: Match, nextMatch: Match | null }) => {
     return (
         <div className="flex items-center justify-center">
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4 md:gap-6">
                 <MatchCard match={match1} />
                 <MatchCard match={match2} />
             </div>
@@ -141,7 +141,7 @@ export default function Bracket({ tournament, activeRoundName }: { tournament: T
 
   return (
     <div className="overflow-x-auto pb-4 flex justify-center">
-        <div className="flex flex-col items-center gap-6">
+        <div className="flex flex-col items-center gap-4 md:gap-6">
             {Array.from({ length: activeRound.matches.length / 2 }).map((_, i) => {
                 const match1 = activeRound.matches[i * 2];
                 const match2 = activeRound.matches[i * 2 + 1];

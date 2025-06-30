@@ -204,7 +204,7 @@ const TeamDisplay = ({ team, score, isWinner, isLoser }: { team: Team | null, sc
   return teamRowContent;
 };
 
-const MatchCard = ({ match }: { match: Match | null }) => {
+const MatchCard = ({ match, highlightTeam1AsWinner, highlightTeam2AsWinner }: { match: Match | null, highlightTeam1AsWinner?: boolean, highlightTeam2AsWinner?: boolean }) => {
     const team1 = match?.teams?.[0] ?? null;
     const team2 = match?.teams?.[1] ?? null;
     const score1 = match?.scores?.[0] ?? 0;
@@ -215,23 +215,24 @@ const MatchCard = ({ match }: { match: Match | null }) => {
     const winner1 = isCompleted && score1 > score2;
     const winner2 = isCompleted && score2 > score1;
     const loser1 = isCompleted && score1 < score2;
-    const loser2 = isCompleted && score2 > score1;
+    const loser2 = isCompleted && score2 < score1;
+    
+    const hasAdvancedWinners = !!(highlightTeam1AsWinner || highlightTeam2AsWinner);
 
-    const MatchContent = ({ showWinnerAnimation }: { showWinnerAnimation: boolean }) => (
+    const MatchContent = () => (
         <div className="p-0">
-            <TeamDisplay team={team1} score={score1} isWinner={showWinnerAnimation && winner1} isLoser={loser1} />
+            <TeamDisplay team={team1} score={score1} isWinner={(isCompleted && winner1) || highlightTeam1AsWinner} isLoser={loser1} />
             <div className="border-t border-border/50 mx-2"></div>
-            <TeamDisplay team={team2} score={score2} isWinner={showWinnerAnimation && winner2} isLoser={loser2} />
+            <TeamDisplay team={team2} score={score2} isWinner={(isCompleted && winner2) || highlightTeam2AsWinner} isLoser={loser2} />
         </div>
     );
     
-    const cardHeight = 'h-[73px]';
     const animatedCardHeight = 'h-[76px]';
 
-    if (isCompleted) {
+    if (isCompleted || hasAdvancedWinners) {
         return (
             <div className={cn("bg-card rounded-lg w-full flex-shrink-0 border border-transparent shadow-sm", animatedCardHeight)}>
-                <MatchContent showWinnerAnimation={true} />
+                <MatchContent />
             </div>
         );
     }
@@ -240,35 +241,35 @@ const MatchCard = ({ match }: { match: Match | null }) => {
         <div className={cn("relative p-[1.5px] rounded-lg overflow-hidden w-full", animatedCardHeight)}>
              <div className="absolute inset-0 animate-border-spin bg-[conic-gradient(from_180deg_at_50%_50%,hsl(var(--muted-foreground))_0deg,hsl(var(--primary-foreground))_180deg,hsl(var(--muted-foreground))_360deg)]" />
              <div className={cn("relative z-10 bg-card rounded-[calc(var(--radius)-2px)] h-full")}>
-                 <MatchContent showWinnerAnimation={false} />
+                 <MatchContent />
              </div>
         </div>
     );
 };
 
-const SingleMatchDisplay = ({ match }: { match: Match | null }) => {
+const SingleMatchDisplay = ({ match, highlightTeam1AsWinner, highlightTeam2AsWinner }: { match: Match | null, highlightTeam1AsWinner?: boolean, highlightTeam2AsWinner?: boolean }) => {
     return (
-      <div className="w-full md:w-44">
-        <div className="flex justify-between items-center mb-1 h-5">
-          <p className="text-[10px] text-muted-foreground">{match?.name ?? ''}</p>
+      <div className="w-full md:w-40">
+        <div className="flex justify-between items-center mb-1 h-4">
+          <p className="text-[9px] text-muted-foreground">{match?.name ?? ''}</p>
           {match?.status === 'live' && (
-            <Badge variant="default" className="flex items-center gap-1 text-[10px] h-4 px-1.5 bg-red-500 border-none">
+            <Badge variant="default" className="flex items-center gap-1 text-[9px] h-3 px-1.5 bg-red-500 border-none">
                 <Video className="h-2 w-2" />
                 Live
             </Badge>
           )}
         </div>
-        <MatchCard match={match} />
+        <MatchCard match={match} highlightTeam1AsWinner={highlightTeam1AsWinner} highlightTeam2AsWinner={highlightTeam2AsWinner}/>
       </div>
     )
 }
 
 const Connector = ({ isTopWinner, isBottomWinner }: { isTopWinner: boolean, isBottomWinner: boolean }) => {
-    const CARD_AND_LABEL_HEIGHT = 100; // card height 76 + label height 24
+    const CARD_AND_LABEL_HEIGHT = 92; 
     const GAP = 32;
     const TOTAL_HEIGHT = CARD_AND_LABEL_HEIGHT * 2 + GAP;
     const TEAM_ROW_HEIGHT = 36;
-    const LABEL_HEIGHT = 24; // h-5 (20px) + mb-1 (4px)
+    const LABEL_HEIGHT = 16; 
     
     const topTeamY = LABEL_HEIGHT + (TEAM_ROW_HEIGHT / 2);
     const bottomTeamY = LABEL_HEIGHT + TEAM_ROW_HEIGHT + (TEAM_ROW_HEIGHT / 2) + 1; // +1 for the border
@@ -356,7 +357,11 @@ export default function Bracket({ tournament, bracket, activeRoundName }: { tour
 
                     {nextRound && (
                         <div className="flex items-center">
-                           <SingleMatchDisplay match={nextMatch} />
+                           <SingleMatchDisplay
+                                match={nextMatch}
+                                highlightTeam1AsWinner={match1?.status === 'completed'}
+                                highlightTeam2AsWinner={match2?.status === 'completed'}
+                           />
                         </div>
                     )}
                 </div>

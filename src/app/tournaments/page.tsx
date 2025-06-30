@@ -19,7 +19,7 @@ export default function TournamentsPage() {
 
   const [tournaments, setTournaments] = useState<Tournament[]>(mockTournaments);
   const [selectedGame, setSelectedGame] = useState<Game | 'all'>(gameFromQuery || 'all');
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'live' | 'upcoming' | 'completed'>(gameFromQuery ? 'upcoming' : 'all');
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'live' | 'upcoming' | 'completed'>('upcoming');
   const [selectedFormat, setSelectedFormat] = useState<Format>('all');
   const [selectedSubMode, setSelectedSubMode] = useState<SubMode>('all');
   const [bookmarked, setBookmarked] = useState<Record<string, boolean>>({});
@@ -28,7 +28,9 @@ export default function TournamentsPage() {
   useEffect(() => {
     const gameFromQuery = searchParams.get('game') as Game | null;
     setSelectedGame(gameFromQuery || 'all');
-    setSelectedStatus(gameFromQuery ? 'upcoming' : 'all');
+    if (gameFromQuery) {
+      setSelectedStatus('upcoming');
+    }
   }, [searchParams]);
 
   const handleBookmarkToggle = (id: string) => {

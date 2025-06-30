@@ -30,7 +30,7 @@ export const mockTournaments: Tournament[] = [
     image: 'https://placehold.co/600x400.png',
     dataAiHint: 'summer action game',
     participants: teams.slice(0, 16),
-    format: '5v5',
+    format: 'CS_SQUAD',
     bracket: [],
   },
   {
@@ -47,7 +47,7 @@ export const mockTournaments: Tournament[] = [
     image: 'https://placehold.co/600x400.png',
     dataAiHint: 'soldiers modern warfare',
     participants: teams.slice(0, 8),
-    format: '5v5',
+    format: 'CS_SQUAD',
     bracket: [
       {
         name: 'Quarter-finals',
@@ -122,7 +122,7 @@ export const mockTournaments: Tournament[] = [
     format: 'LW_SOLO',
     bracket: [],
   },
-    {
+  {
     id: 'lw-duo-deathmatch',
     name: 'Lone Wolf Duo Deathmatch',
     game: 'Free Fire',
@@ -157,6 +157,23 @@ export const mockTournaments: Tournament[] = [
     bracket: [],
   },
   {
+    id: 'cs-solo-showdown',
+    name: 'Clash Squad Solo Showdown',
+    game: 'Free Fire',
+    startDate: '2024-08-20T19:00:00',
+    teamsCount: 16,
+    maxTeams: 32,
+    entryFee: 0,
+    prizePool: '500',
+    rules: '1v1 Clash Squad format. Show your individual skill.',
+    status: 'upcoming',
+    image: 'https://placehold.co/600x400.png',
+    dataAiHint: 'one player action',
+    participants: teams.slice(0,16),
+    format: 'CS_SOLO',
+    bracket: [],
+  },
+  {
     id: 'br-solo-showdown',
     name: 'Battle Royale Solo Showdown',
     game: 'PUBG',
@@ -173,6 +190,23 @@ export const mockTournaments: Tournament[] = [
     format: 'BR_SOLO',
     bracket: [],
   },
+    {
+    id: 'br-duo-brawl',
+    name: 'BR Duo Brawl',
+    game: 'PUBG',
+    startDate: '2024-08-25T14:00:00',
+    teamsCount: 16,
+    maxTeams: 32,
+    entryFee: 5,
+    prizePool: '1,500',
+    rules: '2v2 Battle Royale. Last duo standing wins.',
+    status: 'upcoming',
+    image: 'https://placehold.co/600x400.png',
+    dataAiHint: 'two soldiers action',
+    participants: teams.slice(0,16),
+    format: 'BR_DUO',
+    bracket: [],
+  },
   {
     id: 'ml-diamond-cup-s5',
     name: 'ML Diamond Cup S5',
@@ -187,7 +221,7 @@ export const mockTournaments: Tournament[] = [
     image: 'https://placehold.co/600x400.png',
     dataAiHint: 'fantasy landscape',
     participants: teams.slice(0, 8),
-    format: '5v5',
+    format: 'CS_SQUAD',
     bracket: [
       {
         name: 'Quarter-finals',
@@ -242,7 +276,7 @@ export const mockTournaments: Tournament[] = [
     image: 'https://placehold.co/600x400.png',
     dataAiHint: 'modern soldier',
     participants: teams,
-    format: '5v5',
+    format: 'CS_SQUAD',
     bracket: [],
   },
 ];

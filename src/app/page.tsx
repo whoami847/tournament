@@ -145,34 +145,6 @@ const LiveEvents = ({tournaments}: {tournaments: Tournament[]}) => (
     </div>
 );
 
-const TournamentTag = ({ icon, text }: { icon: React.ReactNode, text: string }) => (
-    <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted py-1 px-2 rounded-md">
-        {icon}
-        <span>{text}</span>
-    </div>
-);
-
-const TournamentsGrid = ({tournaments}: {tournaments: Tournament[]}) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    {tournaments.map((t, i) => (
-      <Card key={i} className="border-border/50 bg-transparent overflow-hidden rounded-xl">
-        <div className="relative h-48">
-            <Image src={t.image} alt={t.name} fill className="object-cover" data-ai-hint={t.dataAiHint as string} />
-            {t.status === 'upcoming' && <Badge className="absolute top-2 right-2 bg-primary/80 border-none text-xs">Open</Badge>}
-        </div>
-        <CardContent className="p-3 bg-card">
-            <h4 className="font-bold truncate">{t.name}</h4>
-            <p className="text-xs text-muted-foreground mb-2">{format(new Date(t.startDate), "dd.MM.yy '•' HH:mm")}</p>
-            <div className="flex items-center gap-2 mt-1">
-              <TournamentTag icon={<Users className="h-3 w-3" />} text={t.format} />
-              <TournamentTag icon={<DollarSign className="h-3 w-3" />} text={`$${t.prizePool}`} />
-            </div>
-        </CardContent>
-      </Card>
-    ))}
-  </div>
-);
-
 const GamesList = () => (
     <div className="-mx-4">
         <Carousel opts={{ align: "start", loop: false }} className="w-full">
@@ -215,7 +187,7 @@ const TopPlayers = () => (
     </div>
 );
 
-const GameFilter = ({ selectedGame, onSelectGame }: { selectedGame: Game | 'all', onSelectGame: (game: Game | 'all') => void }) => (
+const GameFilter = ({ selectedGame, onSelectGame }: { selectedGame: Game, onSelectGame: (game: Game) => void }) => (
     <div className="grid grid-cols-2 gap-4 mb-6">
         {gameFilterData.map((game) => (
             <div
@@ -240,15 +212,7 @@ const GameFilter = ({ selectedGame, onSelectGame }: { selectedGame: Game | 'all'
 
 // --- MAIN PAGE COMPONENT ---
 export default function HomePage() {
-  const [selectedUpcomingGame, setSelectedUpcomingGame] = useState<Game | 'all'>('all');
-
-  const upcomingTournaments = useMemo(() => {
-    return mockTournaments.filter(t => {
-      if (t.status !== 'upcoming') return false;
-      if (selectedUpcomingGame === 'all') return true;
-      return t.game === selectedUpcomingGame;
-    });
-  }, [selectedUpcomingGame]);
+  const [selectedUpcomingGame, setSelectedUpcomingGame] = useState<Game>('Free Fire');
 
   return (
     <div className="bg-background text-foreground pb-24">
@@ -265,11 +229,6 @@ export default function HomePage() {
           <section>
             <SectionHeader title="Upcoming Matches" actionText="All tournaments" actionHref="/tournaments" />
             <GameFilter selectedGame={selectedUpcomingGame} onSelectGame={setSelectedUpcomingGame} />
-            {upcomingTournaments.length > 0 ? (
-                <TournamentsGrid tournaments={upcomingTournaments} />
-            ) : (
-                <p className="text-muted-foreground text-center py-8">No upcoming matches for this game.</p>
-            )}
           </section>
           <section>
             <SectionHeader title="Our Supported Games" actionText="All games" actionHref="#" />

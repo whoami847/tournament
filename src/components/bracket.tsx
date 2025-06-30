@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Match, Round, Team, Tournament } from '@/types';
@@ -6,24 +5,24 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import React from 'react';
+import { Video, Swords } from 'lucide-react';
 
 const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: number, isWinner?: boolean }) => {
   if (!team) {
     return (
-      <div className="flex items-center gap-3 p-2 h-[44px] w-full">
-        <div className="h-7 w-7 rounded-md bg-muted/20 flex-shrink-0" />
-        <span className="text-muted-foreground text-sm">TBD</span>
+      <div className="flex items-center gap-3 p-3 h-[52px] w-full">
+        <div className="h-8 w-8 rounded-md bg-muted/20 flex-shrink-0 flex items-center justify-center">
+          <Swords className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <span className="text-muted-foreground text-sm">Team TBD</span>
       </div>
     );
   }
 
   return (
-    <div className={cn(
-      "flex items-center justify-between p-2 h-[44px] w-full",
-      isWinner && "bg-primary/10"
-    )}>
+    <div className="flex items-center justify-between p-3 h-[52px] w-full">
       <div className="flex items-center gap-3 overflow-hidden">
-        <Avatar className="h-7 w-7 flex-shrink-0">
+        <Avatar className="h-8 w-8 flex-shrink-0">
           <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
           <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
         </Avatar>
@@ -32,7 +31,7 @@ const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: num
         </span>
       </div>
       {typeof score !== 'undefined' && (
-        <span className={cn("font-bold text-lg", isWinner ? "text-primary" : "text-muted-foreground/50")}>
+        <span className={cn("font-bold text-lg", isWinner ? "text-chart-2" : "text-muted-foreground/50")}>
           {score}
         </span>
       )}
@@ -41,7 +40,7 @@ const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: num
 };
 
 const MatchCard = ({ match }: { match: Match | null }) => {
-    if (!match) return <div className="bg-card/50 rounded-lg w-64 h-[108px] flex-shrink-0" />;
+    if (!match) return <div className="bg-card rounded-lg w-full h-[105px] flex-shrink-0" />;
 
     const [team1, team2] = match.teams;
     const [score1, score2] = match.scores;
@@ -49,107 +48,64 @@ const MatchCard = ({ match }: { match: Match | null }) => {
     const winner2 = match.status === 'completed' && score2 > score1;
 
     return (
-        <div className="bg-card rounded-lg w-64 flex-shrink-0 border border-border/50 shadow-sm h-[108px]">
-             <div className="flex justify-between items-center px-3 py-1 border-b border-border/50">
-                <span className="text-xs text-muted-foreground">{match.name}</span>
-                {match.status === 'live' && (
-                    <Badge variant="default" className="flex items-center gap-1 bg-red-500 text-white text-[10px] h-5 px-1.5 border-none">
-                        <span className="relative flex h-1.5 w-1.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/75 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
-                        </span>
-                        LIVE
-                    </Badge>
-                )}
-            </div>
-            <div className="p-1">
+        <div className="bg-card rounded-lg w-full flex-shrink-0 border border-transparent shadow-sm h-[105px]">
+            <div className="p-0">
                 <TeamDisplay team={team1} score={score1} isWinner={winner1} />
-                <div className="border-t border-border/50 mx-2"></div>
+                <div className="border-t border-border/50 mx-3"></div>
                 <TeamDisplay team={team2} score={score2} isWinner={winner2} />
             </div>
         </div>
     );
 };
 
-const RoundColumn = ({ round, vSpace, paddingTop }: { round: Round; vSpace: number; paddingTop: number }) => {
-  return (
-    <div className="flex flex-col items-center flex-shrink-0">
-      <h3 className="text-base font-bold uppercase tracking-wider text-muted-foreground h-8 flex items-center mb-4">{round.name}</h3>
-      <div className="flex flex-col" style={{ gap: `${vSpace}px`, paddingTop: `${paddingTop}px` }}>
-        {round.matches.map((match, index) => (
-          <MatchCard key={match?.id || index} match={match} />
-        ))}
+const SingleMatchDisplay = ({ match }: { match: Match | null }) => {
+    if (!match) return <div className="w-full md:w-48 h-[129px]" />;
+    
+    return (
+      <div className="w-full md:w-48">
+        <div className="flex justify-between items-center mb-1 h-5">
+          <p className="text-sm text-muted-foreground">{match.name}</p>
+          {match.status === 'live' && (
+            <Badge variant="default" className="flex items-center gap-1.5 text-[10px] h-5 px-2">
+                <Video className="h-3 w-3" />
+                En live
+            </Badge>
+          )}
+        </div>
+        <MatchCard match={match} />
       </div>
-    </div>
-  );
+    )
+}
+
+const Connector = () => {
+    const CARD_HEIGHT = 105;
+    const GAP = 32; 
+    const MATCH_DISPLAY_HEIGHT = CARD_HEIGHT + 24; // Card height + label and margin
+    const TOTAL_HEIGHT = MATCH_DISPLAY_HEIGHT * 2 + GAP;
+    
+    const startY1 = MATCH_DISPLAY_HEIGHT / 2;
+    const startY2 = MATCH_DISPLAY_HEIGHT + GAP + (MATCH_DISPLAY_HEIGHT / 2);
+    const endY = TOTAL_HEIGHT / 2;
+    
+    return (
+      <div className="w-12 h-full flex-shrink-0 mx-2" style={{ height: `${TOTAL_HEIGHT}px` }}>
+          <svg className="w-full h-full" viewBox={`0 0 48 ${TOTAL_HEIGHT}`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d={`M1 ${startY1} C 24,${startY1} 24,${endY} 36,${endY}`} stroke="hsl(var(--border))" strokeWidth="2"/>
+              <path d={`M1 ${startY2} C 24,${startY2} 24,${endY} 36,${endY}`} stroke="hsl(var(--border))" strokeWidth="2"/>
+              <path d={`M42 ${endY} L36 ${endY-4} L30 ${endY} L36 ${endY+4} Z`} fill="hsl(var(--border))" />
+          </svg>
+      </div>
+    );
 };
 
-const Connector = ({ height, topY, bottomY, targetY }: { height: number; topY: number; bottomY: number; targetY: number; }) => (
-    <div className="w-12 flex-shrink-0" style={{ height: `${height}px` }}>
-        <svg className="w-full h-full" viewBox={`0 0 48 ${height}`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d={`M1 ${topY} C 24,${topY} 24,${targetY} 36,${targetY}`} stroke="#FFB74D" strokeWidth="2"/>
-            <path d={`M1 ${bottomY} C 24,${bottomY} 24,${targetY} 36,${targetY}`} stroke="#FFB74D" strokeWidth="2"/>
-            <path d={`M36 ${targetY} H 48`} stroke="#FFB74D" strokeWidth="2"/>
-            <path d={`M36 ${targetY} L39 ${targetY-3} L42 ${targetY} L39 ${targetY+3} Z`} fill="#FFB74D" />
-        </svg>
-    </div>
-);
-
-const ConnectorColumn = ({ vSpace, numMatches, matches }: { vSpace: number; numMatches: number; matches: (Match | null)[] }) => {
-  const CARD_HEIGHT = 108;
-  const unitHeight = CARD_HEIGHT * 2 + vSpace;
-  const targetY = unitHeight / 2;
-
-  // Y position for a winner in the top half of a card (approximated)
-  const winnerTopHalfY = CARD_HEIGHT * 0.33;
-  // Y position for a winner in the bottom half of a card (approximated)
-  const winnerBottomHalfY = CARD_HEIGHT * 0.66;
-  
-  return (
-    <div className="flex flex-col items-center flex-shrink-0">
-      <h3 className="h-8 mb-4">&nbsp;</h3>
-      <div className="flex flex-col">
-        {Array.from({ length: numMatches / 2 }).map((_, i) => {
-          const topMatch = matches[i * 2];
-          const bottomMatch = matches[i * 2 + 1];
-          
-          let topPathY;
-          if (topMatch?.status === 'completed') {
-            const winnerIsBottomTeam = topMatch.scores[0] < topMatch.scores[1];
-            topPathY = winnerIsBottomTeam ? winnerBottomHalfY : winnerTopHalfY;
-          } else {
-            topPathY = CARD_HEIGHT / 2; // Default to center
-          }
-
-          let bottomPathY;
-          if (bottomMatch?.status === 'completed') {
-            const winnerIsTopTeam = bottomMatch.scores[0] > bottomMatch.scores[1];
-            bottomPathY = (CARD_HEIGHT + vSpace) + (winnerIsTopTeam ? winnerTopHalfY : winnerBottomHalfY);
-          } else {
-            bottomPathY = (CARD_HEIGHT + vSpace) + (CARD_HEIGHT / 2); // Default to center
-          }
-
-          return (
-            <Connector key={i} height={unitHeight} topY={topPathY} bottomY={bottomPathY} targetY={targetY} />
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-export default function Bracket({ tournament }: { tournament: Tournament }) {
+export default function Bracket({ tournament, activeRoundName }: { tournament: Tournament, activeRoundName: string }) {
   
   const processedBracket = React.useMemo(() => {
-    if (!tournament.bracket || tournament.bracket.length === 0) return [];
-    // Use JSON.parse(JSON.stringify(...)) for a deep copy to avoid mutating the original data
     const newBracket: Round[] = JSON.parse(JSON.stringify(tournament.bracket));
-
     const getWinner = (match: Match | null): Team | null => {
       if (!match || match.status !== 'completed' || !match.teams[0] || !match.teams[1]) return null;
       return match.scores[0] > match.scores[1] ? match.teams[0] : match.teams[1];
     };
-    
     for (let i = 0; i < newBracket.length - 1; i++) {
       const currentRound = newBracket[i];
       const nextRound = newBracket[i + 1];
@@ -167,10 +123,11 @@ export default function Bracket({ tournament }: { tournament: Tournament }) {
     return newBracket;
   }, [tournament.bracket]);
 
-  const CARD_HEIGHT = 108;
-  const INITIAL_V_SPACE = 16;
+  const activeRoundIndex = processedBracket.findIndex(r => r.name === activeRoundName);
+  const activeRound = processedBracket[activeRoundIndex];
+  const nextRound = processedBracket[activeRoundIndex + 1] || null;
 
-  if (!processedBracket || processedBracket.length === 0) {
+  if (!activeRound) {
     return (
         <div className="text-center py-12">
             <p className="text-muted-foreground">Bracket not available for this tournament.</p>
@@ -178,33 +135,48 @@ export default function Bracket({ tournament }: { tournament: Tournament }) {
     );
   }
 
+  const matchPairs = [];
+  if (activeRound) {
+      for (let i = 0; i < activeRound.matches.length; i+=2) {
+          matchPairs.push([
+              activeRound.matches[i],
+              activeRound.matches[i+1] || null
+          ])
+      }
+  }
+  
+  // Final Round (or any round with just one match)
+  if (activeRound.matches.length === 1) {
+    return (
+      <div className="flex justify-center">
+        <SingleMatchDisplay match={activeRound.matches[0]} />
+      </div>
+    )
+  }
+
   return (
-    <div className="overflow-x-auto pb-4">
-        <div className="flex items-start">
-          {processedBracket.map((round, roundIndex) => {
-            const vSpace = INITIAL_V_SPACE * Math.pow(2, roundIndex) + (CARD_HEIGHT * (Math.pow(2, roundIndex) - 1));
-            
-            let roundPaddingTop = 0;
-            if (roundIndex > 0) {
-              const prevRoundVSpace = INITIAL_V_SPACE * Math.pow(2, roundIndex - 1) + (CARD_HEIGHT * (Math.pow(2, roundIndex - 1) - 1));
-              const prevUnitHeight = CARD_HEIGHT * 2 + prevRoundVSpace;
-              roundPaddingTop = (prevUnitHeight / 2) - (CARD_HEIGHT / 2);
-            }
+    <div className="flex flex-col items-center">
+        {matchPairs.map((pair, index) => {
+            const [match1, match2] = pair;
+            const nextMatch = nextRound ? nextRound.matches[index] : null;
 
             return (
-              <React.Fragment key={round.name}>
-                <RoundColumn round={round} vSpace={vSpace} paddingTop={roundPaddingTop} />
-                {roundIndex < processedBracket.length - 1 && (
-                  <ConnectorColumn 
-                    vSpace={vSpace} 
-                    numMatches={round.matches.length}
-                    matches={round.matches}
-                  />
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
+                <div key={index} className="flex items-center w-full justify-center">
+                    <div className="space-y-8">
+                       <SingleMatchDisplay match={match1} />
+                       <SingleMatchDisplay match={match2} />
+                    </div>
+
+                    {nextRound && <Connector />}
+
+                    {nextRound && (
+                        <div className="flex items-center">
+                           <SingleMatchDisplay match={nextMatch} />
+                        </div>
+                    )}
+                </div>
+            )
+        })}
     </div>
   );
 }

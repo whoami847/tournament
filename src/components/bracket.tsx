@@ -115,6 +115,7 @@ export default function Bracket({ tournament }: { tournament: Tournament }) {
   
   const processedBracket = React.useMemo(() => {
     if (!tournament.bracket || tournament.bracket.length === 0) return [];
+    // Use JSON.parse(JSON.stringify(...)) for a deep copy to avoid mutating the original data
     const newBracket: Round[] = JSON.parse(JSON.stringify(tournament.bracket));
 
     const getWinner = (match: Match | null): Team | null => {
@@ -140,7 +141,7 @@ export default function Bracket({ tournament }: { tournament: Tournament }) {
   }, [tournament.bracket]);
 
   const CARD_HEIGHT = 108;
-  const INITIAL_V_SPACE = 24;
+  const INITIAL_V_SPACE = 16;
 
   if (!processedBracket || processedBracket.length === 0) {
     return (

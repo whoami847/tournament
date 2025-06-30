@@ -155,7 +155,7 @@ const TournamentsGrid = () => (
   <div className="grid grid-cols-2 gap-4">
     {tournamentsData.map((t, i) => (
       <Card key={i} className="border-border/50 bg-transparent overflow-hidden rounded-xl">
-        <div className="relative h-24">
+        <div className="relative h-32">
             <Image src={t.image} alt={t.name} fill className="object-cover" data-ai-hint={t.dataAiHint} />
             {t.isOpen && <Badge className="absolute top-2 right-2 bg-primary/80 border-none text-xs">Open</Badge>}
         </div>

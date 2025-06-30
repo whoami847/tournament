@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { mockTournaments } from '@/lib/data';
 import type { Tournament, Game } from '@/types';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 // --- MOCK DATA ---
 
@@ -145,7 +146,7 @@ const TournamentTag = ({ icon, text }: { icon: React.ReactNode, text: string }) 
 );
 
 const TournamentsGrid = ({tournaments}: {tournaments: Tournament[]}) => (
-  <div className="grid grid-cols-2 gap-4">
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
     {tournaments.map((t, i) => (
       <Card key={i} className="border-border/50 bg-transparent overflow-hidden rounded-xl">
         <div className="relative h-48">
@@ -207,6 +208,41 @@ const TopPlayers = () => (
     </div>
 );
 
+const gameFilters = [
+    { name: 'all' as const, displayName: 'All', image: 'https://placehold.co/400x200.png', dataAiHint: 'joystick collection' },
+    ...gamesData.map(g => ({ ...g, name: g.name as Game, displayName: g.name })),
+];
+
+const GameFilter = ({ selectedGame, onSelectGame }: { selectedGame: Game | 'all', onSelectGame: (game: Game | 'all') => void }) => (
+    <div className="-mx-4 mb-4">
+        <Carousel opts={{ align: "start", loop: false }} className="w-full">
+            <CarouselContent className="pl-4">
+            {gameFilters.map((game) => (
+                <CarouselItem key={game.name} className="basis-1/3 md:basis-1/4">
+                    <div 
+                        className={cn(
+                            "relative h-20 rounded-lg overflow-hidden cursor-pointer border-2 transition-all",
+                            selectedGame === game.name ? 'border-primary' : 'border-card'
+                        )}
+                        onClick={() => onSelectGame(game.name)}
+                    >
+                        <Image src={game.image} alt={game.displayName} fill className="object-cover" data-ai-hint={game.dataAiHint}/>
+                        <div className={cn(
+                            "absolute inset-0 transition-all",
+                             selectedGame === game.name ? 'bg-black/30' : 'bg-black/60 hover:bg-black/50'
+                        )} />
+                        <div className="absolute inset-0 flex items-center justify-center p-2 text-white">
+                            <h4 className="font-bold text-center text-sm">{game.displayName}</h4>
+                        </div>
+                    </div>
+                </CarouselItem>
+            ))}
+            </CarouselContent>
+        </Carousel>
+    </div>
+);
+
+
 // --- MAIN PAGE COMPONENT ---
 export default function HomePage() {
   const [selectedUpcomingGame, setSelectedUpcomingGame] = useState<Game | 'all'>('all');
@@ -233,27 +269,7 @@ export default function HomePage() {
           )}
           <section>
             <SectionHeader title="Upcoming Matches" actionText="All tournaments" actionHref="/tournaments" />
-             <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
-                <Button 
-                    variant={selectedUpcomingGame === 'all' ? 'default' : 'outline'}
-                    onClick={() => setSelectedUpcomingGame('all')}
-                    className="rounded-full shrink-0"
-                    size="sm"
-                >
-                    All
-                </Button>
-                {gamesData.map(game => (
-                    <Button
-                        key={game.name}
-                        variant={selectedUpcomingGame === game.name ? 'default' : 'outline'}
-                        onClick={() => setSelectedUpcomingGame(game.name as Game)}
-                        className="rounded-full shrink-0"
-                        size="sm"
-                    >
-                        {game.name}
-                    </Button>
-                ))}
-            </div>
+            <GameFilter selectedGame={selectedUpcomingGame} onSelectGame={setSelectedUpcomingGame} />
             {upcomingTournaments.length > 0 ? (
                 <TournamentsGrid tournaments={upcomingTournaments} />
             ) : (

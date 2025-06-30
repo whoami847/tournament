@@ -57,16 +57,8 @@ export default function TournamentPage({ params }: { params: { id: string } }) {
                   <TabsContent value="participants" className="mt-4">
                       <Card>
                           <CardHeader><CardTitle>Registered Teams ({tournament.participants.length})</CardTitle></CardHeader>
-                          <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                              {tournament.participants.map(team => (
-                                  <div key={team.id} className="flex items-center gap-3 bg-card-foreground/5 p-3 rounded-md">
-                                      <Avatar>
-                                          <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo"/>
-                                          <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
-                                      </Avatar>
-                                      <span className="font-medium">{team.name}</span>
-                                  </div>
-                              ))}
+                          <CardContent>
+                              <p className="text-muted-foreground text-center py-12">Participants are shown in the bracket view.</p>
                           </CardContent>
                       </Card>
                   </TabsContent>

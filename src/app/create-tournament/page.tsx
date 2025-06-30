@@ -48,6 +48,7 @@ export default function CreateTournamentPage() {
         defaultValues: {
             name: "",
             game: "Free Fire",
+            startDate: "",
             maxTeams: 16,
             entryFee: 0,
             prizePool: "1,000",

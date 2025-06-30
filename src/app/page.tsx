@@ -12,6 +12,7 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import Link from 'next/link';
 import { mockTournaments } from '@/lib/data';
 import type { Tournament } from '@/types';
+import { format } from 'date-fns';
 
 // --- MOCK DATA ---
 
@@ -126,7 +127,7 @@ const LiveEvents = ({tournaments}: {tournaments: Tournament[]}) => (
                             <CardContent className="absolute bottom-0 left-0 p-3 text-white w-full">
                                 <Badge className="mb-1 bg-red-500 text-white border-none font-bold animate-pulse">Live</Badge>
                                 <h4 className="font-bold truncate">{event.name}</h4>
-                                <p className="text-xs text-white/70">{event.startDate}</p>
+                                <p className="text-xs text-white/70">{format(new Date(event.startDate), "dd.MM.yy '•' HH:mm")}</p>
                             </CardContent>
                             <Badge variant="secondary" className="absolute top-2 right-2 text-xs">{event.game}</Badge>
                         </Card>
@@ -148,13 +149,13 @@ const TournamentsGrid = ({tournaments}: {tournaments: Tournament[]}) => (
   <div className="grid grid-cols-2 gap-4">
     {tournaments.map((t, i) => (
       <Card key={i} className="border-border/50 bg-transparent overflow-hidden rounded-xl">
-        <div className="relative h-40">
+        <div className="relative h-48">
             <Image src={t.image} alt={t.name} fill className="object-cover" data-ai-hint={t.dataAiHint as string} />
             {t.status === 'upcoming' && <Badge className="absolute top-2 right-2 bg-primary/80 border-none text-xs">Open</Badge>}
         </div>
         <CardContent className="p-3 bg-card">
             <h4 className="font-bold truncate">{t.name}</h4>
-            <p className="text-xs text-muted-foreground mb-2">{t.startDate}</p>
+            <p className="text-xs text-muted-foreground mb-2">{format(new Date(t.startDate), "dd.MM.yy '•' HH:mm")}</p>
         </CardContent>
       </Card>
     ))}

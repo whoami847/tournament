@@ -70,13 +70,9 @@ const MatchCard = ({ match }: { match: Match | null }) => {
     );
 };
 
-const RoundColumn = ({ round, roundIndex }: { round: Round; roundIndex: number }) => {
-  const cardHeight = 108;
-  const initialVSpace = 24;
-  const vSpace = initialVSpace * Math.pow(2, roundIndex) + (cardHeight * (Math.pow(2, roundIndex) - 1));
-
+const RoundColumn = ({ round, vSpace, paddingTop }: { round: Round; vSpace: number; paddingTop: number }) => {
   return (
-    <div className="flex flex-col items-center flex-shrink-0">
+    <div className="flex flex-col items-center flex-shrink-0" style={{ paddingTop: `${paddingTop}px` }}>
       <h3 className="text-sm md:text-base font-bold uppercase tracking-wider text-muted-foreground h-8 flex items-center mb-4">{round.name}</h3>
       <div className="flex flex-col" style={{ gap: `${vSpace}px` }}>
         {round.matches.map((match) => (
@@ -90,16 +86,14 @@ const RoundColumn = ({ round, roundIndex }: { round: Round; roundIndex: number }
 const Connector = ({ height }: { height: number }) => (
   <div className="w-8 md:w-12 flex-shrink-0 flex items-center justify-center" style={{ height: `${height}px` }}>
     <svg className="w-full h-full" viewBox={`0 0 48 ${height}`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d={`M1 ${height * 0.25} C 24,${height * 0.25} 24,${height * 0.5} 48,${height * 0.5}`} stroke="hsl(var(--accent))" strokeWidth="2"/>
-      <path d={`M1 ${height * 0.75} C 24,${height * 0.75} 24,${height * 0.5} 48,${height * 0.5}`} stroke="hsl(var(--accent))" strokeWidth="2"/>
+      <path d={`M1 ${height * 0.25} C 24,${height * 0.25} 24,${height * 0.5} 48,${height * 0.5}`} stroke="#FFB74D" strokeWidth="2"/>
+      <path d={`M1 ${height * 0.75} C 24,${height * 0.75} 24,${height * 0.5} 48,${height * 0.5}`} stroke="#FFB74D" strokeWidth="2"/>
     </svg>
   </div>
 );
 
-const ConnectorColumn = ({ roundIndex, numMatches }: { roundIndex: number; numMatches: number }) => {
+const ConnectorColumn = ({ vSpace, numMatches }: { vSpace: number; numMatches: number }) => {
   const cardHeight = 108;
-  const initialVSpace = 24;
-  const vSpace = initialVSpace * Math.pow(2, roundIndex) + (cardHeight * (Math.pow(2, roundIndex) - 1));
   const connectorHeight = cardHeight + vSpace;
   const paddingTop = connectorHeight / 2;
 
@@ -144,6 +138,8 @@ export default function Bracket({ tournament }: { tournament: Tournament }) {
     return newBracket;
   }, [tournament.bracket]);
 
+  const cardHeight = 108;
+  const initialVSpace = 24;
 
   if (!processedBracket || processedBracket.length === 0) {
     return (
@@ -156,14 +152,27 @@ export default function Bracket({ tournament }: { tournament: Tournament }) {
   return (
     <div className="overflow-x-auto pb-4">
         <div className="flex items-start">
-          {processedBracket.map((round, roundIndex) => (
-            <React.Fragment key={round.name}>
-              <RoundColumn round={round} roundIndex={roundIndex} />
-              {roundIndex < processedBracket.length - 1 && (
-                <ConnectorColumn roundIndex={roundIndex} numMatches={round.matches.length} />
-              )}
-            </React.Fragment>
-          ))}
+          {processedBracket.map((round, roundIndex) => {
+            const vSpace = initialVSpace * Math.pow(2, roundIndex) + (cardHeight * (Math.pow(2, roundIndex) - 1));
+            
+            let roundPaddingTop = 0;
+            if (roundIndex > 0) {
+              const prevRoundVSpace = initialVSpace * Math.pow(2, roundIndex - 1) + (cardHeight * (Math.pow(2, roundIndex - 1) - 1));
+              roundPaddingTop = (cardHeight / 2) + (prevRoundVSpace / 2);
+            }
+
+            return (
+              <React.Fragment key={round.name}>
+                <RoundColumn round={round} vSpace={vSpace} paddingTop={roundPaddingTop} />
+                {roundIndex < processedBracket.length - 1 && (
+                  <ConnectorColumn 
+                    vSpace={vSpace} 
+                    numMatches={round.matches.length} 
+                  />
+                )}
+              </React.Fragment>
+            );
+          })}
         </div>
     </div>
   );

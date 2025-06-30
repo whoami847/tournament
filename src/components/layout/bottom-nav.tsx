@@ -16,6 +16,10 @@ const navItems = [
 export default function BottomNav() {
   const pathname = usePathname();
 
+  if (pathname.startsWith('/admin')) {
+    return null;
+  }
+
   const getIsActive = (href: string) => {
     if (href === '/') {
         return pathname === '/';

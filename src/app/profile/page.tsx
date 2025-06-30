@@ -1,9 +1,125 @@
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, User, Gamepad2, Globe, Calendar, Users, Shield, Trophy, Star, Flame } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+// --- MOCK DATA ---
+const userInfo = {
+    fullName: "Mapple",
+    gamerId: "mapple_gaming_123",
+    country: "India",
+    joined: "December 2022",
+};
+
+const teamInfo = {
+    name: "Cosmic Knights",
+    avatar: "https://placehold.co/96x96.png",
+    dataAiHint: "knight helmet logo",
+    role: "In-Game Leader (IGL)",
+    members: [
+        { name: "Shadow", avatar: "https://placehold.co/40x40.png", dataAiHint: "male gamer intense" },
+        { name: "Vortex", avatar: "https://placehold.co/40x40.png", dataAiHint: "female gamer focused" },
+        { name: "Nova", avatar: "https://placehold.co/40x40.png", dataAiHint: "male gamer smiling" },
+        { name: "Blaze", avatar: "https://placehold.co/40x40.png", dataAiHint: "female gamer headset" },
+    ],
+};
+
+const achievements = [
+    { icon: Trophy, title: "Tournament Winner", tournament: "ML Diamond Cup S5", date: "July 2024", color: "text-amber-400" },
+    { icon: Star, title: "MVP Award", tournament: "Summer Skirmish", date: "July 2024", color: "text-blue-400" },
+    { icon: Flame, title: "Top Fragger", tournament: "CODM Battle Arena", date: "July 2024", color: "text-red-400" },
+];
+
+
+// --- SUB-COMPONENTS ---
+
+const InfoItem = ({ icon: Icon, label, value }: { icon: LucideIcon, label: string, value: string }) => (
+    <div className="flex items-center gap-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+            <Icon className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <div>
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <p className="font-semibold">{value}</p>
+        </div>
+    </div>
+);
+
+const UserInfo = () => (
+    <Card>
+        <CardHeader>
+            <CardTitle>Personal Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+            <InfoItem icon={User} label="Full Name" value={userInfo.fullName} />
+            <InfoItem icon={Gamepad2} label="Gamer ID" value={userInfo.gamerId} />
+            <InfoItem icon={Globe} label="Country" value={userInfo.country} />
+            <InfoItem icon={Calendar} label="Joined" value={userInfo.joined} />
+        </CardContent>
+    </Card>
+);
+
+const TeamInfo = () => (
+    <Card>
+        <CardHeader>
+            <CardTitle>My Team</CardTitle>
+        </CardHeader>
+        <CardContent>
+            <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+                <Avatar className="h-24 w-24 border-4 border-primary/20">
+                    <AvatarImage src={teamInfo.avatar} alt={teamInfo.name} data-ai-hint={teamInfo.dataAiHint} />
+                    <AvatarFallback>{teamInfo.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <h3 className="text-2xl font-bold">{teamInfo.name}</h3>
+                    <p className="font-medium text-primary">{teamInfo.role}</p>
+                </div>
+            </div>
+            <div className="mt-6">
+                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase text-muted-foreground">
+                    <Users className="h-4 w-4" />
+                    Team Members
+                </h4>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {teamInfo.members.map(member => (
+                        <div key={member.name} className="flex items-center gap-3 rounded-md bg-muted p-2">
+                            <Avatar className="h-8 w-8">
+                                <AvatarImage src={member.avatar} alt={member.name} data-ai-hint={member.dataAiHint} />
+                                <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{member.name}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </CardContent>
+    </Card>
+);
+
+const Achievements = () => (
+    <Card>
+        <CardHeader>
+            <CardTitle>Top Achievements</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+            {achievements.map((ach, index) => (
+                <div key={index} className="flex items-center gap-4 rounded-lg bg-muted p-4">
+                    <div className="flex h-12 w-12 items-center justify-center">
+                        <ach.icon className={`h-8 w-8 ${ach.color}`} />
+                    </div>
+                    <div>
+                        <p className="font-bold">{ach.title}</p>
+                        <p className="text-sm text-muted-foreground">{ach.tournament} &bull; {ach.date}</p>
+                    </div>
+                </div>
+            ))}
+        </CardContent>
+    </Card>
+);
+
 
 export default function ProfilePage() {
   return (
@@ -42,19 +158,19 @@ export default function ProfilePage() {
         {/* Tabs Navigation */}
         <div className="px-4 mt-6">
              <Tabs defaultValue="info" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 bg-transparent p-0 h-auto rounded-lg">
+                <TabsList className="grid w-full grid-cols-3 bg-card p-1 h-auto rounded-lg border">
                     <TabsTrigger value="info" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Information</TabsTrigger>
                     <TabsTrigger value="team" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Team</TabsTrigger>
                     <TabsTrigger value="success" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Achievements</TabsTrigger>
                 </TabsList>
-                <TabsContent value="info">
-                    <Card><CardContent><p className="text-center text-muted-foreground p-8">Information not available.</p></CardContent></Card>
+                <TabsContent value="info" className="mt-4">
+                    <UserInfo />
                 </TabsContent>
-                 <TabsContent value="team">
-                    <Card><CardContent><p className="text-center text-muted-foreground p-8">Team details not available.</p></CardContent></Card>
+                 <TabsContent value="team" className="mt-4">
+                    <TeamInfo />
                 </TabsContent>
-                 <TabsContent value="success">
-                    <Card><CardContent><p className="text-center text-muted-foreground p-8">Achievements not available.</p></CardContent></Card>
+                 <TabsContent value="success" className="mt-4">
+                    <Achievements />
                 </TabsContent>
             </Tabs>
         </div>

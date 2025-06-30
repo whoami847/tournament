@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Match, Round, Team, Tournament } from '@/types';
@@ -27,8 +28,8 @@ const ChampionCard = ({ team }: { team: Team }) => {
 const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: number, isWinner?: boolean }) => {
   if (!team) {
     return (
-      <div className="flex items-center gap-3 p-2 h-[34px] w-full">
-        <div className="h-6 w-6 rounded-md bg-muted/20 flex-shrink-0 flex items-center justify-center">
+      <div className="flex items-center gap-3 p-2 h-[42px] w-full">
+        <div className="h-8 w-8 rounded-md bg-muted/20 flex-shrink-0 flex items-center justify-center">
           <Swords className="h-4 w-4 text-muted-foreground" />
         </div>
         <span className="text-muted-foreground text-sm">Team TBD</span>
@@ -37,9 +38,9 @@ const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: num
   }
 
   return (
-    <div className="flex items-center justify-between p-2 h-[34px] w-full">
+    <div className="flex items-center justify-between p-2 h-[42px] w-full">
       <div className="flex items-center gap-3 overflow-hidden">
-        <Avatar className="h-6 w-6 flex-shrink-0">
+        <Avatar className="h-8 w-8 flex-shrink-0">
           <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
           <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
         </Avatar>
@@ -48,7 +49,7 @@ const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: num
         </span>
       </div>
       {typeof score !== 'undefined' && (
-        <span className={cn("font-bold text-sm", isWinner ? "text-primary" : "text-muted-foreground/50")}>
+        <span className={cn("font-bold text-lg", isWinner ? "text-primary" : "text-muted-foreground/50")}>
           {score}
         </span>
       )}
@@ -57,7 +58,7 @@ const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: num
 };
 
 const MatchCard = ({ match }: { match: Match | null }) => {
-    if (!match) return <div className="bg-card rounded-lg w-full h-[72px] flex-shrink-0" />;
+    if (!match) return <div className="bg-card rounded-lg w-full h-[88px] flex-shrink-0" />;
 
     const [team1, team2] = match.teams;
     const [score1, score2] = match.scores;
@@ -69,7 +70,7 @@ const MatchCard = ({ match }: { match: Match | null }) => {
     const displayTeam2AsWinner = winner2 || (match.status !== 'completed');
 
     return (
-        <div className="bg-card rounded-lg w-full flex-shrink-0 border border-transparent shadow-sm h-[72px]">
+        <div className="bg-card rounded-lg w-full flex-shrink-0 border border-border/50 shadow-sm h-[88px]">
             <div className="p-0">
                 <TeamDisplay team={team1} score={score1} isWinner={displayTeam1AsWinner} />
                 <div className="border-t border-border/50 mx-2"></div>
@@ -80,10 +81,10 @@ const MatchCard = ({ match }: { match: Match | null }) => {
 };
 
 const SingleMatchDisplay = ({ match }: { match: Match | null }) => {
-    if (!match) return <div className="w-full md:w-48 h-[92px]" />;
+    if (!match) return <div className="w-full md:w-56 h-[108px]" />;
     
     return (
-      <div className="w-full md:w-48">
+      <div className="w-full md:w-56">
         <div className="flex justify-between items-center mb-1 h-5">
           <p className="text-xs text-muted-foreground">{match.name}</p>
           {match.status === 'live' && (
@@ -98,36 +99,51 @@ const SingleMatchDisplay = ({ match }: { match: Match | null }) => {
     )
 }
 
-const Connector = () => {
-    const CARD_HEIGHT = 72;
-    const GAP = 32; 
-    const MATCH_DISPLAY_HEIGHT = CARD_HEIGHT + 20; // Card height + label height + margin
-    const TOTAL_HEIGHT = MATCH_DISPLAY_HEIGHT * 2 + GAP;
+const Connector = ({ isTopWinner, isBottomWinner }: { isTopWinner: boolean, isBottomWinner: boolean }) => {
+    const CARD_AND_LABEL_HEIGHT = 108;
+    const GAP = 32;
+    const TOTAL_HEIGHT = CARD_AND_LABEL_HEIGHT * 2 + GAP;
+    const TEAM_ROW_HEIGHT = 42;
     
-    const startY1 = MATCH_DISPLAY_HEIGHT / 2;
-    const startY2 = MATCH_DISPLAY_HEIGHT + GAP + (MATCH_DISPLAY_HEIGHT / 2);
+    // Y position for the center of the top and bottom team rows within a match card
+    const topTeamY = TEAM_ROW_HEIGHT / 2;
+    const bottomTeamY = TEAM_ROW_HEIGHT + (TEAM_ROW_HEIGHT / 2);
+
+    // Calculate start Y positions based on winners
+    const startY1 = isTopWinner ? topTeamY : bottomTeamY;
+    const startY2 = (CARD_AND_LABEL_HEIGHT + GAP) + (isBottomWinner ? topTeamY : bottomTeamY);
+
     const endY = TOTAL_HEIGHT / 2;
     
     return (
-      <div className="w-8 h-full flex-shrink-0 mx-2" style={{ height: `${TOTAL_HEIGHT}px` }}>
-          <svg className="w-full h-full" viewBox={`0 0 32 ${TOTAL_HEIGHT}`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d={`M1 ${startY1} C 16,${startY1} 16,${endY} 24,${endY}`} stroke="hsl(var(--border))" strokeWidth="2"/>
-              <path d={`M1 ${startY2} C 16,${startY2} 16,${endY} 24,${endY}`} stroke="hsl(var(--border))" strokeWidth="2"/>
-              <path d={`M28 ${endY} L24 ${endY-4} L20 ${endY} L24 ${endY+4} Z`} fill="hsl(var(--border))" />
+      <div className="w-10 h-full flex-shrink-0 mx-2" style={{ height: `${TOTAL_HEIGHT}px` }}>
+          <svg className="w-full h-full" viewBox={`0 0 40 ${TOTAL_HEIGHT}`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d={`M1 ${startY1} C 20,${startY1} 20,${endY} 32,${endY}`} stroke="hsl(var(--border))" strokeWidth="2"/>
+              <path d={`M1 ${startY2} C 20,${startY2} 20,${endY} 32,${endY}`} stroke="hsl(var(--border))" strokeWidth="2"/>
+              <path d={`M36 ${endY} L32 ${endY-4} L28 ${endY} L32 ${endY+4} Z`} fill="hsl(var(--border))" />
           </svg>
       </div>
     );
 };
 
-export default function Bracket({ tournament, activeRoundName }: { tournament: Tournament, activeRoundName: string }) {
+export default function Bracket({ tournament, bracket, activeRoundName }: { tournament: Tournament, bracket: Round[], activeRoundName: string }) {
   
   const getWinner = (match: Match | null): Team | null => {
       if (!match || match.status !== 'completed' || !match.teams[0] || !match.teams[1]) return null;
       return match.scores[0] > match.scores[1] ? match.teams[0] : match.teams[1];
   };
 
+  const isWinner = (match: Match | null, teamIndex: 0 | 1): boolean => {
+    if (!match || match.status !== 'completed' || !match.teams[0] || !match.teams[1]) return true; // Default to top for non-completed matches
+    const [score1, score2] = match.scores;
+    return teamIndex === 0 ? score1 > score2 : score2 > score1;
+  }
+
   const processedBracket = React.useMemo(() => {
-    const newBracket: Round[] = JSON.parse(JSON.stringify(tournament.bracket));
+    if (tournament.status === 'upcoming') {
+        return bracket;
+    }
+    const newBracket: Round[] = JSON.parse(JSON.stringify(bracket));
     for (let i = 0; i < newBracket.length - 1; i++) {
       const currentRound = newBracket[i];
       const nextRound = newBracket[i + 1];
@@ -143,7 +159,7 @@ export default function Bracket({ tournament, activeRoundName }: { tournament: T
       }
     }
     return newBracket;
-  }, [tournament.bracket]);
+  }, [bracket, tournament.status]);
 
   const activeRoundIndex = processedBracket.findIndex(r => r.name === activeRoundName);
   const activeRound = processedBracket[activeRoundIndex];
@@ -200,7 +216,7 @@ export default function Bracket({ tournament, activeRoundName }: { tournament: T
                        <SingleMatchDisplay match={match2} />
                     </div>
 
-                    {nextRound && <Connector />}
+                    {nextRound && <Connector isTopWinner={isWinner(match1, 0)} isBottomWinner={isWinner(match2, 0)} />}
 
                     {nextRound && (
                         <div className="flex items-center">

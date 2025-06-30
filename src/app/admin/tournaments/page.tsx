@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { mockTournaments } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, PlusCircle } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { Tournament } from '@/types';
 
@@ -25,9 +26,17 @@ export default function AdminTournamentsPage() {
     
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Tournaments</CardTitle>
-                <CardDescription>Manage all tournaments in the app.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Tournaments</CardTitle>
+                    <CardDescription>Manage all tournaments in the app.</CardDescription>
+                </div>
+                <Button asChild size="sm">
+                    <Link href="/create-tournament">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Tournament
+                    </Link>
+                </Button>
             </CardHeader>
             <CardContent>
                 <div className="flex items-center gap-2 p-1 bg-muted rounded-full flex-wrap mb-6 self-start">

@@ -15,33 +15,71 @@ export default function AdminUsersPage() {
                 <CardDescription>Manage all registered users.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>User</TableHead>
-                            <TableHead>Gamer ID</TableHead>
-                            <TableHead>Country</TableHead>
-                            <TableHead>Joined Date</TableHead>
-                            <TableHead><span className="sr-only">Actions</span></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                {/* Desktop Table */}
+                <div className="hidden md:block">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>User</TableHead>
+                                <TableHead>Gamer ID</TableHead>
+                                <TableHead>Country</TableHead>
+                                <TableHead>Joined Date</TableHead>
+                                <TableHead><span className="sr-only">Actions</span></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {mockUsers.map((user) => (
+                                <TableRow key={user.id}>
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarImage src={`https://placehold.co/40x40.png`} alt={user.name} data-ai-hint="male avatar" />
+                                                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <span className="font-medium">{user.name}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>{user.gamerId}</TableCell>
+                                    <TableCell>{user.country}</TableCell>
+                                    <TableCell>{format(new Date(user.joined), 'PPP')}</TableCell>
+                                    <TableCell>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                    <span className="sr-only">Toggle menu</span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem>View Profile</DropdownMenuItem>
+                                                <DropdownMenuItem>Suspend</DropdownMenuItem>
+                                                <DropdownMenuItem className="text-destructive focus:text-destructive">Delete User</DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+
+                {/* Mobile Card List */}
+                <div className="md:hidden">
+                    <div className="space-y-4">
                         {mockUsers.map((user) => (
-                            <TableRow key={user.id}>
-                                <TableCell>
+                            <div key={user.id} className="bg-muted/20 p-4 rounded-lg border">
+                                <div className="flex justify-between items-start">
                                     <div className="flex items-center gap-3">
-                                        <Avatar className="h-8 w-8">
+                                        <Avatar className="h-10 w-10">
                                             <AvatarImage src={`https://placehold.co/40x40.png`} alt={user.name} data-ai-hint="male avatar" />
                                             <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                                         </Avatar>
-                                        <span className="font-medium">{user.name}</span>
+                                        <div>
+                                            <p className="font-semibold">{user.name}</p>
+                                            <p className="text-sm text-muted-foreground">{user.gamerId}</p>
+                                        </div>
                                     </div>
-                                </TableCell>
-                                <TableCell>{user.gamerId}</TableCell>
-                                <TableCell>{user.country}</TableCell>
-                                <TableCell>{format(new Date(user.joined), 'PPP')}</TableCell>
-                                <TableCell>
-                                     <DropdownMenu>
+                                    <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button aria-haspopup="true" size="icon" variant="ghost">
                                                 <MoreHorizontal className="h-4 w-4" />
@@ -54,12 +92,16 @@ export default function AdminUsersPage() {
                                             <DropdownMenuItem className="text-destructive focus:text-destructive">Delete User</DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                </TableCell>
-                            </TableRow>
+                                </div>
+                                <div className="mt-4 flex justify-between text-sm text-muted-foreground pt-4 border-t border-muted-foreground/20">
+                                    <span>Country: <span className="font-medium text-foreground">{user.country}</span></span>
+                                    <span>Joined: <span className="font-medium text-foreground">{format(new Date(user.joined), 'PPP')}</span></span>
+                                </div>
+                            </div>
                         ))}
-                    </TableBody>
-                </Table>
+                    </div>
+                </div>
             </CardContent>
         </Card>
-    )
+    );
 }

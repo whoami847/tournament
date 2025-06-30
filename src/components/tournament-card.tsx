@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Bookmark, Users, Calendar, Ticket, Trophy } from 'lucide-react';
 import type { Tournament } from '@/types';
 import { format } from 'date-fns';
+import Countdown from './countdown';
 
 interface TournamentCardProps {
   tournament: Tournament;
@@ -81,10 +82,14 @@ export default function TournamentCard({ tournament, isBookmarked, onBookmarkTog
           </div>
         </CardContent>
         <CardFooter className="p-4 pt-0 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-              <div className={`h-2.5 w-2.5 rounded-full ${statusColor}`}></div>
-              <span className="text-sm font-medium capitalize">{tournament.status}</span>
-          </div>
+          {tournament.status === 'upcoming' ? (
+            <Countdown targetDate={tournament.startDate} />
+          ) : (
+            <div className="flex items-center gap-2">
+                <div className={`h-2.5 w-2.5 rounded-full ${statusColor}`}></div>
+                <span className="text-sm font-medium capitalize">{tournament.status}</span>
+            </div>
+          )}
         </CardFooter>
       </Card>
     </Link>

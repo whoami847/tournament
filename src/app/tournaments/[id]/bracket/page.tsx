@@ -19,7 +19,7 @@ export default function BracketPage() {
 
   return (
     <div className="bg-background min-h-screen text-foreground">
-        <div className="w-full px-4 py-4 md:pb-8 pb-24">
+        <div className="w-full px-4 py-4">
             <header className="flex items-center justify-between mb-6">
                 <Button variant="ghost" size="icon" asChild>
                 <Link href={`/tournaments/${tournament.id}`}>

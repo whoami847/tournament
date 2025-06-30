@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -33,11 +34,21 @@ const formSchema = z.object({
   startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Please enter a valid date and time.",
   }),
+  mode: z.enum(["BR", "CS", "LONE WOLF"], { required_error: "Please select a mode." }),
+  teamType: z.enum(["SOLO", "DUO", "SQUAD"], { required_error: "Please select a team type." }),
   maxTeams: z.coerce.number().int().min(4, "Must have at least 4 teams.").max(64, "Cannot exceed 64 teams."),
   entryFee: z.coerce.number().min(0).optional(),
   prizePool: z.string().min(1, "Prize pool is required."),
   rules: z.string().min(50, "Rules must be at least 50 characters long."),
-})
+}).refine(data => {
+    if (data.mode === 'LONE WOLF' && data.teamType === 'SQUAD') {
+        return false;
+    }
+    return true;
+}, {
+    message: "Squad mode is not available for Lone Wolf.",
+    path: ["teamType"],
+});
 
 export default function CreateTournamentPage() {
     const { toast } = useToast()
@@ -49,12 +60,22 @@ export default function CreateTournamentPage() {
             name: "",
             game: "Free Fire",
             startDate: "",
+            mode: "BR",
+            teamType: "SQUAD",
             maxTeams: 16,
             entryFee: 0,
             prizePool: "1,000",
             rules: "",
         },
     })
+
+    const mode = form.watch('mode');
+
+    useEffect(() => {
+        if (mode === 'LONE WOLF' && form.getValues('teamType') === 'SQUAD') {
+            form.setValue('teamType', 'SOLO');
+        }
+    }, [mode, form]);
 
     function onSubmit(values: z.infer<typeof formSchema>) {
         console.log(values)
@@ -120,6 +141,53 @@ export default function CreateTournamentPage() {
                                                 <Input type="datetime-local" {...field} />
                                             </FormControl>
                                             <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <FormField
+                                    control={form.control}
+                                    name="mode"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Mode</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a mode" />
+                                                </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="BR">Battle Royale</SelectItem>
+                                                    <SelectItem value="CS">Clash Squad</SelectItem>
+                                                    <SelectItem value="LONE WOLF">Lone Wolf</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={form.control}
+                                    name="teamType"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Team Type</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a team type" />
+                                                </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="SOLO">Solo</SelectItem>
+                                                    <SelectItem value="DUO">Duo</SelectItem>
+                                                    {mode !== 'LONE WOLF' && <SelectItem value="SQUAD">Squad</SelectItem>}
+                                                </SelectContent>
+                                            </Select>
+                                        <FormMessage />
                                         </FormItem>
                                     )}
                                 />

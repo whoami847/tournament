@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Match, Round, Team, Tournament } from '@/types';
@@ -206,7 +205,7 @@ const MatchCard = ({ match }: { match: Match | null }) => {
 };
 
 const SingleMatchDisplay = ({ match }: { match: Match | null }) => {
-    if (!match) return <div className="w-full md:w-56 h-[108px]" />;
+    if (!match) return <div className="w-full md:w-56 h-28" />;
     
     return (
       <div className="w-full md:w-56">
@@ -225,16 +224,15 @@ const SingleMatchDisplay = ({ match }: { match: Match | null }) => {
 }
 
 const Connector = ({ isTopWinner, isBottomWinner }: { isTopWinner: boolean, isBottomWinner: boolean }) => {
-    const CARD_AND_LABEL_HEIGHT = 108;
+    const CARD_AND_LABEL_HEIGHT = 112;
     const GAP = 32;
     const TOTAL_HEIGHT = CARD_AND_LABEL_HEIGHT * 2 + GAP;
     const TEAM_ROW_HEIGHT = 42;
+    const LABEL_HEIGHT = 24; // h-5 (20px) + mb-1 (4px)
     
-    // Y position for the center of the top and bottom team rows within a match card
-    const topTeamY = TEAM_ROW_HEIGHT / 2;
-    const bottomTeamY = TEAM_ROW_HEIGHT + (TEAM_ROW_HEIGHT / 2);
+    const topTeamY = LABEL_HEIGHT + (TEAM_ROW_HEIGHT / 2);
+    const bottomTeamY = LABEL_HEIGHT + TEAM_ROW_HEIGHT + (TEAM_ROW_HEIGHT / 2) + 1; // +1 for the border
 
-    // Calculate start Y positions based on winners
     const startY1 = isTopWinner ? topTeamY : bottomTeamY;
     const startY2 = (CARD_AND_LABEL_HEIGHT + GAP) + (isBottomWinner ? topTeamY : bottomTeamY);
 
@@ -258,11 +256,12 @@ export default function Bracket({ tournament, bracket, activeRoundName }: { tour
       return match.scores[0] > match.scores[1] ? match.teams[0] : match.teams[1];
   };
 
-  const isWinner = (match: Match | null, teamIndex: 0 | 1): boolean => {
-    if (!match || match.status !== 'completed' || !match.teams[0] || !match.teams[1]) return true; // Default to top for non-completed matches
-    const [score1, score2] = match.scores;
-    return teamIndex === 0 ? score1 > score2 : score2 > score1;
-  }
+  const didTopTeamWin = (match: Match | null): boolean => {
+    if (!match || match.status !== 'completed' || !match.teams[0] || !match.teams[1]) {
+      return true;
+    }
+    return match.scores[0] > match.scores[1];
+  };
 
   const processedBracket = React.useMemo(() => {
     if (tournament.status === 'upcoming') {
@@ -351,7 +350,7 @@ export default function Bracket({ tournament, bracket, activeRoundName }: { tour
                        <SingleMatchDisplay match={match2} />
                     </div>
 
-                    {nextRound && <Connector isTopWinner={isWinner(match1, 0)} isBottomWinner={isWinner(match2, 0)} />}
+                    {nextRound && <Connector isTopWinner={didTopTeamWin(match1)} isBottomWinner={didTopTeamWin(match2)} />}
 
                     {nextRound && (
                         <div className="flex items-center">

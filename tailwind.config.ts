@@ -88,10 +88,15 @@ export default {
             height: '0',
           },
         },
+        'border-shine': {
+          '0%, 100%': { borderColor: 'hsl(var(--primary) / 0.5)' },
+          '50%': { borderColor: 'hsl(var(--primary))' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'border-shine': 'border-shine 2s linear infinite',
       },
     },
   },

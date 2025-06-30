@@ -96,9 +96,15 @@ export default function TournamentPage({ params }: { params: { id: string } }) {
                   </CardContent>
               </Card>
 
-              <Button size="lg" className="w-full text-lg h-12">
-                  Join Tournament
-              </Button>
+              {tournament.status === 'upcoming' && (
+                <Button 
+                  variant="outline"
+                  size="lg" 
+                  className="w-full text-lg h-12 bg-transparent border-2 border-primary/50 hover:bg-primary/10 hover:animate-border-shine"
+                >
+                    Join Tournament
+                </Button>
+              )}
           </aside>
 
         </div>

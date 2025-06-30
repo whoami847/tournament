@@ -11,6 +11,14 @@ import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import type { Tournament, Round, Match } from '@/types';
 
+const roundAbbreviationMap: Record<string, string> = {
+    'Finals': 'Finals',
+    'Semi-finals': 'Semis',
+    'Quarter-finals': 'Quarters',
+    'Round of 16': 'R16',
+    'Round of 32': 'R32',
+    'Round of 64': 'R64',
+};
 
 const generateUpcomingBracket = (tournament: Tournament): Round[] => {
     const { maxTeams, participants } = tournament;
@@ -20,27 +28,29 @@ const generateUpcomingBracket = (tournament: Tournament): Round[] => {
         return [];
     }
 
-    const roundNamesMap: Record<number, string> = {
-        2: 'Finals',
-        4: 'Semi-finals',
-        8: 'Quarter-finals',
-        16: 'Round of 16',
-        32: 'Round of 32',
-        64: 'Round of 64',
+    const roundNamesMap: Record<number, { name: string, prefix: string }> = {
+        2: { name: 'Finals', prefix: 'F' },
+        4: { name: 'Semi-finals', prefix: 'SF' },
+        8: { name: 'Quarter-finals', prefix: 'QF' },
+        16: { name: 'Round of 16', prefix: 'R16' },
+        32: { name: 'Round of 32', prefix: 'R32' },
+        64: { name: 'Round of 64', prefix: 'R64' },
     };
 
     let rounds: Round[] = [];
     let numberOfTeamsInRound = maxTeams;
 
     while (numberOfTeamsInRound >= 2) {
-        const roundName = roundNamesMap[numberOfTeamsInRound] || `Round of ${numberOfTeamsInRound}`;
+        const roundInfo = roundNamesMap[numberOfTeamsInRound] || { name: `Round of ${numberOfTeamsInRound}`, prefix: `R${numberOfTeamsInRound}` };
+        const roundName = roundInfo.name;
+        const matchPrefix = roundInfo.prefix;
         const matchCount = numberOfTeamsInRound / 2;
         const matches: Match[] = [];
         
         for (let i = 0; i < matchCount; i++) {
             matches.push({
                 id: `${roundName}-m${i + 1}`,
-                name: `Match ${i + 1}`,
+                name: `${matchPrefix}-${i + 1}`,
                 teams: [null, null],
                 scores: [0, 0],
                 status: 'pending',
@@ -124,21 +134,27 @@ export default function BracketPage() {
                 </Button>
             </header>
 
-            <div className="flex justify-center items-center gap-2 mb-8 flex-wrap">
-              {roundNames.map(name => (
-                <Button 
-                  key={name}
-                  variant={activeRoundName === name ? "default" : "secondary"}
-                  className={cn(
-                    "rounded-full h-9 px-4",
-                    activeRoundName !== name && "bg-card text-muted-foreground hover:bg-accent"
-                  )}
-                  onClick={() => setActiveRoundName(name)}
-                >
-                  {name}
-                </Button>
-              ))}
+            <div className="flex justify-center mb-8">
+                <div className="inline-flex items-center justify-center rounded-full bg-card p-1 text-card-foreground">
+                    {roundNames.map(name => (
+                    <Button
+                        key={name}
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                        "rounded-full h-8 px-4 font-semibold",
+                        activeRoundName === name 
+                            ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                            : 'text-muted-foreground hover:bg-accent/50'
+                        )}
+                        onClick={() => setActiveRoundName(name)}
+                    >
+                        {roundAbbreviationMap[name] || name}
+                    </Button>
+                    ))}
+                </div>
             </div>
+
 
             <Bracket tournament={tournament} bracket={bracketData} activeRoundName={activeRoundName} />
         </div>

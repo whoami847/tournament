@@ -46,17 +46,17 @@ export const mockTournaments: Tournament[] = [
       {
         name: 'Quarter-finals',
         matches: [
-          { id: 'qf1', name: 'Match 1', teams: [teams[0], teams[1]], scores: [2, 1], status: 'completed' },
-          { id: 'qf2', name: 'Match 2', teams: [teams[2], teams[3]], scores: [1, 2], status: 'completed' },
-          { id: 'qf3', name: 'Match 3', teams: [teams[4], teams[5]], scores: [2, 0], status: 'completed' },
-          { id: 'qf4', name: 'Match 4', teams: [teams[6], teams[7]], scores: [2, 1], status: 'completed' },
+          { id: 'qf1', name: 'QF-1', teams: [teams[0], teams[1]], scores: [2, 1], status: 'completed' },
+          { id: 'qf2', name: 'QF-2', teams: [teams[2], teams[3]], scores: [1, 2], status: 'completed' },
+          { id: 'qf3', name: 'QF-3', teams: [teams[4], teams[5]], scores: [2, 0], status: 'completed' },
+          { id: 'qf4', name: 'QF-4', teams: [teams[6], teams[7]], scores: [2, 1], status: 'completed' },
         ],
       },
       {
         name: 'Semi-finals',
         matches: [
-          { id: 'sf1', name: 'Match 1', teams: [null, null], scores: [2, 0], status: 'completed' },
-          { id: 'sf2', name: 'Match 2', teams: [null, null], scores: [1, 2], status: 'completed' },
+          { id: 'sf1', name: 'SF-1', teams: [null, null], scores: [2, 0], status: 'completed' },
+          { id: 'sf2', name: 'SF-2', teams: [null, null], scores: [1, 2], status: 'completed' },
         ],
       },
       {

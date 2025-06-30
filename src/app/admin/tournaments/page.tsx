@@ -12,11 +12,16 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import type { Tournament } from '@/types';
 
 export default function AdminTournamentsPage() {
+    const [tournaments, setTournaments] = useState<Tournament[]>(mockTournaments);
     const [selectedStatus, setSelectedStatus] = useState<'live' | 'upcoming' | 'completed'>('upcoming');
 
     const filteredTournaments = useMemo(() => {
-        return mockTournaments.filter((tournament: Tournament) => tournament.status === selectedStatus);
-    }, [selectedStatus]);
+        return tournaments.filter((tournament: Tournament) => tournament.status === selectedStatus);
+    }, [tournaments, selectedStatus]);
+
+    const handleDelete = (tournamentId: string) => {
+        setTournaments(prev => prev.filter(t => t.id !== tournamentId));
+    };
 
     const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', className?: string }> = {
       upcoming: { variant: 'secondary' },
@@ -81,9 +86,13 @@ export default function AdminTournamentsPage() {
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem>Edit</DropdownMenuItem>
-                                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                                <DropdownMenuItem className="text-destructive focus:text-destructive">Delete</DropdownMenuItem>
+                                                <DropdownMenuItem asChild>
+                                                    <Link href="/create-tournament">Edit</Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={`/tournaments/${tournament.id}`}>View Details</Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(tournament.id)}>Delete</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>
@@ -112,9 +121,13 @@ export default function AdminTournamentsPage() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                                        <DropdownMenuItem className="text-destructive focus:text-destructive">Delete</DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/create-tournament">Edit</Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link href={`/tournaments/${tournament.id}`}>View Details</Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(tournament.id)}>Delete</DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>

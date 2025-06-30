@@ -35,61 +35,58 @@ export default function TournamentPage({ params }: { params: { id: string } }) {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-              <Tabs defaultValue="bracket">
-                  <TabsList className="grid w-full grid-cols-2 bg-card rounded-full p-1 h-auto">
-                    <TabsTrigger value="bracket" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Bracket</TabsTrigger>
-                    <TabsTrigger value="rules" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Rules</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="bracket" className="mt-4">
-                      <Card>
-                          <CardHeader><CardTitle>Tournament Bracket</CardTitle></CardHeader>
-                          <CardContent className="text-center py-12">
-                               <p className="text-muted-foreground mb-4">The bracket is displayed in a dedicated view for a better experience.</p>
-                               <Button asChild size="lg">
-                                  <Link href={`/tournaments/${tournament.id}/bracket`}>View Full Bracket</Link>
-                               </Button>
-                          </CardContent>
-                      </Card>
-                  </TabsContent>
-                  <TabsContent value="rules" className="mt-4">
-                      <Card>
-                          <CardHeader><CardTitle>Rules & Regulations</CardTitle></CardHeader>
-                          <CardContent className="prose prose-invert prose-p:text-muted-foreground">
-                              <p>{tournament.rules}</p>
-                          </CardContent>
-                      </Card>
-                  </TabsContent>
-              </Tabs>
-          </div>
+        <div>
+            <Tabs defaultValue="info">
+                <TabsList className="grid w-full grid-cols-3 bg-card rounded-full p-1 h-auto">
+                  <TabsTrigger value="info" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Info</TabsTrigger>
+                  <TabsTrigger value="bracket" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Bracket</TabsTrigger>
+                  <TabsTrigger value="rules" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Rules</TabsTrigger>
+                </TabsList>
+                <TabsContent value="info" className="mt-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Tournament Info</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4 text-sm">
+                            <div className="flex items-center gap-3"><Calendar className="h-5 w-5 text-primary" /> <span>{format(new Date(tournament.startDate), 'MMMM dd, yyyy @ h:mm a')}</span></div>
+                            <div className="flex items-center gap-3"><Gamepad2 className="h-5 w-5 text-primary" /> <span>{tournament.game}</span></div>
+                            <div className="flex items-center gap-3"><Users className="h-5 w-5 text-primary" /> <span>{tournament.teamsCount} / {tournament.maxTeams} teams registered</span></div>
+                            <div className="flex items-center gap-3"><Trophy className="h-5 w-5 text-primary" /> <span>${tournament.prizePool} Prize Pool</span></div>
+                            <div className="flex items-center gap-3"><Ticket className="h-5 w-5 text-primary" /> <span>${tournament.entryFee} Entry Fee</span></div>
+                            <div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary" /> <span className="capitalize">{tournament.status}</span></div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="bracket" className="mt-4">
+                    <Card>
+                        <CardHeader><CardTitle>Tournament Bracket</CardTitle></CardHeader>
+                        <CardContent className="text-center py-12">
+                             <p className="text-muted-foreground mb-4">The bracket is displayed in a dedicated view for a better experience.</p>
+                             <Button asChild size="lg">
+                                <Link href={`/tournaments/${tournament.id}/bracket`}>View Full Bracket</Link>
+                             </Button>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="rules" className="mt-4">
+                    <Card>
+                        <CardHeader><CardTitle>Rules & Regulations</CardTitle></CardHeader>
+                        <CardContent className="prose prose-invert prose-p:text-muted-foreground">
+                            <p>{tournament.rules}</p>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
 
-          <aside className="space-y-6">
-              <Card>
-                  <CardHeader>
-                      <CardTitle>Tournament Info</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 text-sm">
-                      <div className="flex items-center gap-3"><Calendar className="h-5 w-5 text-primary" /> <span>{format(new Date(tournament.startDate), 'MMMM dd, yyyy @ h:mm a')}</span></div>
-                      <div className="flex items-center gap-3"><Gamepad2 className="h-5 w-5 text-primary" /> <span>{tournament.game}</span></div>
-                      <div className="flex items-center gap-3"><Users className="h-5 w-5 text-primary" /> <span>{tournament.teamsCount} / {tournament.maxTeams} teams registered</span></div>
-                      <div className="flex items-center gap-3"><Trophy className="h-5 w-5 text-primary" /> <span>${tournament.prizePool} Prize Pool</span></div>
-                      <div className="flex items-center gap-3"><Ticket className="h-5 w-5 text-primary" /> <span>${tournament.entryFee} Entry Fee</span></div>
-                      <div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary" /> <span className="capitalize">{tournament.status}</span></div>
-                  </CardContent>
-              </Card>
-
-              {tournament.status === 'upcoming' && (
-                <Button 
-                  variant="outline"
-                  size="lg" 
-                  className="w-full text-lg h-12 bg-transparent border-2 border-primary/50 hover:bg-primary/10 hover:animate-border-shine"
-                >
-                    Join Tournament
-                </Button>
-              )}
-          </aside>
-
+            {tournament.status === 'upcoming' && (
+              <Button 
+                variant="outline"
+                size="lg" 
+                className="w-full text-lg h-12 bg-transparent border-2 border-primary/50 hover:bg-primary/10 hover:animate-border-shine mt-8"
+              >
+                  Join Tournament
+              </Button>
+            )}
         </div>
       </div>
     </div>

@@ -246,6 +246,44 @@ export const mockTournaments: Tournament[] = [
     ],
   },
   {
+    id: 'lw-legends-s1',
+    name: 'Lone Wolf Legends - Final Chapter',
+    game: 'Free Fire',
+    startDate: '2024-06-01T18:00:00',
+    teamsCount: 8,
+    maxTeams: 8,
+    entryFee: 0,
+    prizePool: '1,000',
+    rules: 'The final chapter of the Lone Wolf Legends series. 1v1 duels to crown the ultimate champion.',
+    status: 'completed',
+    image: 'https://placehold.co/600x400.png',
+    dataAiHint: 'wolf lone dark',
+    participants: teams.slice(0, 8),
+    format: 'LW_SOLO',
+    bracket: [
+      {
+        name: 'Quarter-finals',
+        matches: [
+          { id: 'lw-s1-qf1', name: 'QF-1', teams: [teams[0], teams[1]], scores: [2, 1], status: 'completed' },
+          { id: 'lw-s1-qf2', name: 'QF-2', teams: [teams[2], teams[3]], scores: [0, 2], status: 'completed' },
+          { id: 'lw-s1-qf3', name: 'QF-3', teams: [teams[4], teams[5]], scores: [2, 0], status: 'completed' },
+          { id: 'lw-s1-qf4', name: 'QF-4', teams: [teams[6], teams[7]], scores: [1, 2], status: 'completed' },
+        ],
+      },
+      {
+        name: 'Semi-finals',
+        matches: [
+          { id: 'lw-s1-sf1', name: 'SF-1', teams: [null, null], scores: [1, 2], status: 'completed' },
+          { id: 'lw-s1-sf2', name: 'SF-2', teams: [null, null], scores: [2, 1], status: 'completed' },
+        ],
+      },
+      {
+        name: 'Finals',
+        matches: [{ id: 'lw-s1-f1', name: 'Final', teams: [null, null], scores: [2, 3], status: 'completed' }],
+      },
+    ],
+  },
+  {
     id: 'pubg-mobile-club-open',
     name: 'PUBG Mobile Club Open',
     game: 'PUBG',

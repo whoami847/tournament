@@ -13,6 +13,43 @@ const teams = [
 
 export const mockTournaments: Tournament[] = [
   {
+    id: 'codm-battle-arena',
+    name: 'CODM Battle Arena',
+    game: 'COD: Mobile',
+    startDate: '2024-07-18T19:00:00',
+    teamsCount: 8,
+    maxTeams: 16,
+    entryFee: 10,
+    prizePool: '5,000',
+    rules: 'Intense 5v5 action in a single-elimination bracket. Only the best will survive. Maps are chosen by veto. All standard league rules apply.',
+    status: 'live',
+    image: 'https://placehold.co/600x400.png',
+    dataAiHint: 'soldiers modern warfare',
+    participants: teams.slice(0, 8),
+    bracket: [
+      {
+        name: 'Quarter-finals',
+        matches: [
+          { id: 'codm-qf1', name: 'QF-1', teams: [teams[0], teams[1]], scores: [1, 0], status: 'live' },
+          { id: 'codm-qf2', name: 'QF-2', teams: [teams[2], teams[3]], scores: [0, 0], status: 'pending' },
+          { id: 'codm-qf3', name: 'QF-3', teams: [teams[4], teams[5]], scores: [0, 0], status: 'pending' },
+          { id: 'codm-qf4', name: 'QF-4', teams: [teams[6], teams[7]], scores: [0, 0], status: 'pending' },
+        ],
+      },
+      {
+        name: 'Semi-finals',
+        matches: [
+            { id: 'codm-sf1', name: 'SF-1', teams: [null, null], scores: [0, 0], status: 'pending' },
+            { id: 'codm-sf2', name: 'SF-2', teams: [null, null], scores: [0, 0], status: 'pending' },
+        ]
+      },
+      {
+        name: 'Finals',
+        matches: [{ id: 'codm-f1', name: 'Final', teams: [null, null], scores: [0, 0], status: 'pending' }]
+      }
+    ]
+  },
+  {
     id: 'ff-masters-2024',
     name: 'Free Fire Masters 2024',
     game: 'Free Fire',

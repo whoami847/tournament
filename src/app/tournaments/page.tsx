@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import type { Tournament, Game } from '@/types';
 import { mockTournaments } from '@/lib/data';
 import TournamentCard from '@/components/tournament-card';
@@ -12,12 +13,21 @@ import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function TournamentsPage() {
+  const searchParams = useSearchParams();
+  const gameFromQuery = searchParams.get('game') as Game | null;
+
   const [tournaments, setTournaments] = useState<Tournament[]>(mockTournaments);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGame, setSelectedGame] = useState<Game | 'all'>('all');
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'live' | 'upcoming' | 'completed'>('all');
+  const [selectedGame, setSelectedGame] = useState<Game | 'all'>(gameFromQuery || 'all');
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'live' | 'upcoming' | 'completed'>(gameFromQuery ? 'upcoming' : 'all');
   const [bookmarked, setBookmarked] = useState<Record<string, boolean>>({});
   const [showBookmarkedOnly, setShowBookmarkedOnly] = useState(false);
+
+  useEffect(() => {
+    const gameFromQuery = searchParams.get('game') as Game | null;
+    setSelectedGame(gameFromQuery || 'all');
+    setSelectedStatus(gameFromQuery ? 'upcoming' : 'all');
+  }, [searchParams]);
 
   const handleBookmarkToggle = (id: string) => {
     setBookmarked(prev => ({ ...prev, [id]: !prev[id] }));

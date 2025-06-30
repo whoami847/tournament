@@ -139,7 +139,7 @@ const LiveEvents = ({tournaments}: {tournaments: Tournament[]}) => (
 );
 
 const TournamentTag = ({ icon, text }: { icon: React.ReactNode, text: string }) => (
-    <div className="flex items-center gap-1 text-xs text-muted-foreground bg-card py-1 px-2 rounded-md">
+    <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted py-1 px-2 rounded-md">
         {icon}
         <span>{text}</span>
     </div>
@@ -156,6 +156,10 @@ const TournamentsGrid = ({tournaments}: {tournaments: Tournament[]}) => (
         <CardContent className="p-3 bg-card">
             <h4 className="font-bold truncate">{t.name}</h4>
             <p className="text-xs text-muted-foreground mb-2">{format(new Date(t.startDate), "dd.MM.yy '•' HH:mm")}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <TournamentTag icon={<Users className="h-3 w-3" />} text={t.format} />
+              <TournamentTag icon={<DollarSign className="h-3 w-3" />} text={`$${t.prizePool}`} />
+            </div>
         </CardContent>
       </Card>
     ))}

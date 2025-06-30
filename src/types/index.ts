@@ -34,4 +34,5 @@ export interface Tournament {
   bracket: Round[];
   image: string;
   dataAiHint?: string;
+  format: string;
 }

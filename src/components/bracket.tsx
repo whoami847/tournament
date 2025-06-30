@@ -5,9 +5,121 @@ import type { Match, Round, Team, Tournament } from '@/types';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import React from 'react';
-import { Video, Swords, Trophy } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useMemo, useState } from 'react';
+import { Video, Swords, Trophy, User, Users, Crown } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+// --- SOLO BRACKET COMPONENTS ---
+
+const SoloPlayerCard = ({ player }: { player: Team }) => (
+    <div className="flex items-center gap-3 bg-card-foreground/5 p-3 rounded-md">
+        <div className="bg-muted rounded-full h-10 w-10 flex items-center justify-center flex-shrink-0">
+            <User className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <span className="font-medium truncate">{player.name}</span>
+    </div>
+);
+
+const processBracketForWinners = (bracket: Round[]): Round[] => {
+    const newBracket: Round[] = JSON.parse(JSON.stringify(bracket));
+
+    const getMatchWinner = (match: Match): Team | null => {
+        if (!match || match.status !== 'completed' || !match.teams[0] || !match.teams[1]) return null;
+        return match.scores[0] > match.scores[1] ? match.teams[0] : match.teams[1];
+    };
+
+    for (let i = 0; i < newBracket.length - 1; i++) {
+      const currentRound = newBracket[i];
+      const nextRound = newBracket[i + 1];
+      for (let j = 0; j < currentRound.matches.length; j++) {
+        const winner = getMatchWinner(currentRound.matches[j]);
+        if (winner) {
+            const nextMatchIndex = Math.floor(j / 2);
+            const teamIndexInNextMatch = j % 2;
+            if (nextRound.matches[nextMatchIndex] && nextRound.matches[nextMatchIndex].teams[teamIndexInNextMatch] === null) {
+               nextRound.matches[nextMatchIndex].teams[teamIndexInNextMatch] = winner;
+            }
+        }
+      }
+    }
+    return newBracket;
+}
+
+export const SoloBracket = ({ tournament }: { tournament: Tournament }) => {
+    const processedBracket = useMemo(() => {
+        if (!tournament.bracket || tournament.status !== 'completed') return tournament.bracket;
+        return processBracketForWinners(tournament.bracket);
+    }, [tournament.bracket, tournament.status]);
+    
+    const winner = useMemo(() => {
+        if (tournament.status !== 'completed' || !processedBracket || processedBracket.length === 0) {
+            return null;
+        }
+        const finalRound = processedBracket[processedBracket.length - 1];
+        if (!finalRound || finalRound.matches.length !== 1) return null;
+        const finalMatch = finalRound.matches[0];
+        if (finalMatch.status !== 'completed' || !finalMatch.teams[0] || !finalMatch.teams[1]) return null;
+        const [team1, team2] = finalMatch.teams;
+        const [score1, score2] = finalMatch.scores;
+        return score1 > score2 ? team1 : team2;
+    }, [tournament.status, processedBracket]);
+
+    return (
+        <Tabs defaultValue="players" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-card p-1 rounded-full h-auto">
+                <TabsTrigger value="players" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Players
+                </TabsTrigger>
+                <TabsTrigger value="winner" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
+                    <Trophy className="h-4 w-4" />
+                    Winner
+                </TabsTrigger>
+            </TabsList>
+            <TabsContent value="players" className="mt-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Participants ({tournament.participants.length})</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {tournament.participants.map(player => (
+                            <SoloPlayerCard key={player.id} player={player} />
+                        ))}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="winner" className="mt-6">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Tournament Winner</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex justify-center items-center py-16">
+                       {winner ? (
+                           <div className="flex flex-col items-center gap-4 text-center">
+                                <Crown className="h-16 w-16 text-amber-400" />
+                                <div className="bg-muted rounded-full h-24 w-24 flex items-center justify-center border-4 border-amber-400">
+                                   <User className="h-12 w-12 text-muted-foreground" />
+                                </div>
+                                <h2 className="text-2xl font-bold mt-2">{winner.name}</h2>
+                                <p className="font-semibold uppercase text-amber-400">Champion</p>
+                           </div>
+                       ) : (
+                           <div className="text-center text-muted-foreground space-y-2">
+                                <Trophy className="h-12 w-12 mx-auto text-muted-foreground/50" />
+                                <p className="font-medium">The winner has not been decided yet.</p>
+                                <p className="text-sm">Check back after the tournament is completed.</p>
+                           </div>
+                       )}
+                    </CardContent>
+                 </Card>
+            </TabsContent>
+        </Tabs>
+    );
+};
+
+
+// --- TEAM BRACKET COMPONENTS ---
 
 const ChampionCard = ({ team }: { team: Team }) => {
     return (

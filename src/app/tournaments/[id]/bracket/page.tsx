@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { useParams, notFound } from 'next/navigation';
 import { mockTournaments } from '@/lib/data';
-import Bracket from '@/components/bracket';
+import Bracket, { SoloBracket } from '@/components/bracket';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, MoreHorizontal } from 'lucide-react';
 import { useState, useMemo } from 'react';
@@ -89,6 +89,8 @@ export default function BracketPage() {
     notFound();
   }
 
+  const isSoloTournament = tournament.format.includes('SOLO');
+
   const bracketData = useMemo(() => {
     if (tournament.status === 'upcoming') {
         return generateUpcomingBracket(tournament);
@@ -97,7 +99,7 @@ export default function BracketPage() {
   }, [tournament]);
 
 
-  if (!bracketData || bracketData.length === 0) {
+  if (!isSoloTournament && (!bracketData || bracketData.length === 0)) {
     return (
         <div className="bg-background min-h-screen text-foreground flex flex-col items-center justify-center p-4">
              <header className="absolute top-0 left-0 right-0 flex items-center justify-between p-4">
@@ -116,8 +118,8 @@ export default function BracketPage() {
     )
   }
 
-  const [activeRoundName, setActiveRoundName] = useState(bracketData[0].name);
-  const roundNames = bracketData.map(r => r.name);
+  const [activeRoundName, setActiveRoundName] = useState(bracketData?.[0]?.name ?? '');
+  const roundNames = bracketData?.map(r => r.name) ?? [];
 
   return (
     <div className="bg-background min-h-screen text-foreground pb-24">
@@ -134,29 +136,33 @@ export default function BracketPage() {
                 </Button>
             </header>
 
-            <div className="flex justify-center mb-8">
-                <div className="inline-flex items-center justify-center rounded-full bg-card p-1 text-card-foreground">
-                    {roundNames.map(name => (
-                    <Button
-                        key={name}
-                        variant="ghost"
-                        size="sm"
-                        className={cn(
-                        "rounded-full h-8 px-4 font-semibold",
-                        activeRoundName === name 
-                            ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                            : 'text-muted-foreground hover:bg-accent/50'
-                        )}
-                        onClick={() => setActiveRoundName(name)}
-                    >
-                        {roundAbbreviationMap[name] || name}
-                    </Button>
-                    ))}
-                </div>
-            </div>
-
-
-            <Bracket tournament={tournament} bracket={bracketData} activeRoundName={activeRoundName} />
+            {isSoloTournament ? (
+                <SoloBracket tournament={tournament} />
+            ) : (
+                <>
+                    <div className="flex justify-center mb-8">
+                        <div className="inline-flex items-center justify-center rounded-full bg-card p-1 text-card-foreground">
+                            {roundNames.map(name => (
+                            <Button
+                                key={name}
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                "rounded-full h-8 px-4 font-semibold",
+                                activeRoundName === name 
+                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                                    : 'text-muted-foreground hover:bg-accent/50'
+                                )}
+                                onClick={() => setActiveRoundName(name)}
+                            >
+                                {roundAbbreviationMap[name] || name}
+                            </Button>
+                            ))}
+                        </div>
+                    </div>
+                    <Bracket tournament={tournament} bracket={bracketData} activeRoundName={activeRoundName} />
+                </>
+            )}
         </div>
     </div>
   );

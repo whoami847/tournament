@@ -26,7 +26,7 @@ const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: num
           <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
           <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <span className={cn("text-sm font-medium truncate", isWinner ? "text-foreground" : "text-muted-foreground")}>
+        <span className={cn("text-sm truncate", isWinner ? "font-bold text-foreground" : "font-medium text-muted-foreground")}>
           {team.name}
         </span>
       </div>
@@ -47,12 +47,16 @@ const MatchCard = ({ match }: { match: Match | null }) => {
     const winner1 = match.status === 'completed' && score1 > score2;
     const winner2 = match.status === 'completed' && score2 > score1;
 
+    // For pending/live matches, both teams are styled as "winners" to make them bold.
+    const displayTeam1AsWinner = winner1 || (match.status !== 'completed');
+    const displayTeam2AsWinner = winner2 || (match.status !== 'completed');
+
     return (
         <div className="bg-card rounded-lg w-full flex-shrink-0 border border-transparent shadow-sm h-[72px]">
             <div className="p-0">
-                <TeamDisplay team={team1} score={score1} isWinner={winner1} />
+                <TeamDisplay team={team1} score={score1} isWinner={displayTeam1AsWinner} />
                 <div className="border-t border-border/50 mx-2"></div>
-                <TeamDisplay team={team2} score={score2} isWinner={winner2} />
+                <TeamDisplay team={team2} score={score2} isWinner={displayTeam2AsWinner} />
             </div>
         </div>
     );

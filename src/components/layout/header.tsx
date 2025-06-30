@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/icons";
-import { PlusCircle, User } from "lucide-react";
+import { ClipboardList, User } from "lucide-react";
 
 export default function Header() {
   return (
@@ -21,9 +21,9 @@ export default function Header() {
               <Link href="/tournaments">Tournaments</Link>
             </Button>
             <Button asChild>
-              <Link href="/create-tournament">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create
+              <Link href="/results">
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Results
               </Link>
             </Button>
              <Button variant="ghost" size="icon" asChild>

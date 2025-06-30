@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Swords, Gamepad2, User, Wallet } from 'lucide-react';
+import { Home, Swords, ClipboardList, User, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Home' },
   { href: '/tournaments', icon: Swords, label: 'Tournaments' },
-  { href: '/create-tournament', icon: Gamepad2, label: 'Create' },
+  { href: '/results', icon: ClipboardList, label: 'Results' },
   { href: '/wallet', icon: Wallet, label: 'Wallet' },
   { href: '/profile', icon: User, label: 'Profile' },
 ];

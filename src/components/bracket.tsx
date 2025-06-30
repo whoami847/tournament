@@ -9,9 +9,9 @@ import React from 'react';
 const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: number, isWinner?: boolean }) => {
   if (!team) {
     return (
-      <div className="flex items-center gap-2 md:gap-3 p-2 h-[40px] md:h-[44px] w-full">
-        <div className="h-6 md:h-7 w-6 md:w-7 rounded-md bg-muted/20 flex-shrink-0" />
-        <span className="text-muted-foreground text-sm">TBD</span>
+      <div className="flex items-center gap-2 p-2 h-[40px] md:h-[44px] w-full">
+        <div className="h-6 w-6 md:h-7 md:w-7 rounded-md bg-muted/20 flex-shrink-0" />
+        <span className="text-muted-foreground text-xs md:text-sm">TBD</span>
       </div>
     );
   }
@@ -22,7 +22,7 @@ const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: num
       isWinner && "bg-primary/10"
     )}>
       <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
-        <Avatar className="h-6 md:h-7 w-6 md:w-7 flex-shrink-0">
+        <Avatar className="h-6 w-6 md:h-7 md:w-7 flex-shrink-0">
           <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
           <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
         </Avatar>
@@ -50,14 +50,14 @@ const MatchCard = ({ match }: { match: Match | null }) => {
     return (
         <div className="bg-card rounded-lg w-56 md:w-64 flex-shrink-0 border border-border/50 shadow-sm h-[100px] md:h-[108px]">
              <div className="flex justify-between items-center px-2 md:px-3 py-1 border-b border-border/50">
-                <span className="text-[11px] md:text-xs text-muted-foreground">{match.name}</span>
+                <span className="text-[10px] md:text-xs text-muted-foreground">{match.name}</span>
                 {match.status === 'live' && (
-                    <Badge variant="default" className="flex items-center gap-1 bg-red-500 text-white text-[10px] h-5 px-1.5 border-none">
+                    <Badge variant="default" className="flex items-center gap-1 bg-red-500 text-white text-[9px] md:text-[10px] h-4 md:h-5 px-1.5 border-none">
                         <span className="relative flex h-1.5 w-1.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/75 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
                         </span>
-                        EN LIVE
+                        LIVE
                     </Badge>
                 )}
             </div>
@@ -70,43 +70,60 @@ const MatchCard = ({ match }: { match: Match | null }) => {
     );
 };
 
-const Connector = () => (
-    <div className="w-12 md:w-16 h-[216px] md:h-[240px] flex-shrink-0 flex items-center justify-center relative">
-         <svg className="w-full h-full" viewBox="0 0 64 240" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M1 54 C 24,54 24,120 40,120" stroke="#FFB74D" strokeWidth="2" vectorEffect="non-scaling-stroke"/>
-            <path d="M1 186 C 24,186 24,120 40,120" stroke="#FFB74D" strokeWidth="2" vectorEffect="non-scaling-stroke"/>
-            <path d="M48 120 H64" stroke="#FFB74D" strokeWidth="2" vectorEffect="non-scaling-stroke"/>
-            <path d="M44 116 L48 120 L44 124 L40 120 Z" fill="#FFB74D" />
-        </svg>
+const RoundColumn = ({ round, roundIndex }: { round: Round; roundIndex: number }) => {
+  const cardHeight = 108;
+  const initialVSpace = 24;
+  const vSpace = initialVSpace * Math.pow(2, roundIndex) + (cardHeight * (Math.pow(2, roundIndex) - 1));
+
+  return (
+    <div className="flex flex-col items-center flex-shrink-0">
+      <h3 className="text-sm md:text-base font-bold uppercase tracking-wider text-muted-foreground h-8 flex items-center mb-4">{round.name}</h3>
+      <div className="flex flex-col" style={{ gap: `${vSpace}px` }}>
+        {round.matches.map((match) => (
+          <MatchCard key={match.id} match={match} />
+        ))}
+      </div>
     </div>
+  );
+};
+
+const Connector = ({ height }: { height: number }) => (
+  <div className="w-8 md:w-12 flex-shrink-0 flex items-center justify-center" style={{ height: `${height}px` }}>
+    <svg className="w-full h-full" viewBox={`0 0 48 ${height}`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d={`M1 ${height * 0.25} C 24,${height * 0.25} 24,${height * 0.5} 48,${height * 0.5}`} stroke="hsl(var(--accent))" strokeWidth="2"/>
+      <path d={`M1 ${height * 0.75} C 24,${height * 0.75} 24,${height * 0.5} 48,${height * 0.5}`} stroke="hsl(var(--accent))" strokeWidth="2"/>
+    </svg>
+  </div>
 );
 
+const ConnectorColumn = ({ roundIndex, numMatches }: { roundIndex: number; numMatches: number }) => {
+  const cardHeight = 108;
+  const initialVSpace = 24;
+  const vSpace = initialVSpace * Math.pow(2, roundIndex) + (cardHeight * (Math.pow(2, roundIndex) - 1));
+  const connectorHeight = cardHeight + vSpace;
+  const paddingTop = connectorHeight / 2;
 
-const Matchup = ({ match1, match2, nextMatch }: { match1: Match, match2: Match, nextMatch: Match | null }) => {
-    return (
-        <div className="flex items-center justify-center">
-            <div className="flex flex-col gap-4 md:gap-6">
-                <MatchCard match={match1} />
-                <MatchCard match={match2} />
-            </div>
-            <Connector />
-            <MatchCard match={nextMatch} />
-        </div>
-    );
+  return (
+    <div className="flex flex-col items-center flex-shrink-0">
+      <h3 className="h-8 mb-4">&nbsp;</h3>
+      <div className="flex flex-col" style={{ gap: `${vSpace}px`, paddingTop: `${paddingTop}px` }}>
+        {Array.from({ length: numMatches / 2 }).map((_, i) => (
+          <Connector key={i} height={connectorHeight} />
+        ))}
+      </div>
+    </div>
+  );
 };
 
 
-export default function Bracket({ tournament, activeRoundName }: { tournament: Tournament, activeRoundName: string }) {
+export default function Bracket({ tournament }: { tournament: Tournament }) {
   
   const processedBracket = React.useMemo(() => {
     if (!tournament.bracket || tournament.bracket.length === 0) return [];
-    
     const newBracket = JSON.parse(JSON.stringify(tournament.bracket));
 
     const getWinner = (match: Match | null): Team | null => {
-      if (!match || match.status !== 'completed' || !match.teams[0] || !match.teams[1]) {
-        return null;
-      }
+      if (!match || match.status !== 'completed' || !match.teams[0] || !match.teams[1]) return null;
       return match.scores[0] > match.scores[1] ? match.teams[0] : match.teams[1];
     };
     
@@ -127,11 +144,8 @@ export default function Bracket({ tournament, activeRoundName }: { tournament: T
     return newBracket;
   }, [tournament.bracket]);
 
-  const activeRound = processedBracket.find(r => r.name === activeRoundName);
-  const activeRoundIndex = processedBracket.findIndex(r => r.name === activeRoundName);
-  const nextRound = processedBracket[activeRoundIndex + 1];
 
-  if (!activeRound) {
+  if (!processedBracket || processedBracket.length === 0) {
     return (
         <div className="text-center py-12">
             <p className="text-muted-foreground">Bracket not available for this tournament.</p>
@@ -140,17 +154,16 @@ export default function Bracket({ tournament, activeRoundName }: { tournament: T
   }
 
   return (
-    <div className="overflow-x-auto pb-4 flex justify-center">
-        <div className="flex flex-col items-center gap-4 md:gap-6">
-            {Array.from({ length: activeRound.matches.length / 2 }).map((_, i) => {
-                const match1 = activeRound.matches[i * 2];
-                const match2 = activeRound.matches[i * 2 + 1];
-                const nextMatch = nextRound ? nextRound.matches[i] : null;
-                
-                if (!match1 || !match2) return null;
-
-                return <Matchup key={i} match1={match1} match2={match2} nextMatch={nextMatch} />
-            })}
+    <div className="overflow-x-auto pb-4">
+        <div className="flex items-start">
+          {processedBracket.map((round, roundIndex) => (
+            <React.Fragment key={round.name}>
+              <RoundColumn round={round} roundIndex={roundIndex} />
+              {roundIndex < processedBracket.length - 1 && (
+                <ConnectorColumn roundIndex={roundIndex} numMatches={round.matches.length} />
+              )}
+            </React.Fragment>
+          ))}
         </div>
     </div>
   );

@@ -17,10 +17,10 @@ export default function AdminTournamentsPage() {
         return mockTournaments.filter((tournament: Tournament) => tournament.status === selectedStatus);
     }, [selectedStatus]);
 
-    const statusVariantMap: { [key: string]: 'default' | 'secondary' | 'destructive' } = {
-        upcoming: 'secondary',
-        live: 'default',
-        completed: 'destructive',
+    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', className?: string }> = {
+      upcoming: { variant: 'secondary' },
+      live: { variant: 'destructive' },
+      completed: { variant: 'default', className: 'bg-green-500 text-primary-foreground border-transparent hover:bg-green-600' },
     };
     
     return (
@@ -50,12 +50,14 @@ export default function AdminTournamentsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredTournaments.map((tournament) => (
+                            {filteredTournaments.map((tournament) => {
+                                const config = statusConfig[tournament.status] ?? { variant: 'secondary' };
+                                return (
                                 <TableRow key={tournament.id}>
                                     <TableCell className="font-medium">{tournament.name}</TableCell>
                                     <TableCell>{tournament.game}</TableCell>
                                     <TableCell>
-                                        <Badge variant={statusVariantMap[tournament.status] || 'default'} className="capitalize">
+                                        <Badge variant={config.variant} className={`capitalize ${config.className ?? ''}`}>
                                             {tournament.status}
                                         </Badge>
                                     </TableCell>
@@ -77,14 +79,16 @@ export default function AdminTournamentsPage() {
                                         </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )})}
                         </TableBody>
                     </Table>
                 </div>
 
                 {/* Mobile Card List */}
                 <div className="md:hidden space-y-4">
-                     {filteredTournaments.map((tournament) => (
+                     {filteredTournaments.map((tournament) => {
+                        const config = statusConfig[tournament.status] ?? { variant: 'secondary' };
+                        return (
                         <div key={tournament.id} className="bg-muted/20 p-4 rounded-lg border">
                             <div className="flex justify-between items-start">
                                 <div>
@@ -106,7 +110,7 @@ export default function AdminTournamentsPage() {
                                 </DropdownMenu>
                             </div>
                              <div className="mt-4 flex justify-between items-center text-sm text-muted-foreground pt-4 border-t border-muted-foreground/20">
-                                <Badge variant={statusVariantMap[tournament.status] || 'default'} className="capitalize">
+                                <Badge variant={config.variant} className={`capitalize ${config.className ?? ''}`}>
                                     {tournament.status}
                                 </Badge>
                                 <div className="text-right">
@@ -119,7 +123,7 @@ export default function AdminTournamentsPage() {
                                 </div>
                             </div>
                         </div>
-                    ))}
+                    )})}
                 </div>
             </CardContent>
         </Card>

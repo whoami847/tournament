@@ -57,6 +57,14 @@ const topPlayersData = [
     { rank: 3, name: 'Mortal', role: 'Player', winrate: '82.5%', games: 64, avatar: 'https://placehold.co/48x48.png', dataAiHint: 'male gamer smiling',},
 ];
 
+const gameFilterData = [
+    { name: 'all' as const, displayName: 'All', image: 'https://placehold.co/400x400.png', dataAiHint: 'joystick collection' },
+    { name: 'Free Fire' as Game, displayName: 'Free Fire', image: 'https://placehold.co/400x400.png', dataAiHint: 'fire character action' },
+    { name: 'PUBG' as Game, displayName: 'PUBG', image: 'https://placehold.co/400x400.png', dataAiHint: 'soldier helmet' },
+    { name: 'Mobile Legends' as Game, displayName: 'Mobile Legends', image: 'https://placehold.co/400x400.png', dataAiHint: 'fantasy characters' },
+    { name: 'COD: Mobile' as Game, displayName: 'COD: Mobile', image: 'https://placehold.co/400x400.png', dataAiHint: 'modern warfare soldier' },
+];
+
 
 // --- SUB-COMPONENTS ---
 
@@ -208,37 +216,25 @@ const TopPlayers = () => (
     </div>
 );
 
-const gameFilters = [
-    { name: 'all' as const, displayName: 'All', image: 'https://placehold.co/400x200.png', dataAiHint: 'joystick collection' },
-    ...gamesData.map(g => ({ ...g, name: g.name as Game, displayName: g.name })),
-];
-
 const GameFilter = ({ selectedGame, onSelectGame }: { selectedGame: Game | 'all', onSelectGame: (game: Game | 'all') => void }) => (
-    <div className="-mx-4 mb-4">
-        <Carousel opts={{ align: "start", loop: false }} className="w-full">
-            <CarouselContent className="pl-4">
-            {gameFilters.map((game) => (
-                <CarouselItem key={game.name} className="basis-1/3 md:basis-1/4">
-                    <div 
-                        className={cn(
-                            "relative h-20 rounded-lg overflow-hidden cursor-pointer border-2 transition-all",
-                            selectedGame === game.name ? 'border-primary' : 'border-card'
-                        )}
-                        onClick={() => onSelectGame(game.name)}
-                    >
-                        <Image src={game.image} alt={game.displayName} fill className="object-cover" data-ai-hint={game.dataAiHint}/>
-                        <div className={cn(
-                            "absolute inset-0 transition-all",
-                             selectedGame === game.name ? 'bg-black/30' : 'bg-black/60 hover:bg-black/50'
-                        )} />
-                        <div className="absolute inset-0 flex items-center justify-center p-2 text-white">
-                            <h4 className="font-bold text-center text-sm">{game.displayName}</h4>
-                        </div>
-                    </div>
-                </CarouselItem>
-            ))}
-            </CarouselContent>
-        </Carousel>
+    <div className="grid grid-cols-2 gap-4 mb-6">
+        {gameFilterData.map((game) => (
+            <div
+                key={game.name}
+                className={cn(
+                    "rounded-xl overflow-hidden cursor-pointer border-2 transition-all bg-card",
+                    selectedGame === game.name ? 'border-primary' : 'border-transparent'
+                )}
+                onClick={() => onSelectGame(game.name)}
+            >
+                <div className="relative aspect-square bg-muted">
+                    <Image src={game.image} alt={game.displayName} fill className="object-cover" data-ai-hint={game.dataAiHint}/>
+                </div>
+                <div className="p-3">
+                    <h4 className="font-semibold text-center text-sm uppercase">{game.displayName}</h4>
+                </div>
+            </div>
+        ))}
     </div>
 );
 

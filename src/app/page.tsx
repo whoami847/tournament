@@ -38,9 +38,9 @@ const featuredEventsData = [
 ];
 
 const popularEventsData = [
-  { name: 'MSC 2024', date: '28.06.24 • 19:00', game: 'Mobile Legends', image: 'https://placehold.co/300x400.png', dataAiHint: 'fantasy MOBA characters', isWinner: true },
-  { name: 'FFWS SEA', date: '22.03.24 • 15:00', game: 'Free Fire', image: 'https://placehold.co/300x400.png', dataAiHint: 'fire characters battle' },
-  { name: 'PMGC Grand Finals', date: '08.12.24 • 20:00', game: 'PUBG', image: 'https://placehold.co/300x400.png', dataAiHint: 'soldiers battle royale' },
+  { name: 'Pro League Stage 2', date: 'Now • Live', game: 'Free Fire', image: 'https://placehold.co/300x400.png', dataAiHint: 'action game character running' },
+  { name: 'City Rumble', date: 'Now • Live', game: 'COD: Mobile', image: 'https://placehold.co/300x400.png', dataAiHint: 'soldier urban warfare' },
+  { name: 'Summer Split Finals', date: 'Today • 20:00', game: 'Mobile Legends', image: 'https://placehold.co/300x400.png', dataAiHint: 'fantasy characters battle' },
 ];
 
 const tournamentsData = [
@@ -131,7 +131,7 @@ const PopularEvents = () => (
                             <Image src={event.image} alt={event.name} fill className="object-cover" data-ai-hint={event.dataAiHint} />
                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                             <CardContent className="absolute bottom-0 left-0 p-3 text-white w-full">
-                                {event.isWinner && <Badge className="mb-1 bg-amber-400 text-black border-none font-bold">Winner</Badge>}
+                                <Badge className="mb-1 bg-red-500 text-white border-none font-bold animate-pulse">Live</Badge>
                                 <h4 className="font-bold truncate">{event.name}</h4>
                                 <p className="text-xs text-white/70">{event.date}</p>
                             </CardContent>
@@ -227,15 +227,15 @@ export default function HomePage() {
         <div className="space-y-10">
           <FeaturedEvent />
           <section>
-            <SectionHeader title="Popular Events" />
+            <SectionHeader title="Live/Ongoing" />
             <PopularEvents />
           </section>
           <section>
-            <SectionHeader title="Tournaments" actionText="All tournaments" actionHref="/tournaments" />
+            <SectionHeader title="Upcoming Matches" actionText="All tournaments" actionHref="/tournaments" />
             <TournamentsGrid />
           </section>
           <section>
-            <SectionHeader title="Games" actionText="All games" actionHref="#" />
+            <SectionHeader title="Our Supported Games" actionText="All games" actionHref="#" />
             <GamesList />
           </section>
           <section>

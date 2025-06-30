@@ -12,6 +12,8 @@ import { Switch } from '@/components/ui/switch';
 import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+type Format = 'all' | 'BR' | 'CS' | 'LONE WOLF' | '5v5';
+
 export default function TournamentsPage() {
   const searchParams = useSearchParams();
   const gameFromQuery = searchParams.get('game') as Game | null;
@@ -20,6 +22,7 @@ export default function TournamentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGame, setSelectedGame] = useState<Game | 'all'>(gameFromQuery || 'all');
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'live' | 'upcoming' | 'completed'>(gameFromQuery ? 'upcoming' : 'all');
+  const [selectedFormat, setSelectedFormat] = useState<Format>('all');
   const [bookmarked, setBookmarked] = useState<Record<string, boolean>>({});
   const [showBookmarkedOnly, setShowBookmarkedOnly] = useState(false);
 
@@ -38,12 +41,14 @@ export default function TournamentsPage() {
       const matchesSearch = tournament.name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesGame = selectedGame === 'all' || tournament.game === selectedGame;
       const matchesStatus = selectedStatus === 'all' || tournament.status === selectedStatus;
+      const matchesFormat = selectedFormat === 'all' || tournament.format === selectedFormat;
       const matchesBookmark = !showBookmarkedOnly || !!bookmarked[tournament.id];
-      return matchesSearch && matchesGame && matchesStatus && matchesBookmark;
+      return matchesSearch && matchesGame && matchesStatus && matchesFormat && matchesBookmark;
     });
-  }, [tournaments, searchTerm, selectedGame, selectedStatus, showBookmarkedOnly, bookmarked]);
+  }, [tournaments, searchTerm, selectedGame, selectedStatus, selectedFormat, showBookmarkedOnly, bookmarked]);
   
   const games: Game[] = ['Free Fire', 'PUBG', 'Mobile Legends', 'COD: Mobile'];
+  const formats: Exclude<Format, 'all' | '5v5'>[] = ['BR', 'CS', 'LONE WOLF'];
 
   return (
     <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
@@ -77,16 +82,33 @@ export default function TournamentsPage() {
             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2 p-1 bg-muted rounded-full">
-                <Button variant={selectedStatus === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('all')}>All</Button>
-                <Button variant={selectedStatus === 'live' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('live')}>Ongoing</Button>
-                <Button variant={selectedStatus === 'upcoming' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('upcoming')}>Upcoming</Button>
-                <Button variant={selectedStatus === 'completed' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('completed')}>Finished</Button>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-2 p-1 bg-muted rounded-full">
+                    <Button variant={selectedStatus === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('all')}>All</Button>
+                    <Button variant={selectedStatus === 'live' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('live')}>Ongoing</Button>
+                    <Button variant={selectedStatus === 'upcoming' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('upcoming')}>Upcoming</Button>
+                    <Button variant={selectedStatus === 'completed' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('completed')}>Finished</Button>
+                </div>
+                <div className="flex items-center space-x-2">
+                <Switch id="bookmarks-only" checked={showBookmarkedOnly} onCheckedChange={setShowBookmarkedOnly} />
+                <Label htmlFor="bookmarks-only">My Bookmarks</Label>
+                </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Switch id="bookmarks-only" checked={showBookmarkedOnly} onCheckedChange={setShowBookmarkedOnly} />
-              <Label htmlFor="bookmarks-only">My Bookmarks</Label>
+
+            <div className="flex items-center gap-2 p-1 bg-muted rounded-full self-start">
+              <Button variant={selectedFormat === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedFormat('all')}>All Modes</Button>
+              {formats.map(format => (
+                <Button 
+                  key={format} 
+                  variant={selectedFormat === format ? 'default' : 'ghost'} 
+                  size="sm" 
+                  className="rounded-full h-8 px-4" 
+                  onClick={() => setSelectedFormat(format)}
+                >
+                  {format === 'LONE WOLF' ? 'Lone Wolf' : format}
+                </Button>
+              ))}
             </div>
           </div>
         </div>

@@ -152,30 +152,30 @@ const ChampionPlaceholder = () => (
 const TeamDisplay = ({ team, score, isWinner }: { team: Team | null, score?: number, isWinner?: boolean }) => {
   const teamNameAndAvatar = team ? (
     <>
-        <Avatar className="h-8 w-8 flex-shrink-0">
+        <Avatar className="h-6 w-6 flex-shrink-0">
           <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
           <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <span className={cn("text-sm truncate", isWinner ? "font-bold text-foreground" : "font-medium text-muted-foreground")}>
+        <span className={cn("text-xs truncate", isWinner ? "font-bold text-foreground" : "font-medium text-muted-foreground")}>
           {team.name}
         </span>
     </>
   ) : (
     <>
-        <div className="h-8 w-8 rounded-md bg-muted/20 flex-shrink-0 flex items-center justify-center">
+        <div className="h-6 w-6 rounded-md bg-muted/20 flex-shrink-0 flex items-center justify-center">
             <Swords className="h-4 w-4 text-muted-foreground" />
         </div>
-        <span className="text-muted-foreground text-sm">Team TBD</span>
+        <span className="text-muted-foreground text-xs">Team TBD</span>
     </>
   );
 
   return (
-    <div className="flex items-center justify-between p-2 h-[42px] w-full">
+    <div className="flex items-center justify-between p-2 h-9 w-full">
       <div className="flex items-center gap-3 overflow-hidden">
         {teamNameAndAvatar}
       </div>
       {typeof score !== 'undefined' && (
-        <span className={cn("font-bold text-lg", isWinner ? "text-primary" : "text-muted-foreground/50")}>
+        <span className={cn("font-bold text-base", isWinner ? "text-primary" : "text-muted-foreground/50")}>
           {score}
         </span>
       )}
@@ -198,7 +198,7 @@ const MatchCard = ({ match }: { match: Match | null }) => {
     const displayTeam2AsWinner = winner2 || (status !== 'completed' && !!team2);
 
     return (
-        <div className="bg-card rounded-lg w-full flex-shrink-0 border border-border/50 shadow-sm h-[88px]">
+        <div className="bg-card rounded-lg w-full flex-shrink-0 border border-border/50 shadow-sm h-[76px]">
             <div className="p-0">
                 <TeamDisplay team={team1} score={score1} isWinner={displayTeam1AsWinner} />
                 <div className="border-t border-border/50 mx-2"></div>
@@ -210,7 +210,7 @@ const MatchCard = ({ match }: { match: Match | null }) => {
 
 const SingleMatchDisplay = ({ match }: { match: Match | null }) => {
     return (
-      <div className="w-full md:w-56">
+      <div className="w-full md:w-48">
         <div className="flex justify-between items-center mb-1 h-5">
           <p className="text-xs text-muted-foreground">{match?.name ?? ''}</p>
           {match?.status === 'live' && (
@@ -226,10 +226,10 @@ const SingleMatchDisplay = ({ match }: { match: Match | null }) => {
 }
 
 const Connector = ({ isTopWinner, isBottomWinner }: { isTopWinner: boolean, isBottomWinner: boolean }) => {
-    const CARD_AND_LABEL_HEIGHT = 112;
+    const CARD_AND_LABEL_HEIGHT = 100; // card height 76 + label height 24
     const GAP = 32;
     const TOTAL_HEIGHT = CARD_AND_LABEL_HEIGHT * 2 + GAP;
-    const TEAM_ROW_HEIGHT = 42;
+    const TEAM_ROW_HEIGHT = 36;
     const LABEL_HEIGHT = 24; // h-5 (20px) + mb-1 (4px)
     
     const topTeamY = LABEL_HEIGHT + (TEAM_ROW_HEIGHT / 2);
@@ -241,11 +241,11 @@ const Connector = ({ isTopWinner, isBottomWinner }: { isTopWinner: boolean, isBo
     const endY = TOTAL_HEIGHT / 2;
     
     return (
-      <div className="w-10 h-full flex-shrink-0 mx-2" style={{ height: `${TOTAL_HEIGHT}px` }}>
-          <svg className="w-full h-full" viewBox={`0 0 40 ${TOTAL_HEIGHT}`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d={`M1 ${startY1} C 20,${startY1} 20,${endY} 32,${endY}`} stroke="#FFB74D" strokeWidth="2"/>
-              <path d={`M1 ${startY2} C 20,${startY2} 20,${endY} 32,${endY}`} stroke="#FFB74D" strokeWidth="2"/>
-              <path d={`M36 ${endY} L32 ${endY-4} L28 ${endY} L32 ${endY+4} Z`} fill="#FFB74D" />
+      <div className="w-8 h-full flex-shrink-0 mx-2" style={{ height: `${TOTAL_HEIGHT}px` }}>
+          <svg className="w-full h-full" viewBox={`0 0 32 ${TOTAL_HEIGHT}`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d={`M1 ${startY1} C 16,${startY1} 16,${endY} 28,${endY}`} stroke="#FFB74D" strokeWidth="2"/>
+              <path d={`M1 ${startY2} C 16,${startY2} 16,${endY} 28,${endY}`} stroke="#FFB74D" strokeWidth="2"/>
+              <path d={`M32 ${endY} L28 ${endY-4} L24 ${endY} L28 ${endY+4} Z`} fill="#FFB74D" />
           </svg>
       </div>
     );

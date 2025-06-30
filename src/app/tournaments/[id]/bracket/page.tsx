@@ -61,7 +61,7 @@ const generateUpcomingBracket = (tournament: Tournament): Round[] => {
         numberOfTeamsInRound /= 2;
     }
 
-    const generatedRounds = rounds.reverse();
+    const generatedRounds = rounds;
 
     // Populate the first round with participants
     if (generatedRounds.length > 0) {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -14,8 +13,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
-import { UserPlus } from 'lucide-react';
+import { User, Users, Shield } from 'lucide-react';
 import React from 'react';
+import { Badge } from '@/components/ui/badge';
 
 // Zod schema for a single player
 const playerSchema = z.object({
@@ -23,8 +23,9 @@ const playerSchema = z.object({
   id: z.string().min(3, { message: "Gamer ID must be at least 3 characters." }),
 });
 
-// Main form schema
+// Main form schema, adding an optional teamName
 const formSchema = z.object({
+  teamName: z.string().optional(),
   players: z.array(playerSchema).min(1, "At least one player is required."),
 });
 
@@ -49,15 +50,16 @@ export default function JoinTournamentPage() {
     }
 
     const teamType = getTeamType(tournament.format);
-    const maxPlayers = teamType === 'SQUAD' ? 4 : teamType === 'DUO' ? 2 : 1;
+    const initialRegistrationSize = teamType === 'SOLO' ? 1 : 1;
 
     // State to manage how many players are being registered
-    const [registrationSize, setRegistrationSize] = React.useState(teamType === 'SOLO' ? 1 : 1);
+    const [registrationSize, setRegistrationSize] = React.useState(initialRegistrationSize);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            players: Array.from({ length: registrationSize }, () => ({ name: '', id: '' })),
+            teamName: '',
+            players: Array.from({ length: initialRegistrationSize }, () => ({ name: '', id: '' })),
         },
     });
 
@@ -75,11 +77,18 @@ export default function JoinTournamentPage() {
         replace(newPlayers);
     }, [registrationSize, replace, form]);
 
+    React.useEffect(() => {
+        // If tournament type is solo, always set player count to 1
+        if (teamType === 'SOLO') {
+            setRegistrationSize(1);
+        }
+    }, [teamType]);
+
     function onSubmit(values: z.infer<typeof formSchema>) {
         console.log(values);
         toast({
             title: "Registration Submitted!",
-            description: `Your team has been registered for "${tournament.name}".`,
+            description: `Your registration for "${tournament.name}" has been received.`,
         });
         router.push(`/tournaments/${tournament.id}`);
     }
@@ -89,27 +98,34 @@ export default function JoinTournamentPage() {
 
         const options = [];
         
-        options.push({ label: 'Register as Solo (1 Player)', value: 1 });
+        options.push({ label: 'Register Solo', value: 1, icon: User });
         if (teamType === 'DUO' || teamType === 'SQUAD') {
-            options.push({ label: 'Register as Duo (2 Players)', value: 2 });
+            options.push({ label: 'Register as Duo', value: 2, icon: Users });
         }
         if (teamType === 'SQUAD') {
-            options.push({ label: 'Register as a Squad (4 Players)', value: 4 });
+            options.push({ label: 'Register as Squad', value: 4, icon: Shield });
         }
 
         return (
-            <div className="mb-8">
-                <Label className="text-base font-semibold">How many players are you registering?</Label>
+            <div className="space-y-4 text-center">
+                <Label className="text-base font-semibold">How are you registering?</Label>
                 <p className="text-sm text-muted-foreground mb-4">You can register individually or as a partial/full team.</p>
                 <RadioGroup
                     defaultValue={registrationSize.toString()}
                     onValueChange={(value) => setRegistrationSize(parseInt(value))}
-                    className="flex flex-col sm:flex-row gap-4"
+                    className={`grid grid-cols-1 ${options.length > 1 ? `sm:grid-cols-${options.length}` : ''} gap-4`}
                 >
                     {options.map(opt => (
-                        <div key={opt.value} className="flex items-center space-x-2">
-                             <RadioGroupItem value={opt.value.toString()} id={`r-${opt.value}`} />
-                            <Label htmlFor={`r-${opt.value}`}>{opt.label}</Label>
+                        <div key={opt.value}>
+                            <RadioGroupItem value={opt.value.toString()} id={`r-${opt.value}`} className="peer sr-only" />
+                            <Label
+                                htmlFor={`r-${opt.value}`}
+                                className="flex flex-col items-center justify-center rounded-lg border-2 p-4 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:shadow-md peer-data-[state=checked]:bg-primary/5"
+                            >
+                                <opt.icon className="h-8 w-8 mb-2 text-primary" />
+                                <span className="font-bold">{opt.label}</span>
+                                <span className="text-sm text-muted-foreground">{opt.value} Player{opt.value > 1 ? 's' : ''}</span>
+                            </Label>
                         </div>
                     ))}
                 </RadioGroup>
@@ -117,10 +133,12 @@ export default function JoinTournamentPage() {
         );
     };
 
+    const showTeamNameInput = teamType !== 'SOLO' && registrationSize > 1;
+
     return (
         <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
-            <Card>
-                <CardHeader>
+            <Card className="max-w-4xl mx-auto">
+                <CardHeader className="text-center">
                     <CardTitle className="text-3xl">Register for Tournament</CardTitle>
                     <CardDescription className="text-base">
                         You are registering for: <span className="font-semibold text-primary">{tournament.name}</span>
@@ -131,14 +149,30 @@ export default function JoinTournamentPage() {
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                             {registrationOptions()}
 
+                            {showTeamNameInput && (
+                                <FormField
+                                    control={form.control}
+                                    name="teamName"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Team Name</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Enter your team name" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
+                            
+                            <Separator />
+                            
                             <div className="space-y-6">
+                                <h3 className="font-semibold text-xl text-center">Player Information</h3>
                                 {fields.map((field, index) => (
-                                    <div key={field.id} className="p-4 border rounded-lg bg-muted/20">
-                                        <h3 className="flex items-center gap-2 font-semibold mb-4 text-lg">
-                                            <UserPlus className="h-5 w-5 text-primary" />
-                                            Player {index + 1} Information
-                                        </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div key={field.id} className="p-4 border rounded-lg bg-background shadow-sm relative">
+                                        <Badge variant="secondary" className="absolute -top-3 left-4">{`Player ${index + 1}`}</Badge>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                                             <FormField
                                                 control={form.control}
                                                 name={`players.${index}.name`}
@@ -170,9 +204,9 @@ export default function JoinTournamentPage() {
                                 ))}
                             </div>
                             
-                            <Separator />
-
-                            <Button type="submit" size="lg">Submit Registration</Button>
+                            <div className="flex justify-center">
+                                <Button type="submit" size="lg">Submit Registration</Button>
+                            </div>
                         </form>
                     </Form>
                 </CardContent>

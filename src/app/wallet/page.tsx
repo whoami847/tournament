@@ -5,10 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Search, Banknote, Gamepad2, Gift, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import React from 'react';
+import React, { useState } from 'react';
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { createPaymentUrl } from '@/lib/payment-actions';
 import {
   Dialog,
   DialogContent,
@@ -112,12 +111,25 @@ const WalletHeader = () => (
 );
 
 const CardStack = ({ balance }: { balance: number }) => {
+    const [isFanned, setIsFanned] = useState(false);
+
+    const handleOpenChange = (open: boolean) => {
+        if (!open) {
+            setIsFanned(false);
+        }
+    };
+
     return (
-        <div className="relative h-60 flex items-center justify-center group">
+        <div className={cn("relative h-60 flex items-center justify-center", !isFanned && "group")}>
             {/* Bottom Card */}
             <div
-                className="absolute w-full max-w-[320px] h-52 rounded-2xl bg-gradient-to-br from-[#4A2E0C] to-[#8C5A2D] p-6 text-white shadow-lg transition-transform duration-500 ease-out group-hover:-translate-y-2 group-hover:rotate-[-8deg]"
-                style={{ transform: 'translateY(24px) rotate(-6deg)', zIndex: 10 }}
+                className={cn(
+                    "absolute w-full max-w-[320px] h-52 rounded-2xl bg-gradient-to-br from-[#4A2E0C] to-[#8C5A2D] p-6 text-white shadow-lg transition-all duration-500 ease-out",
+                    isFanned 
+                        ? 'transform -translate-y-20 -translate-x-24 rotate-[-15deg]' 
+                        : 'translate-y-6 rotate-[-6deg] group-hover:-translate-y-2 group-hover:rotate-[-8deg]'
+                )}
+                style={{ zIndex: 10 }}
             >
                 <div className="flex justify-between items-start">
                     <p className="font-bold tracking-wider">Mapple</p>
@@ -126,8 +138,13 @@ const CardStack = ({ balance }: { balance: number }) => {
             </div>
              {/* Middle Card */}
             <div
-                className="absolute w-full max-w-[320px] h-52 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 p-6 text-white shadow-lg transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:rotate-[-4deg]"
-                style={{ transform: 'translateY(12px) rotate(-3deg)', zIndex: 20 }}
+                className={cn(
+                    "absolute w-full max-w-[320px] h-52 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 p-6 text-white shadow-lg transition-all duration-500 ease-out",
+                    isFanned
+                        ? 'transform -translate-y-20 translate-x-24 rotate-[15deg]'
+                        : 'translate-y-3 rotate-[-3deg] group-hover:-translate-y-1 group-hover:rotate-[-4deg]'
+                )}
+                style={{ zIndex: 20 }}
             >
                  <div className="flex justify-between items-start">
                     <p className="font-bold tracking-wider">Mapple</p>
@@ -136,7 +153,12 @@ const CardStack = ({ balance }: { balance: number }) => {
             </div>
              {/* Top Card */}
             <div
-                className="absolute w-full max-w-[320px] h-52 rounded-2xl bg-black p-6 text-white shadow-2xl flex flex-col justify-between transition-transform duration-500 ease-out group-hover:scale-105 group-hover:-translate-y-6"
+                className={cn(
+                    "absolute w-full max-w-[320px] h-52 rounded-2xl bg-black p-6 text-white shadow-2xl flex flex-col justify-between transition-all duration-500 ease-out",
+                    isFanned
+                        ? 'transform translate-y-20 rotate-0'
+                        : 'group-hover:scale-105 group-hover:-translate-y-6'
+                )}
                 style={{ zIndex: 30 }}
             >
                  <div className="flex justify-between items-start">
@@ -155,9 +177,9 @@ const CardStack = ({ balance }: { balance: number }) => {
                 </div>
 
                 <div className="flex justify-start gap-4">
-                    <Dialog>
+                     <Dialog onOpenChange={handleOpenChange}>
                         <DialogTrigger asChild>
-                             <Button className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
+                             <Button onClick={() => setIsFanned(true)} className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
                                 <ArrowUp className="mr-2 h-4 w-4" /> Add Money
                             </Button>
                         </DialogTrigger>
@@ -171,9 +193,9 @@ const CardStack = ({ balance }: { balance: number }) => {
                             <AddMoneyForm />
                         </DialogContent>
                     </Dialog>
-                     <Dialog>
+                     <Dialog onOpenChange={handleOpenChange}>
                         <DialogTrigger asChild>
-                            <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
+                            <Button onClick={() => setIsFanned(true)} variant="secondary" className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
                                 <ArrowDown className="mr-2 h-4 w-4" /> Withdraw
                             </Button>
                         </DialogTrigger>
@@ -182,7 +204,7 @@ const CardStack = ({ balance }: { balance: number }) => {
                 </div>
             </div>
         </div>
-    )
+    );
 }
 
 const TransactionList = () => {

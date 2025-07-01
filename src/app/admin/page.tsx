@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { Card, CardContent } from "@/components/ui/card";
-import { LayoutDashboard, Users, Swords, GitPullRequest, Settings, LucideIcon, Gamepad2 } from "lucide-react";
+import { LayoutDashboard, Users, Swords, GitPullRequest, Settings, LucideIcon, Gamepad2, Image as ImageIcon } from "lucide-react";
 
 const adminControls: { href: string; icon: LucideIcon; label: string }[] = [
   { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/admin/banners', icon: ImageIcon, label: 'Banners' },
   { href: '/admin/tournaments', icon: Swords, label: 'Tournaments' },
   { href: '/admin/games', icon: Gamepad2, label: 'Games' },
   { href: '/admin/users', icon: Users, label: 'Users' },

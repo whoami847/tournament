@@ -55,3 +55,12 @@ export interface AuthUser {
   displayName: string | null;
   photoURL: string | null;
 }
+
+export interface FeaturedBanner {
+  id: string;
+  game: string;
+  name: string;
+  date: string;
+  image: string;
+  dataAiHint: string;
+}

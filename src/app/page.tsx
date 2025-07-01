@@ -11,7 +11,8 @@ import { Bell, ChevronRight, Users, DollarSign, Gamepad2, Trophy } from 'lucide-
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Link from 'next/link';
 import { getTournamentsStream } from '@/lib/tournaments-service';
-import type { Tournament, Game } from '@/types';
+import { getBannersStream } from '@/lib/banners-service';
+import type { Tournament, Game, FeaturedBanner } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
@@ -26,30 +27,6 @@ import { useAuth } from '@/hooks/use-auth';
 
 
 // --- MOCK DATA ---
-
-const featuredEventsData = [
-  {
-    game: 'Free Fire',
-    name: 'Free Fire World Series',
-    date: '10.11.2024 • 18:00',
-    image: 'https://placehold.co/800x400.png',
-    dataAiHint: 'fire battle action'
-  },
-  {
-    game: 'Mobile Legends',
-    name: 'MSC 2024',
-    date: '28.06.24 • 19:00',
-    image: 'https://placehold.co/800x400.png',
-    dataAiHint: 'fantasy MOBA characters'
-  },
-  {
-    game: 'PUBG',
-    name: 'PMGC Grand Finals',
-    date: '08.12.24 • 20:00',
-    image: 'https://placehold.co/800x400.png',
-    dataAiHint: 'soldiers battle royale'
-  }
-];
 
 const gamesData = [
     { name: 'Free Fire', categories: 'Battle Royale • Action', image: 'https://placehold.co/400x200.png', dataAiHint: 'fire character action',},
@@ -130,10 +107,18 @@ const SectionHeader = ({ title, actionText, actionHref }: { title: string, actio
   </div>
 );
 
-const FeaturedEvent = () => {
+const FeaturedEvent = ({ banners }: { banners: FeaturedBanner[] }) => {
     const plugin = useRef(
         Autoplay({ delay: 3000, stopOnInteraction: true })
     );
+    
+    if (banners.length === 0) {
+        return (
+            <Card className="relative w-full h-48 border-none overflow-hidden rounded-2xl bg-muted flex items-center justify-center">
+                <p className="text-muted-foreground">No featured events available.</p>
+            </Card>
+        )
+    }
 
     return (
         <Carousel
@@ -143,7 +128,7 @@ const FeaturedEvent = () => {
             onMouseLeave={plugin.current.reset}
         >
             <CarouselContent>
-                {featuredEventsData.map((event, i) => (
+                {banners.map((event, i) => (
                     <CarouselItem key={i}>
                         <Card className="relative w-full h-48 border-none overflow-hidden rounded-2xl">
                             <Image src={event.image} alt={event.name} fill className="object-cover" data-ai-hint={event.dataAiHint} />
@@ -252,14 +237,23 @@ const GameFilter = () => (
 // --- MAIN PAGE COMPONENT ---
 export default function HomePage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [banners, setBanners] = useState<FeaturedBanner[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = getTournamentsStream((data) => {
+    const unsubscribeTournaments = getTournamentsStream((data) => {
       setTournaments(data);
       setLoading(false);
     });
-    return () => unsubscribe();
+
+    const unsubscribeBanners = getBannersStream((data) => {
+        setBanners(data);
+    });
+
+    return () => {
+        unsubscribeTournaments();
+        unsubscribeBanners();
+    };
   }, []);
 
   const liveTournaments = useMemo(() => {
@@ -272,7 +266,7 @@ export default function HomePage() {
       <HomeHeader />
       <div className="container mx-auto px-4 mt-4">
         <div className="space-y-10">
-          <FeaturedEvent />
+          <FeaturedEvent banners={banners} />
           {!loading && liveTournaments.length > 0 && (
             <section>
               <SectionHeader title="Live/Ongoing" />

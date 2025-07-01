@@ -22,7 +22,7 @@ export const mockJoinRequests: JoinRequest[] = [
         tournamentName: 'Summer Skirmish',
         teamName: 'Solo Entry',
         players: [{ name: 'PlayerOne', gamerId: 'p1_id_123' }],
-        status: 'pending',
+        status: 'approved',
         requestedAt: '2024-07-25T10:00:00Z',
     },
     {
@@ -33,7 +33,7 @@ export const mockJoinRequests: JoinRequest[] = [
             { name: 'Alpha', gamerId: 'alpha_codm' },
             { name: 'Bravo', gamerId: 'bravo_codm' },
         ],
-        status: 'pending',
+        status: 'approved',
         requestedAt: '2024-07-25T11:30:00Z',
     },
     {
@@ -46,7 +46,7 @@ export const mockJoinRequests: JoinRequest[] = [
             { name: 'Camper', gamerId: 'camper_ff_07' },
             { name: 'Support', gamerId: 'support_ff_47' },
         ],
-        status: 'pending',
+        status: 'approved',
         requestedAt: '2024-07-24T18:00:00Z',
     },
     {
@@ -62,7 +62,7 @@ export const mockJoinRequests: JoinRequest[] = [
         tournamentName: 'Summer Skirmish',
         teamName: 'Team Lag',
         players: [{ name: 'Ping999', gamerId: 'ping_high' }],
-        status: 'rejected',
+        status: 'approved',
         requestedAt: '2024-07-22T14:00:00Z',
     }
 ];

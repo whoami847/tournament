@@ -499,6 +499,11 @@ const TransactionList = () => {
         withdrawal: <div className="p-3 bg-red-500/10 rounded-full"><Gamepad2 className="h-5 w-5 text-red-400" /></div>,
         reward: <div className="p-3 bg-yellow-500/10 rounded-full"><Gift className="h-5 w-5 text-yellow-400" /></div>,
     };
+
+    const filteredTransactions = mockTransactions.filter(
+        (tx) => tx.type === 'deposit' || tx.type === 'reward'
+    );
+
     return (
         <section>
             <div className="flex justify-between items-center mb-4">
@@ -506,7 +511,7 @@ const TransactionList = () => {
                 <Button variant="link" className="text-primary">See all</Button>
             </div>
             <div className="space-y-3">
-                {mockTransactions.map((tx, index) => (
+                {filteredTransactions.map((tx, index) => (
                     <Card key={index} className="bg-card/80 backdrop-blur-sm border-border/50">
                         <CardContent className="p-3 flex items-center gap-4">
                             {transactionIcons[tx.type]}
@@ -539,5 +544,3 @@ export default function WalletPage() {
         </div>
     );
 }
-
-    

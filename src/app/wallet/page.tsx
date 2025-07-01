@@ -260,6 +260,12 @@ function WithdrawDialogContent({ closeDialog }: { closeDialog: () => void }) {
 
             return (
                 <DialogContent className="sm:max-w-md p-0 bg-stone-100 dark:bg-stone-900 border-none rounded-2xl overflow-hidden">
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>Confirm Withdrawal</DialogTitle>
+                        <DialogDescription>
+                            Review the details and swipe to confirm your withdrawal of {parseFloat(amount).toFixed(2)} TK.
+                        </DialogDescription>
+                    </DialogHeader>
                     <div className="p-6">
                         <header className="flex justify-between items-center mb-8">
                              <Button variant="ghost" size="icon" onClick={handleBack} className="text-black dark:text-white">

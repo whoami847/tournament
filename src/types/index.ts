@@ -12,6 +12,7 @@ export interface Team {
   id: string;
   name: string;
   avatar: string;
+  dataAiHint?: string;
 }
 
 export interface Match {

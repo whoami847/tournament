@@ -83,6 +83,20 @@ const ContactList = () => (
 
 
 const CardStack = () => {
+    const [cardNumber, setCardNumber] = React.useState('**** **** **** ****');
+
+    React.useEffect(() => {
+        const generateCardNumber = () => {
+            let num = '';
+            for (let i = 0; i < 4; i++) {
+                num += Math.floor(1000 + Math.random() * 9000).toString();
+                if (i < 3) num += ' ';
+            }
+            return num;
+        };
+        setCardNumber(generateCardNumber());
+    }, []);
+
     return (
         <div className="relative h-60 flex items-center justify-center group">
             {/* Bottom Card */}
@@ -91,8 +105,8 @@ const CardStack = () => {
                 style={{ transform: 'translateY(24px) rotate(-6deg)', zIndex: 10 }}
             >
                 <div className="flex justify-between items-start">
-                    <p className="font-bold tracking-wider">NICK OHMY</p>
-                    <p className="font-bold text-2xl italic">VISA</p>
+                    <p className="font-bold tracking-wider">Mapple</p>
+                    <p className="font-bold text-lg italic">Game Card</p>
                 </div>
             </div>
              {/* Middle Card */}
@@ -101,8 +115,8 @@ const CardStack = () => {
                 style={{ transform: 'translateY(12px) rotate(-3deg)', zIndex: 20 }}
             >
                  <div className="flex justify-between items-start">
-                    <p className="font-bold tracking-wider">NICK OHMY</p>
-                    <p className="font-bold text-2xl italic">VISA</p>
+                    <p className="font-bold tracking-wider">Mapple</p>
+                    <p className="font-bold text-lg italic">Game Card</p>
                 </div>
             </div>
              {/* Top Card */}
@@ -111,18 +125,18 @@ const CardStack = () => {
                 style={{ zIndex: 30 }}
             >
                 <div className="flex justify-end items-start">
-                    <p className="font-bold text-2xl italic">VISA</p>
+                    <p className="font-bold text-lg italic">Game Card</p>
                 </div>
                 <div>
-                    <p className="text-2xl font-mono tracking-widest">1234 5678 9000 0000</p>
+                    <p className="text-2xl font-mono tracking-widest">{cardNumber}</p>
                     <div className="flex justify-between items-end mt-4">
                         <div>
                             <p className="text-xs uppercase text-gray-400">Card Holder Name</p>
-                            <p className="font-medium tracking-wider">NICK OHMY</p>
+                            <p className="font-medium tracking-wider">Mapple</p>
                         </div>
                         <div>
                              <p className="text-xs uppercase text-gray-400">Expiry Date</p>
-                            <p className="font-medium">05/24</p>
+                             <p className="font-medium text-2xl">∞</p>
                         </div>
                     </div>
                 </div>

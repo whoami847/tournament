@@ -206,7 +206,7 @@ function WithdrawDialogContent({ closeDialog }: { closeDialog: () => void }) {
     switch (step) {
         case 'enterAmount':
             return (
-                <DialogContent className="sm:max-w-md p-0">
+                <DialogContent className="sm:max-w-md p-0 rounded-2xl overflow-hidden">
                     <DialogHeader className="p-6 pb-4">
                         <Button variant="ghost" size="icon" className="absolute left-4 top-4" onClick={handleBack}>
                             <ArrowLeft className="h-4 w-4" />
@@ -316,7 +316,7 @@ function WithdrawDialogContent({ closeDialog }: { closeDialog: () => void }) {
         
         default: // 'selectMethod'
             return (
-                <DialogContent className="sm:max-w-md p-0">
+                <DialogContent className="sm:max-w-md p-0 rounded-2xl overflow-hidden">
                     <DialogHeader className="p-6 pb-4">
                         <DialogTitle className="text-xl text-center font-semibold">From Account</DialogTitle>
                     </DialogHeader>
@@ -467,7 +467,7 @@ const CardStack = ({ balance }: { balance: number }) => {
                                 <ArrowUp className="mr-2 h-4 w-4" /> Add Money
                             </Button>
                         </DialogTrigger>
-                         <DialogContent className="sm:max-w-md p-0">
+                         <DialogContent className="sm:max-w-md p-0 rounded-2xl overflow-hidden">
                             <DialogHeader className="p-6 pb-4">
                                 <DialogTitle className="text-2xl text-center">Add Money</DialogTitle>
                                 <DialogDescription className="text-center">
@@ -539,3 +539,5 @@ export default function WalletPage() {
         </div>
     );
 }
+
+    

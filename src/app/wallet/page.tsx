@@ -1,7 +1,7 @@
 
 'use client';
 
-import { AreaChart } from 'recharts';
+import { AreaChart, Area } from 'recharts';
 import type { ChartConfig } from '@/components/ui/chart';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Button } from "@/components/ui/button";

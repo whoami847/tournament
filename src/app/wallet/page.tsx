@@ -12,15 +12,6 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 
 // --- MOCK DATA ---
-const contacts = [
-    { name: 'Emily Smith', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'female portrait' },
-    { name: 'Olivia Wilson', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'female face' },
-    { name: 'James Davis', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'male portrait' },
-    { name: 'Robert Smith', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'male face' },
-    { name: 'William Smith', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'male glasses' },
-    { name: 'Sophia Brown', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'female smiling' },
-];
-
 const chartData = [
   { month: 'Jan', income: 4000, expenses: 2400 },
   { month: 'Feb', income: 3000, expenses: 1398 },
@@ -64,23 +55,6 @@ const WalletHeader = () => (
         </Button>
     </header>
 );
-
-const ContactList = () => (
-    <section>
-        <div className="flex space-x-4 overflow-x-auto no-scrollbar pb-2">
-            {contacts.map((contact, i) => (
-                <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0 w-20">
-                    <Avatar className="h-14 w-14 border-2 border-primary/20">
-                        <AvatarImage src={contact.avatar} alt={contact.name} data-ai-hint={contact.dataAiHint} />
-                        <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <p className="text-xs text-center truncate w-full">{contact.name}</p>
-                </div>
-            ))}
-        </div>
-    </section>
-);
-
 
 const CardStack = () => {
     const [cardNumber, setCardNumber] = React.useState('**** **** **** ****');
@@ -241,7 +215,6 @@ export default function WalletPage() {
         <div className="bg-gradient-to-b from-amber-900/10 via-background to-background min-h-screen text-foreground pb-24">
             <WalletHeader />
             <main className="container mx-auto px-4 mt-4 space-y-8">
-                <ContactList />
                 <CardStack />
                 <BalanceAnalytics />
                 <TransactionList />

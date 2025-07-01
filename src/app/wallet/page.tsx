@@ -1,9 +1,6 @@
 
 'use client';
 
-import { AreaChart, Area } from 'recharts';
-import type { ChartConfig } from '@/components/ui/chart';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -12,26 +9,6 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 
 // --- MOCK DATA ---
-const chartData = [
-  { month: 'Jan', income: 4000, expenses: 2400 },
-  { month: 'Feb', income: 3000, expenses: 1398 },
-  { month: 'Mar', income: 5000, expenses: 6800 },
-  { month: 'Apr', income: 2780, expenses: 3908 },
-  { month: 'May', income: 1890, expenses: 4800 },
-  { month: 'Jun', income: 6390, expenses: 3800 },
-];
-
-const chartConfig = {
-  income: {
-    label: 'Income',
-    color: 'hsl(var(--primary))',
-  },
-  expenses: {
-    label: 'Expenses',
-    color: 'hsl(var(--chart-1))',
-  },
-} satisfies ChartConfig;
-
 const mockTransactions = [
     { type: 'deposit', amount: 2500.00, description: 'Deposit from Card', date: '2024-07-28' },
     { type: 'withdrawal', amount: -500.00, description: 'Entry Fee: Summer Skirmish', date: '2024-07-27' },
@@ -119,62 +96,6 @@ const CardStack = () => {
     )
 }
 
-const BalanceAnalytics = () => (
-    <Card className="bg-card/80 backdrop-blur-sm border-border/50">
-        <CardContent className="p-4">
-            <div className="flex justify-between items-center mb-4">
-                 <div>
-                    <p className="text-sm text-muted-foreground">Balance</p>
-                    <p className="text-3xl font-bold">
-                        <span className="text-2xl align-top text-muted-foreground mr-1">TK</span>
-                        7,500.80
-                    </p>
-                 </div>
-                 <div className="text-right">
-                    <p className="text-xs text-green-400">Income</p>
-                    <p className="font-semibold">TK 9,000</p>
-                    <p className="text-xs text-red-400 mt-1">Expenses</p>
-                    <p className="font-semibold">TK 1,500</p>
-                 </div>
-            </div>
-            <div className="h-[150px] w-full">
-                <ChartContainer config={chartConfig}>
-                    <AreaChart accessibilityLayer data={chartData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
-                        <defs>
-                            <linearGradient id="fillIncome" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
-                                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
-                            </linearGradient>
-                             <linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.7} />
-                                <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1} />
-                            </linearGradient>
-                        </defs>
-                        <ChartTooltip
-                            cursor={true}
-                            content={<ChartTooltipContent indicator="dot" />}
-                        />
-                        <Area
-                            dataKey="income"
-                            type="natural"
-                            fill="url(#fillIncome)"
-                            stroke="hsl(var(--primary))"
-                            stackId="a"
-                        />
-                        <Area
-                            dataKey="expenses"
-                            type="natural"
-                            fill="url(#fillExpenses)"
-                            stroke="hsl(var(--chart-1))"
-                            stackId="a"
-                        />
-                    </AreaChart>
-                </ChartContainer>
-            </div>
-        </CardContent>
-    </Card>
-)
-
 const TransactionList = () => {
     const transactionIcons: Record<string, React.ReactNode> = {
         deposit: <div className="p-3 bg-green-500/10 rounded-full"><Banknote className="h-5 w-5 text-green-400" /></div>,
@@ -216,7 +137,6 @@ export default function WalletPage() {
             <WalletHeader />
             <main className="container mx-auto px-4 mt-4 space-y-8">
                 <CardStack />
-                <BalanceAnalytics />
                 <TransactionList />
             </main>
         </div>

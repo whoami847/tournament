@@ -1,5 +1,13 @@
 export type Game = 'Free Fire' | 'PUBG' | 'Mobile Legends' | 'COD: Mobile';
 
+export interface GameCategory {
+  id: string;
+  name: string;
+  categories: string;
+  image: string;
+  dataAiHint?: string;
+}
+
 export interface Team {
   id: string;
   name: string;

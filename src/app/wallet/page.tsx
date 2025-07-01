@@ -59,24 +59,12 @@ function AddMoneyForm() {
         <form action={formAction}>
             <DialogHeader>
                 <DialogTitle>Add Money to Wallet</DialogTitle>
-                <DialogDescription>Enter your details and the amount you wish to deposit.</DialogDescription>
+                <DialogDescription>Enter the amount you wish to deposit.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                     <Label htmlFor="amount">Amount (TK)</Label>
                     <Input id="amount" name="amount" type="number" placeholder="e.g., 500.00" required />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="customer_name">Full Name</Label>
-                    <Input id="customer_name" name="customer_name" placeholder="Your full name" required />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="customer_email">Email</Label>
-                    <Input id="customer_email" name="customer_email" type="email" placeholder="Your email address" required />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="customer_phone">Phone Number</Label>
-                    <Input id="customer_phone" name="customer_phone" placeholder="Your phone number" required />
                 </div>
             </div>
             <DialogFooter>

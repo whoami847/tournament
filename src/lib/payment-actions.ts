@@ -28,14 +28,15 @@ export async function createPaymentUrl(state: { error: string } | null, formData
 
   const rawFormData = {
     amount: formData.get('amount'),
-    customer_name: formData.get('customer_name'),
-    customer_email: formData.get('customer_email'),
-    customer_phone: formData.get('customer_phone'),
+    // Hardcoding placeholder values as the form is simplified
+    customer_name: 'Esports HQ User',
+    customer_email: 'user@esportshq.com',
+    customer_phone: '01234567890',
   };
 
-  // Basic server-side validation
-  if (!rawFormData.amount || !rawFormData.customer_name || !rawFormData.customer_email || !rawFormData.customer_phone) {
-    return { error: 'All fields are required.' };
+  // Basic server-side validation for amount only
+  if (!rawFormData.amount) {
+    return { error: 'Amount is required.' };
   }
   
   const transaction_id = `TRX-${Date.now()}`;

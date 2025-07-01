@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -33,7 +33,7 @@ function SubmitButton() {
 
 function AddMoneyForm() {
     const { toast } = useToast();
-    const [state, formAction] = useFormState(createPaymentUrl, null);
+    const [state, formAction] = useActionState(createPaymentUrl, null);
     const [isDialogOpen, setIsDialogOpen] = useState(true);
 
     useEffect(() => {

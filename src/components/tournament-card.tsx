@@ -71,12 +71,12 @@ export default function TournamentCard({ tournament, isBookmarked, onBookmarkTog
             </div>
             <div className="flex items-center gap-2">
               <Trophy className="h-4 w-4 text-primary" />
-              <span>${tournament.prizePool} Prize Pool</span>
+              <span>{tournament.prizePool} TK Prize Pool</span>
             </div>
             {tournament.entryFee > 0 && (
                <div className="flex items-center gap-2">
                   <Ticket className="h-4 w-4 text-primary" />
-                  <span>${tournament.entryFee} Entry Fee</span>
+                  <span>{tournament.entryFee} TK Entry Fee</span>
               </div>
             )}
           </div>

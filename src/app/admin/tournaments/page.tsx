@@ -76,7 +76,7 @@ export default function AdminTournamentsPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>{tournament.teamsCount} / {tournament.maxTeams}</TableCell>
-                                    <TableCell>${tournament.prizePool}</TableCell>
+                                    <TableCell>{tournament.prizePool} TK</TableCell>
                                     <TableCell>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -140,7 +140,7 @@ export default function AdminTournamentsPage() {
                                     <p className="text-xs">Participants</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="font-medium text-foreground">${tournament.prizePool}</p>
+                                    <p className="font-medium text-foreground">{tournament.prizePool} TK</p>
                                     <p className="text-xs">Prize Pool</p>
                                 </div>
                             </div>

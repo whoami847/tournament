@@ -78,7 +78,7 @@ export function EditInfoForm({ tournament, onSave }: EditInfoFormProps) {
                         name="prizePool"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Prize Pool ($)</FormLabel>
+                                <FormLabel>Prize Pool (TK)</FormLabel>
                                 <FormControl><Input {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -89,7 +89,7 @@ export function EditInfoForm({ tournament, onSave }: EditInfoFormProps) {
                         name="entryFee"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Entry Fee ($)</FormLabel>
+                                <FormLabel>Entry Fee (TK)</FormLabel>
                                 <FormControl><Input type="number" {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>

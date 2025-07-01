@@ -212,7 +212,7 @@ export default function CreateTournamentPage() {
                                     name="entryFee"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Entry Fee ($)</FormLabel>
+                                            <FormLabel>Entry Fee (TK)</FormLabel>
                                             <FormControl>
                                                 <Input type="number" placeholder="0 for free entry" {...field} />
                                             </FormControl>
@@ -225,7 +225,7 @@ export default function CreateTournamentPage() {
                                     name="prizePool"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Prize Pool ($)</FormLabel>
+                                            <FormLabel>Prize Pool (TK)</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="e.g. 10,000" {...field} />
                                             </FormControl>

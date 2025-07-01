@@ -11,16 +11,16 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 const mockTransactions = [
-    { type: 'deposit', amount: 25.00, description: 'Deposit from Card', date: '2024-07-28' },
-    { type: 'withdrawal', amount: -5.00, description: 'Entry Fee: Summer Skirmish', date: '2024-07-27' },
-    { type: 'withdrawal', amount: -10.00, description: 'Entry Fee: CODM Battle Arena', date: '2024-07-26' },
-    { type: 'deposit', amount: 50.00, description: 'Initial Deposit', date: '2024-07-25' },
-    { type: 'reward', amount: 15.00, description: 'Prize: ML Diamond Cup S5', date: '2024-07-20' },
+    { type: 'deposit', amount: 2500.00, description: 'Deposit from Card', date: '2024-07-28' },
+    { type: 'withdrawal', amount: -500.00, description: 'Entry Fee: Summer Skirmish', date: '2024-07-27' },
+    { type: 'withdrawal', amount: -1000.00, description: 'Entry Fee: CODM Battle Arena', date: '2024-07-26' },
+    { type: 'deposit', amount: 5000.00, description: 'Initial Deposit', date: '2024-07-25' },
+    { type: 'reward', amount: 1500.00, description: 'Prize: ML Diamond Cup S5', date: '2024-07-20' },
 ];
 
 export default function WalletPage() {
     const { toast } = useToast();
-    const [balance, setBalance] = useState(75.00);
+    const [balance, setBalance] = useState(7500.00);
     const [amount, setAmount] = useState('');
 
     const handleAddMoney = () => {
@@ -36,7 +36,7 @@ export default function WalletPage() {
         setBalance(prev => prev + value);
         toast({
             title: 'Success!',
-            description: `$${value.toFixed(2)} has been added to your wallet.`,
+            description: `${value.toFixed(2)} TK has been added to your wallet.`,
         });
         setAmount('');
     };
@@ -62,7 +62,7 @@ export default function WalletPage() {
         setBalance(prev => prev - value);
         toast({
             title: 'Withdrawal Initiated',
-            description: `$${value.toFixed(2)} is being processed for withdrawal.`,
+            description: `${value.toFixed(2)} TK is being processed for withdrawal.`,
         });
         setAmount('');
     };
@@ -83,7 +83,7 @@ export default function WalletPage() {
                             Current Balance
                         </CardDescription>
                         <CardTitle className="text-5xl font-bold">
-                            ${balance.toFixed(2)}
+                            {balance.toFixed(2)} TK
                         </CardTitle>
                     </CardHeader>
                     <CardFooter className="gap-4">
@@ -100,11 +100,11 @@ export default function WalletPage() {
                                 </DialogHeader>
                                 <div className="grid gap-4 py-4">
                                     <div className="grid grid-cols-4 items-center gap-4">
-                                        <Label htmlFor="amount-add" className="text-right">Amount ($)</Label>
+                                        <Label htmlFor="amount-add" className="text-right">Amount (TK)</Label>
                                         <Input
                                             id="amount-add"
                                             type="number"
-                                            placeholder="e.g., 50.00"
+                                            placeholder="e.g., 5000.00"
                                             className="col-span-3"
                                             value={amount}
                                             onChange={(e) => setAmount(e.target.value)}
@@ -131,11 +131,11 @@ export default function WalletPage() {
                                 </DialogHeader>
                                 <div className="grid gap-4 py-4">
                                     <div className="grid grid-cols-4 items-center gap-4">
-                                        <Label htmlFor="amount-withdraw" className="text-right">Amount ($)</Label>
+                                        <Label htmlFor="amount-withdraw" className="text-right">Amount (TK)</Label>
                                         <Input
                                             id="amount-withdraw"
                                             type="number"
-                                            placeholder={`Max $${balance.toFixed(2)}`}
+                                            placeholder={`Max ${balance.toFixed(2)} TK`}
                                             className="col-span-3"
                                             value={amount}
                                             onChange={(e) => setAmount(e.target.value)}
@@ -170,7 +170,7 @@ export default function WalletPage() {
                                         "font-bold text-lg",
                                         tx.amount > 0 ? "text-green-400" : "text-red-400"
                                     )}>
-                                        {tx.amount > 0 ? `+$${tx.amount.toFixed(2)}` : `-$${Math.abs(tx.amount).toFixed(2)}`}
+                                        {tx.amount > 0 ? `+${tx.amount.toFixed(2)} TK` : `-${Math.abs(tx.amount).toFixed(2)} TK`}
                                     </p>
                                 </div>
                             ))}

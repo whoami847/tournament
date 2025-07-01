@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -5,8 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Banknote, Gamepad2, Gift, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import React, { useState, useEffect } from 'react';
-import { useFormStatus, useActionState } from 'react-dom';
+import React, { useState, useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   Dialog,
   DialogContent,

@@ -77,4 +77,5 @@ export interface PlayerProfile {
   role: string;
   winrate: number;
   games: number;
+  balance: number;
 }

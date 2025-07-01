@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Banknote, Gamepad2, Gift, ArrowUp, ArrowDown, Landmark, CreditCard, Wallet, Globe, ChevronDown, ArrowLeft, ArrowRight, ChevronsRight } from 'lucide-react';
+import { Banknote, Gamepad2, Gift, ArrowUp, ArrowDown, Landmark, CreditCard, Wallet, Globe, ChevronDown, ArrowLeft, ArrowRight, ChevronsRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React, { useState, useEffect, useActionState, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
@@ -25,16 +25,11 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { getUserProfileStream } from "@/lib/users-service";
+import type { PlayerProfile } from "@/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// --- MOCK DATA ---
-const mockTransactions = [
-    { type: 'deposit', amount: 2500.00, description: 'Deposit from Card', date: '2024-07-28' },
-    { type: 'withdrawal', amount: -500.00, description: 'Entry Fee: Summer Skirmish', date: '2024-07-27' },
-    { type: 'withdrawal', amount: -1000.00, description: 'Entry Fee: CODM Battle Arena', date: '2024-07-26' },
-    { type: 'reward', amount: 1500.00, description: 'Prize: ML Diamond Cup S5', date: '2024-07-20' },
-];
-
-const totalBalance = mockTransactions.reduce((acc, tx) => acc + tx.amount, 0);
 
 // --- SWIPE BUTTON ---
 const SwipeButton = ({ onSwipeSuccess }: { onSwipeSuccess: () => void }) => {
@@ -167,7 +162,7 @@ function AddMoneyForm() {
     );
 }
 
-function WithdrawDialogContent({ closeDialog }: { closeDialog: () => void }) {
+function WithdrawDialogContent({ closeDialog, profile }: { closeDialog: () => void, profile: PlayerProfile | null }) {
     const [step, setStep] = useState<'selectMethod' | 'enterAmount' | 'confirm'>('selectMethod');
     const [selectedMethod, setSelectedMethod] = useState('bank');
     const [amount, setAmount] = useState('');
@@ -248,7 +243,7 @@ function WithdrawDialogContent({ closeDialog }: { closeDialog: () => void }) {
 
         case 'confirm':
             const transactionId = `#${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(10 + Math.random() * 90)}`;
-            const fromAccountNumber = 'Mapple (80412682)'; 
+            const fromAccountNumber = profile ? `${profile.name} (${profile.gamerId})` : 'Your Account';
             const toAccountDetails = {
                 bank: 'Bank Account ending in **6789',
                 card: 'Card ending in **1234',
@@ -328,8 +323,8 @@ function WithdrawDialogContent({ closeDialog }: { closeDialog: () => void }) {
                                    <Globe className="h-5 w-5 text-muted-foreground" />
                                 </div>
                                 <div>
-                                    <p className="font-semibold">Mapple</p>
-                                    <p className="text-sm text-muted-foreground">80412682</p>
+                                    <p className="font-semibold">{profile?.name || 'Player'}</p>
+                                    <p className="text-sm text-muted-foreground">{profile?.gamerId || 'N/A'}</p>
                                 </div>
                             </div>
                             <ChevronDown className="h-5 w-5 text-muted-foreground" />
@@ -374,19 +369,22 @@ function WithdrawDialogContent({ closeDialog }: { closeDialog: () => void }) {
 
 // --- SUB-COMPONENTS ---
 
-const WalletHeader = () => (
+const WalletHeader = ({ profile }: { profile: PlayerProfile | null }) => (
     <header className="container mx-auto flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 border-2 border-primary"><AvatarImage src="https://placehold.co/40x40.png" alt="Mapple" data-ai-hint="wizard character" /><AvatarFallback>M</AvatarFallback></Avatar>
+            <Avatar className="h-10 w-10 border-2 border-primary">
+                <AvatarImage src={profile?.avatar || ''} alt={profile?.name || 'User'} data-ai-hint="wizard character" />
+                <AvatarFallback>{profile?.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+            </Avatar>
             <div>
                 <p className="text-xs text-muted-foreground">Welcome back,</p>
-                <h1 className="font-bold">Mapple</h1>
+                <h1 className="font-bold">{profile?.name || 'Player'}</h1>
             </div>
         </div>
     </header>
 );
 
-const CardStack = ({ balance }: { balance: number }) => {
+const CardStack = ({ balance, profile }: { balance: number, profile: PlayerProfile | null }) => {
     const [isFanned, setIsFanned] = useState(false);
     const [isWithdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
 
@@ -416,7 +414,7 @@ const CardStack = ({ balance }: { balance: number }) => {
                 style={{ zIndex: 10 }}
             >
                 <div className="flex justify-between items-start">
-                    <p className="font-bold tracking-wider">Mapple</p>
+                    <p className="font-bold tracking-wider">{profile?.name || 'Player'}</p>
                     <p className="font-bold text-lg italic">Game Card</p>
                 </div>
             </div>
@@ -431,7 +429,7 @@ const CardStack = ({ balance }: { balance: number }) => {
                 style={{ zIndex: 20 }}
             >
                  <div className="flex justify-between items-start">
-                    <p className="font-bold tracking-wider">Mapple</p>
+                    <p className="font-bold tracking-wider">{profile?.name || 'Player'}</p>
                     <p className="font-bold text-lg italic">Game Card</p>
                 </div>
             </div>
@@ -448,7 +446,7 @@ const CardStack = ({ balance }: { balance: number }) => {
                  <div className="flex justify-between items-start">
                     <div>
                         <p className="text-xs uppercase text-gray-400">Card Holder Name</p>
-                        <p className="font-medium tracking-wider">Mapple</p>
+                        <p className="font-medium tracking-wider">{profile?.name || 'Player'}</p>
                     </div>
                     <p className="font-bold text-lg italic">Game Card</p>
                 </div>
@@ -485,7 +483,7 @@ const CardStack = ({ balance }: { balance: number }) => {
                                 <ArrowDown className="mr-2 h-4 w-4" /> Withdraw
                             </Button>
                         </DialogTrigger>
-                        <WithdrawDialogContent closeDialog={() => handleWithdrawOpenChange(false)} />
+                        <WithdrawDialogContent profile={profile} closeDialog={() => handleWithdrawOpenChange(false)} />
                     </Dialog>
                 </div>
             </div>
@@ -494,24 +492,23 @@ const CardStack = ({ balance }: { balance: number }) => {
 }
 
 const TransactionList = () => {
+    // For now, transactions are not stored. This is a placeholder.
+    const transactions: any[] = [];
+
     const transactionIcons: Record<string, React.ReactNode> = {
         deposit: <div className="p-3 bg-green-500/10 rounded-full"><Banknote className="h-5 w-5 text-green-400" /></div>,
         withdrawal: <div className="p-3 bg-red-500/10 rounded-full"><Gamepad2 className="h-5 w-5 text-red-400" /></div>,
         reward: <div className="p-3 bg-yellow-500/10 rounded-full"><Gift className="h-5 w-5 text-yellow-400" /></div>,
     };
 
-    const filteredTransactions = mockTransactions.filter(
-        (tx) => tx.type === 'deposit' || tx.type === 'reward'
-    );
-
     return (
         <section>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Transaction</h2>
-                <Button variant="link" className="text-primary">See all</Button>
+                <h2 className="text-xl font-bold">Recent Transactions</h2>
             </div>
             <div className="space-y-3">
-                {filteredTransactions.map((tx, index) => (
+                {transactions.length > 0 ? (
+                    transactions.map((tx, index) => (
                     <Card key={index} className="bg-card/80 backdrop-blur-sm border-border/50">
                         <CardContent className="p-3 flex items-center gap-4">
                             {transactionIcons[tx.type]}
@@ -527,18 +524,69 @@ const TransactionList = () => {
                             </p>
                         </CardContent>
                     </Card>
-                ))}
+                    ))
+                ) : (
+                    <Card className="bg-card/80 backdrop-blur-sm border-border/50">
+                        <CardContent className="p-6 text-center text-muted-foreground">
+                            You have no recent transactions.
+                        </CardContent>
+                    </Card>
+                )}
             </div>
         </section>
     );
 };
 
 export default function WalletPage() {
+    const { user } = useAuth();
+    const [profile, setProfile] = useState<PlayerProfile | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (user?.uid) {
+            setLoading(true);
+            const unsubscribe = getUserProfileStream(user.uid, (data) => {
+                setProfile(data);
+                setLoading(false);
+            });
+            return () => unsubscribe();
+        } else if (!user) {
+            setLoading(false);
+        }
+    }, [user]);
+
+    const balance = profile?.balance ?? 0;
+
+    if (loading) {
+        return (
+             <div className="bg-gradient-to-b from-amber-900/10 via-background to-background min-h-screen text-foreground pb-24 flex flex-col">
+                <header className="container mx-auto flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div className="space-y-1">
+                            <Skeleton className="h-3 w-20" />
+                            <Skeleton className="h-4 w-24" />
+                        </div>
+                    </div>
+                </header>
+                <main className="container mx-auto px-4 mt-4 space-y-8 flex-grow">
+                    <div className="relative h-60 flex items-center justify-center">
+                        <Skeleton className="absolute w-full max-w-[320px] h-52 rounded-2xl" />
+                    </div>
+                    <div className="space-y-4">
+                         <Skeleton className="h-6 w-32 mb-4" />
+                         <Skeleton className="h-20 w-full" />
+                    </div>
+                </main>
+            </div>
+        )
+    }
+
     return (
         <div className="bg-gradient-to-b from-amber-900/10 via-background to-background min-h-screen text-foreground pb-24">
-            <WalletHeader />
+            <WalletHeader profile={profile} />
             <main className="container mx-auto px-4 mt-4 space-y-8">
-                <CardStack balance={totalBalance} />
+                <CardStack balance={balance} profile={profile} />
                 <TransactionList />
             </main>
         </div>

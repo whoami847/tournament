@@ -26,6 +26,7 @@ const fromFirestore = (doc: any): PlayerProfile => {
     role: data.role,
     winrate: data.winrate,
     games: data.games,
+    balance: data.balance || 0,
   };
 };
 
@@ -45,6 +46,7 @@ export const createUserProfile = async (user: User) => {
       role: 'Player',
       winrate: 0,
       games: 0,
+      balance: 0,
     };
     await setDoc(userRef, newUserProfile);
   }
@@ -77,3 +79,20 @@ export const getTopPlayersStream = (callback: (players: PlayerProfile[]) => void
 
   return unsubscribe;
 }
+
+export const getUserProfileStream = (userId: string, callback: (profile: PlayerProfile | null) => void) => {
+    const userRef = doc(firestore, 'users', userId);
+
+    const unsubscribe = onSnapshot(userRef, (docSnap) => {
+        if (docSnap.exists()) {
+            callback(fromFirestore(docSnap));
+        } else {
+            callback(null);
+        }
+    }, (error) => {
+        console.error("Error fetching user profile stream: ", error);
+        callback(null);
+    });
+
+    return unsubscribe;
+};

@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Banknote, Gamepad2, Gift, ArrowUp, ArrowDown } from 'lucide-react';
+import { Banknote, Gamepad2, Gift, ArrowUp, ArrowDown, Landmark, CreditCard, Wallet, Globe, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React, { useState, useEffect, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
@@ -21,6 +21,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { createPaymentUrl } from "@/lib/payment-actions";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 // --- MOCK DATA ---
 const mockTransactions = [
@@ -103,25 +105,70 @@ function AddMoneyForm() {
 }
 
 function WithdrawDialogContent() {
+    const [selectedMethod, setSelectedMethod] = useState('bank');
+
     return (
-        <DialogContent className="sm:max-w-md">
-            <DialogHeader className="text-center">
-                <DialogTitle className="text-2xl">Withdraw Funds</DialogTitle>
-                <DialogDescription>
-                    Withdrawal functionality is coming soon.
-                </DialogDescription>
+        <DialogContent className="sm:max-w-md p-0">
+            <DialogHeader className="p-6 pb-4">
+                <DialogTitle className="text-xl text-center font-semibold">From Account</DialogTitle>
             </DialogHeader>
-            <div className="py-8 text-center text-muted-foreground">
-                <p>This feature is currently under development.</p>
-                <p className="text-sm">We are working hard to bring it to you.</p>
+            <div className="px-6 pb-6 space-y-6">
+                {/* User Info */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-background flex items-center justify-center border">
+                           <Globe className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <div>
+                            <p className="font-semibold">Mapple</p>
+                            <p className="text-sm text-muted-foreground">80412682</p>
+                        </div>
+                    </div>
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                </div>
+
+                {/* Withdrawal Methods */}
+                <RadioGroup value={selectedMethod} onValueChange={setSelectedMethod} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <RadioGroupItem value="g-wallet" id="g-wallet" className="sr-only peer" />
+                            <Label
+                                htmlFor="g-wallet"
+                                className="flex h-full items-center justify-center gap-2 rounded-lg border-2 border-muted bg-muted/60 p-4 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 text-foreground font-semibold"
+                            >
+                                <Wallet className="h-5 w-5" />
+                                G-wallet
+                            </Label>
+                        </div>
+                        <div>
+                            <RadioGroupItem value="card" id="card" className="sr-only peer" />
+                            <Label
+                                htmlFor="card"
+                                className="flex h-full items-center justify-center gap-2 rounded-lg border-2 border-muted bg-muted/60 p-4 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 text-foreground font-semibold"
+                            >
+                                <CreditCard className="h-5 w-5" />
+                                Card
+                            </Label>
+                        </div>
+                    </div>
+                    <div>
+                        <RadioGroupItem value="bank" id="bank" className="sr-only peer" />
+                        <Label
+                            htmlFor="bank"
+                            className="flex items-center justify-center gap-2 rounded-lg border-2 border-transparent bg-muted/60 p-4 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground text-foreground font-semibold"
+                        >
+                            <Landmark className="h-5 w-5" />
+                            Bank Account
+                        </Label>
+                    </div>
+                </RadioGroup>
+
+                 <Button size="lg" className="w-full !mt-8">
+                    Next
+                </Button>
             </div>
-             <DialogFooter>
-                <DialogClose asChild>
-                    <Button variant="outline" className="w-full">Close</Button>
-                </DialogClose>
-            </DialogFooter>
         </DialogContent>
-    )
+    );
 }
 
 

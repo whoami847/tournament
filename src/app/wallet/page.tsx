@@ -6,8 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Search, Banknote, Gamepad2, Gift, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React, { useState } from 'react';
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { createPaymentUrl } from "@/lib/payment-actions";
 
 // --- MOCK DATA ---
 const mockTransactions = [

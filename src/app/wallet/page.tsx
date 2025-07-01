@@ -3,10 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Search, Banknote, Gamepad2, Gift, ArrowUp, ArrowDown } from 'lucide-react';
+import { Banknote, Gamepad2, Gift, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import React, { useState, useEffect, useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import React, { useState, useEffect } from 'react';
+import { useFormStatus, useActionState } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -37,7 +37,7 @@ const totalBalance = mockTransactions.reduce((acc, tx) => acc + tx.amount, 0);
 function SubmitButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" className="w-full" disabled={pending}>
+        <Button type="submit" size="lg" className="w-full" disabled={pending}>
             {pending ? 'Processing...' : 'Proceed to Pay'}
         </Button>
     );
@@ -45,30 +45,61 @@ function SubmitButton() {
 
 function AddMoneyForm() {
     const [state, formAction] = useActionState(createPaymentUrl, null);
+    const [amount, setAmount] = useState('');
+
+    const quickAmounts = [100, 200, 500, 1000];
+
+    const handleQuickAmountClick = (value: number) => {
+        setAmount(value.toString());
+    };
 
     return (
-        <form action={formAction} className="space-y-4">
+        <form action={formAction} className="space-y-6 pt-4">
             {state?.error && (
                 <Alert variant="destructive">
                     <AlertDescription>{state.error}</AlertDescription>
                 </Alert>
             )}
-            <div className="space-y-2">
-                <Label htmlFor="amount">Amount (TK)</Label>
-                <Input
-                    id="amount"
-                    name="amount"
-                    type="number"
-                    placeholder="e.g. 500"
-                    required
-                    min="10"
-                />
+            <div className="space-y-2 text-center">
+                <Label htmlFor="amount" className="text-sm text-muted-foreground">Enter Amount</Label>
+                <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-3xl font-semibold text-muted-foreground">TK</span>
+                    <Input
+                        id="amount"
+                        name="amount"
+                        type="number"
+                        placeholder="0.00"
+                        required
+                        min="10"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="h-20 w-full rounded-xl border-2 border-border bg-muted pl-16 pr-4 text-center text-5xl font-bold tracking-tighter focus:bg-background"
+                    />
+                </div>
             </div>
+
+            <div>
+                <p className="mb-2 text-center text-sm text-muted-foreground">Or select a quick amount</p>
+                <div className="grid grid-cols-4 gap-2">
+                    {quickAmounts.map((value) => (
+                        <Button
+                            key={value}
+                            type="button"
+                            variant={amount === value.toString() ? "default" : "outline"}
+                            onClick={() => handleQuickAmountClick(value)}
+                            className="h-12 text-lg"
+                        >
+                            {value}
+                        </Button>
+                    ))}
+                </div>
+            </div>
+            
             <DialogFooter>
                 <SubmitButton />
             </DialogFooter>
         </form>
-    )
+    );
 }
 
 function WithdrawDialogContent() {
@@ -104,9 +135,6 @@ const WalletHeader = () => (
                 <h1 className="font-bold">Mapple</h1>
             </div>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full bg-card/80">
-            <Search className="h-5 w-5" />
-        </Button>
     </header>
 );
 
@@ -183,11 +211,11 @@ const CardStack = ({ balance }: { balance: number }) => {
                                 <ArrowUp className="mr-2 h-4 w-4" /> Add Money
                             </Button>
                         </DialogTrigger>
-                         <DialogContent>
+                         <DialogContent className="sm:max-w-md">
                             <DialogHeader>
-                                <DialogTitle>Add Money to Wallet</DialogTitle>
+                                <DialogTitle>Add Money</DialogTitle>
                                 <DialogDescription>
-                                    Enter the amount you wish to deposit.
+                                   Select or enter an amount to add to your wallet.
                                 </DialogDescription>
                             </DialogHeader>
                             <AddMoneyForm />

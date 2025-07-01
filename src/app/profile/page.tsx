@@ -13,17 +13,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, User, Gamepad2, Globe, Calendar, Users, Shield, Trophy, Star, Flame } from 'lucide-react';
+import { MoreHorizontal, User, Gamepad2, Globe, Calendar, Users, Shield, Trophy, Star, Flame, LogOut } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { signOutUser } from '@/lib/auth-service';
+import { useRouter } from 'next/navigation';
 
-// --- MOCK DATA ---
-const userInfo = {
-    fullName: "Mapple",
-    gamerId: "mapple_gaming_123",
-    country: "India",
-    joined: "December 2022",
-};
-
+// --- MOCK DATA (will be replaced by dynamic data) ---
 const teamInfo = {
     name: "Cosmic Knights",
     avatar: "https://placehold.co/96x96.png",
@@ -58,19 +54,22 @@ const InfoItem = ({ icon: Icon, label, value }: { icon: LucideIcon, label: strin
     </div>
 );
 
-const UserInfo = () => (
-    <Card>
-        <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-            <InfoItem icon={User} label="Full Name" value={userInfo.fullName} />
-            <InfoItem icon={Gamepad2} label="Gamer ID" value={userInfo.gamerId} />
-            <InfoItem icon={Globe} label="Country" value={userInfo.country} />
-            <InfoItem icon={Calendar} label="Joined" value={userInfo.joined} />
-        </CardContent>
-    </Card>
-);
+const UserInfo = () => {
+    const { user } = useAuth();
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Personal Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <InfoItem icon={User} label="Full Name" value={user?.displayName || 'N/A'} />
+                <InfoItem icon={Gamepad2} label="Email" value={user?.email || 'N/A'} />
+                <InfoItem icon={Globe} label="Country" value={"India"} />
+                <InfoItem icon={Calendar} label="Joined" value={"December 2022"} />
+            </CardContent>
+        </Card>
+    );
+};
 
 const TeamInfo = () => (
     <Card>
@@ -132,72 +131,86 @@ const Achievements = () => (
 
 
 export default function ProfilePage() {
-  return (
-    <div className="pb-24">
-        {/* Header Section */}
-        <div className="relative h-48 w-full">
-            <Image
-                src="https://placehold.co/800x300.png"
-                alt="Profile banner"
-                data-ai-hint="abstract background"
-                fill
-                className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
-            <div className="absolute top-14 right-4 sm:top-4">
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="bg-black/20 hover:bg-black/40 text-white hover:text-white">
-                            <MoreHorizontal className="h-5 w-5" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Edit Profile</DropdownMenuItem>
-                        <DropdownMenuItem>Settings</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link href="/admin">Admin Panel</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive">Log Out</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-            <h1 className="absolute top-16 left-4 text-2xl font-bold text-white sm:top-6">Profile</h1>
-        </div>
+    const { user } = useAuth();
+    const router = useRouter();
 
-        {/* Profile Info Section */}
-        <div className="relative z-10 -mt-16 flex flex-col items-center text-center px-4">
-            <div className="relative">
-                <Avatar className="h-28 w-28 border-4 border-background">
-                    <AvatarImage src="https://placehold.co/112x112.png" alt="Mapple" data-ai-hint="fantasy character" />
-                    <AvatarFallback>M</AvatarFallback>
-                </Avatar>
-                <div className="absolute bottom-1 right-1 h-5 w-5 bg-teal-400 rounded-full border-2 border-background" />
+    const handleLogout = async () => {
+        await signOutUser();
+        router.push('/login');
+    };
+    
+    const displayName = user?.displayName || user?.email?.split('@')[0] || 'Player';
+    const fallback = displayName.charAt(0).toUpperCase();
+
+    return (
+        <div className="pb-24">
+            {/* Header Section */}
+            <div className="relative h-48 w-full">
+                <Image
+                    src="https://placehold.co/800x300.png"
+                    alt="Profile banner"
+                    data-ai-hint="abstract background"
+                    fill
+                    className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+                <div className="absolute top-14 right-4 sm:top-4">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="bg-black/20 hover:bg-black/40 text-white hover:text-white">
+                                <MoreHorizontal className="h-5 w-5" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem>Edit Profile</DropdownMenuItem>
+                            <DropdownMenuItem>Settings</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                                <Link href="/admin">Admin Panel</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive/10 focus:text-destructive flex items-center gap-2">
+                                <LogOut className="h-4 w-4" />
+                                <span>Log Out</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+                <h1 className="absolute top-16 left-4 text-2xl font-bold text-white sm:top-6">Profile</h1>
             </div>
-            <h2 className="mt-3 text-3xl font-bold">Mapple</h2>
-            <p className="text-muted-foreground">Player</p>
+
+            {/* Profile Info Section */}
+            <div className="relative z-10 -mt-16 flex flex-col items-center text-center px-4">
+                <div className="relative">
+                    <Avatar className="h-28 w-28 border-4 border-background">
+                        <AvatarImage src={user?.photoURL || ''} alt={displayName} data-ai-hint="fantasy character" />
+                        <AvatarFallback>{fallback}</AvatarFallback>
+                    </Avatar>
+                    <div className="absolute bottom-1 right-1 h-5 w-5 bg-teal-400 rounded-full border-2 border-background" />
+                </div>
+                <h2 className="mt-3 text-3xl font-bold">{displayName}</h2>
+                <p className="text-muted-foreground">Player</p>
+            </div>
+            
+            {/* Tabs Navigation */}
+            <div className="px-4 mt-6">
+                <Tabs defaultValue="info" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 bg-card p-1 h-auto rounded-lg border">
+                        <TabsTrigger value="info" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Information</TabsTrigger>
+                        <TabsTrigger value="team" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Team</TabsTrigger>
+                        <TabsTrigger value="success" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Achievements</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="info" className="mt-4">
+                        <UserInfo />
+                    </TabsContent>
+                    <TabsContent value="team" className="mt-4">
+                        <TeamInfo />
+                    </TabsContent>
+                    <TabsContent value="success" className="mt-4">
+                        <Achievements />
+                    </TabsContent>
+                </Tabs>
+            </div>
         </div>
-        
-        {/* Tabs Navigation */}
-        <div className="px-4 mt-6">
-             <Tabs defaultValue="info" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 bg-card p-1 h-auto rounded-lg border">
-                    <TabsTrigger value="info" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Information</TabsTrigger>
-                    <TabsTrigger value="team" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Team</TabsTrigger>
-                    <TabsTrigger value="success" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Achievements</TabsTrigger>
-                </TabsList>
-                <TabsContent value="info" className="mt-4">
-                    <UserInfo />
-                </TabsContent>
-                 <TabsContent value="team" className="mt-4">
-                    <TeamInfo />
-                </TabsContent>
-                 <TabsContent value="success" className="mt-4">
-                    <Achievements />
-                </TabsContent>
-            </Tabs>
-        </div>
-    </div>
-  );
+    );
 }

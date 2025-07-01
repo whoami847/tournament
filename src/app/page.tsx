@@ -22,6 +22,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from '@/hooks/use-auth';
 
 
 // --- MOCK DATA ---
@@ -78,40 +79,49 @@ const notifications = [
     { title: "Match Reminder", description: "Your match vs Vortex Vipers starts in 30 minutes.", time: "2h ago" },
 ];
 
-const HomeHeader = () => (
-  <header className="flex items-center justify-between p-4">
-    <div className="flex items-center gap-3">
-      <Avatar className="h-10 w-10 border-2 border-primary"><AvatarImage src="https://placehold.co/40x40.png" alt="Mapple" data-ai-hint="wizard character" /><AvatarFallback>M</AvatarFallback></Avatar>
-      <div><h1 className="font-bold">Mapple</h1><p className="text-sm text-muted-foreground">Player</p></div>
-    </div>
-    <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative rounded-full bg-card h-10 w-10">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-2 right-2 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                </span>
-            </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {notifications.map((n, i) => (
-                 <DropdownMenuItem key={i} className="flex flex-col items-start gap-1 p-3 cursor-pointer">
-                     <p className="font-semibold">{n.title}</p>
-                     <p className="text-xs text-muted-foreground">{n.description}</p>
-                     <p className="text-xs text-muted-foreground self-end">{n.time}</p>
-                 </DropdownMenuItem>
-            ))}
-             <DropdownMenuSeparator />
-             <DropdownMenuItem className="justify-center">
-                <Link href="#" className="text-sm font-medium text-primary">View all notifications</Link>
-             </DropdownMenuItem>
-        </DropdownMenuContent>
-    </DropdownMenu>
-  </header>
-);
+const HomeHeader = () => {
+    const { user } = useAuth();
+    const displayName = user?.displayName || user?.email?.split('@')[0] || 'Player';
+    const fallback = displayName.charAt(0).toUpperCase();
+
+    return (
+        <header className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10 border-2 border-primary">
+                <AvatarImage src={user?.photoURL || ''} alt={displayName} data-ai-hint="wizard character" />
+                <AvatarFallback>{fallback}</AvatarFallback>
+            </Avatar>
+            <div><h1 className="font-bold">{displayName}</h1><p className="text-sm text-muted-foreground">Player</p></div>
+            </div>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="relative rounded-full bg-card h-10 w-10">
+                        <Bell className="h-5 w-5" />
+                        <span className="absolute top-2 right-2 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                        </span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                    <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {notifications.map((n, i) => (
+                        <DropdownMenuItem key={i} className="flex flex-col items-start gap-1 p-3 cursor-pointer">
+                            <p className="font-semibold">{n.title}</p>
+                            <p className="text-xs text-muted-foreground">{n.description}</p>
+                            <p className="text-xs text-muted-foreground self-end">{n.time}</p>
+                        </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="justify-center">
+                        <Link href="#" className="text-sm font-medium text-primary">View all notifications</Link>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </header>
+    );
+};
 
 const SectionHeader = ({ title, actionText, actionHref }: { title: string, actionText?: string, actionHref?: string }) => (
   <div className="flex justify-between items-baseline mb-4">

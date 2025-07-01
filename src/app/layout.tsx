@@ -3,6 +3,9 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from "@/components/ui/toaster"
 import BottomNav from '@/components/layout/bottom-nav';
+import { AuthProvider } from '@/context/auth-context';
+import AuthGuard from '@/components/auth-guard';
+
 
 export const metadata: Metadata = {
   title: 'Esports HQ',
@@ -22,11 +25,17 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
       </head>
       <body className={cn("font-body antialiased bg-background text-foreground min-h-screen flex flex-col")}>
-        <main className="flex-grow">
-          {children}
-        </main>
-        <BottomNav />
-        <Toaster />
+        <AuthProvider>
+          <AuthGuard>
+            <>
+              <main className="flex-grow">
+                {children}
+              </main>
+              <BottomNav />
+              <Toaster />
+            </>
+          </AuthGuard>
+        </AuthProvider>
       </body>
     </html>
   );

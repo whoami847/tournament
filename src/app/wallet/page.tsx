@@ -34,7 +34,6 @@ function SubmitButton() {
 function AddMoneyForm() {
     const { toast } = useToast();
     const [state, formAction] = useActionState(createPaymentUrl, null);
-    const [isDialogOpen, setIsDialogOpen] = useState(true);
 
     useEffect(() => {
         if (state?.error) {
@@ -45,11 +44,6 @@ function AddMoneyForm() {
             });
         }
     }, [state, toast]);
-
-    useEffect(() => {
-        if (!isDialogOpen) {
-        }
-    }, [isDialogOpen]);
     
     return (
         <form action={formAction}>

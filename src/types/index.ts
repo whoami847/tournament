@@ -38,4 +38,5 @@ export interface Tournament {
   perKillPrize?: number;
   map?: string;
   version?: string;
+  createdAt?: string;
 }

@@ -1,17 +1,20 @@
 'use client';
 
-import { mockTournaments } from '@/lib/data';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Award, KeyRound, Trophy, Users, Ticket, Map as MapIcon, Smartphone } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
+import { getTournament } from '@/lib/tournaments-service';
+import type { Tournament } from '@/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const InfoRow = ({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: React.ReactNode }) => (
     <div className="flex items-center justify-between py-3 border-b border-border/50 last:border-b-0">
@@ -24,15 +27,58 @@ const InfoRow = ({ icon: Icon, label, value }: { icon: LucideIcon; label: string
 );
 
 
-const getEntryType = (format: string) => {
+const getEntryType = (format: string = '') => {
   const type = format.split('_')[1] || '';
   if (!type) return 'N/A';
   return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
 };
 
+const TournamentPageSkeleton = () => (
+    <div className="container mx-auto px-4 py-8 md:pb-8 pb-24 space-y-8">
+        <Skeleton className="h-64 md:h-80 rounded-lg w-full" />
+        <div className="space-y-4">
+            <Skeleton className="h-12 w-full rounded-full" />
+            <Card>
+                <CardContent className="p-6 space-y-4">
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                    <Skeleton className="h-8 w-full" />
+                    <div className="pt-8 space-y-2">
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    </div>
+);
+
 export default function TournamentPage() {
   const params = useParams<{ id: string }>();
-  const tournament = mockTournaments.find(t => t.id === params.id);
+  const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (params.id) {
+      const fetchTournament = async () => {
+        setLoading(true);
+        const data = await getTournament(params.id as string);
+        if (data) {
+          setTournament(data);
+        } else {
+          // Handle tournament not found
+          notFound();
+        }
+        setLoading(false);
+      };
+      fetchTournament();
+    }
+  }, [params.id]);
+
+  if (loading) {
+    return <TournamentPageSkeleton />;
+  }
 
   if (!tournament) {
     notFound();

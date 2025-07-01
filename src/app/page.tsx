@@ -1,7 +1,7 @@
 "use client";
 
 import Image from 'next/image';
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import Autoplay from 'embla-carousel-autoplay';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, ChevronRight, Users, DollarSign, Gamepad2, Trophy } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Link from 'next/link';
-import { mockTournaments } from '@/lib/data';
+import { getTournamentsStream } from '@/lib/tournaments-service';
 import type { Tournament, Game } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -49,9 +49,6 @@ const featuredEventsData = [
     dataAiHint: 'soldiers battle royale'
   }
 ];
-
-const liveTournaments = mockTournaments.filter(t => t.status === 'live');
-
 
 const gamesData = [
     { name: 'Free Fire', categories: 'Battle Royale • Action', image: 'https://placehold.co/400x200.png', dataAiHint: 'fire character action',},
@@ -161,16 +158,18 @@ const LiveEvents = ({tournaments}: {tournaments: Tournament[]}) => (
             <CarouselContent className="pl-4">
                 {tournaments.map((event, i) => (
                     <CarouselItem key={i} className="basis-2/5">
-                        <Card className="relative h-48 border-none overflow-hidden rounded-xl">
-                            <Image src={event.image} alt={event.name} fill className="object-cover" data-ai-hint={event.dataAiHint} />
-                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                            <CardContent className="absolute bottom-0 left-0 p-3 text-white w-full">
-                                <Badge className="mb-1 bg-red-500 text-white border-none font-bold animate-pulse">Live</Badge>
-                                <h4 className="font-bold truncate">{event.name}</h4>
-                                <p className="text-xs text-white/70">{format(new Date(event.startDate), "dd.MM.yy '•' HH:mm")}</p>
-                            </CardContent>
-                            <Badge variant="secondary" className="absolute top-2 right-2 text-xs">{event.game}</Badge>
-                        </Card>
+                        <Link href={`/tournaments/${event.id}`}>
+                          <Card className="relative h-48 border-none overflow-hidden rounded-xl">
+                              <Image src={event.image} alt={event.name} fill className="object-cover" data-ai-hint={event.dataAiHint} />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                              <CardContent className="absolute bottom-0 left-0 p-3 text-white w-full">
+                                  <Badge className="mb-1 bg-red-500 text-white border-none font-bold animate-pulse">Live</Badge>
+                                  <h4 className="font-bold truncate">{event.name}</h4>
+                                  <p className="text-xs text-white/70">{format(new Date(event.startDate), "dd.MM.yy '•' HH:mm")}</p>
+                              </CardContent>
+                              <Badge variant="secondary" className="absolute top-2 right-2 text-xs">{event.game}</Badge>
+                          </Card>
+                        </Link>
                     </CarouselItem>
                 ))}
             </CarouselContent>
@@ -242,13 +241,29 @@ const GameFilter = () => (
 
 // --- MAIN PAGE COMPONENT ---
 export default function HomePage() {
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = getTournamentsStream((data) => {
+      setTournaments(data);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const liveTournaments = useMemo(() => {
+    return tournaments.filter(t => t.status === 'live');
+  }, [tournaments]);
+
+
   return (
     <div className="bg-background text-foreground pb-24">
       <HomeHeader />
       <div className="container mx-auto px-4 mt-4">
         <div className="space-y-10">
           <FeaturedEvent />
-          {liveTournaments.length > 0 && (
+          {!loading && liveTournaments.length > 0 && (
             <section>
               <SectionHeader title="Live/Ongoing" />
               <LiveEvents tournaments={liveTournaments} />

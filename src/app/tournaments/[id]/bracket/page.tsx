@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { useParams, notFound } from 'next/navigation';
-import { mockTournaments } from '@/lib/data';
+import { getTournament } from '@/lib/tournaments-service';
 import Bracket, { SoloBracket, processBracketForWinners, ChampionCard, ChampionPlaceholder } from '@/components/bracket';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, MoreHorizontal, Trophy, GitBranch } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import type { Tournament, Round, Match, Team } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,6 +18,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 const roundAbbreviationMap: Record<string, string> = {
@@ -31,7 +32,8 @@ const roundAbbreviationMap: Record<string, string> = {
 
 const generateUpcomingBracket = (tournament: Tournament): Round[] => {
     const { maxTeams, participants } = tournament;
-
+    
+    // This function can be improved to generate more varied placeholder names
     const placeholderTeamNames = [
         'Thunderbolts', 'Arctic Wolves', 'Desert Scorpions', 'Ironclad Legion', 
         'Venomous Vipers', 'Rising Phoenix', 'Goliath Titans', 'Emerald Spectres',
@@ -51,7 +53,6 @@ const generateUpcomingBracket = (tournament: Tournament): Round[] => {
         return team;
     }
 
-    // Ensure maxTeams is a power of 2, otherwise, a bracket is not possible
     if (maxTeams <= 1 || (maxTeams & (maxTeams - 1)) !== 0) {
         return [];
     }
@@ -91,7 +92,6 @@ const generateUpcomingBracket = (tournament: Tournament): Round[] => {
 
     const generatedRounds = rounds;
 
-    // Populate the first round with participants, then placeholders
     if (generatedRounds.length > 0) {
         const firstRoundMatches = generatedRounds[0].matches;
         for (let i = 0; i < firstRoundMatches.length; i++) {
@@ -103,7 +103,6 @@ const generateUpcomingBracket = (tournament: Tournament): Round[] => {
         }
     }
     
-    // Populate subsequent rounds with placeholder teams
     for(let r = 1; r < generatedRounds.length; r++) {
         for(let m = 0; m < generatedRounds[r].matches.length; m++) {
             generatedRounds[r].matches[m].teams = [generatePlaceholderTeam(), generatePlaceholderTeam()];
@@ -113,28 +112,60 @@ const generateUpcomingBracket = (tournament: Tournament): Round[] => {
     return generatedRounds;
 };
 
+const BracketPageSkeleton = () => (
+    <div className="container mx-auto px-4 py-4 animate-pulse">
+        <header className="flex items-center justify-between mb-6">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <Skeleton className="h-6 w-32 rounded-md" />
+            <Skeleton className="h-10 w-10 rounded-full" />
+        </header>
+        <div className="space-y-6">
+            <Skeleton className="h-12 w-full max-w-sm mx-auto rounded-full" />
+            <Card>
+                <CardContent className="py-16">
+                    <div className="flex justify-center items-center gap-4">
+                        <Skeleton className="h-32 w-48 rounded-lg" />
+                        <Skeleton className="h-32 w-48 rounded-lg" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    </div>
+)
 
 export default function BracketPage() {
   const params = useParams<{ id: string }>();
-  if (!params) return notFound();
+  const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const tournament = mockTournaments.find(t => t.id === params.id);
-  
-  if (!tournament) {
-    notFound();
-  }
+  useEffect(() => {
+    if (params.id) {
+        const fetchTournament = async () => {
+            setLoading(true);
+            const data = await getTournament(params.id as string);
+            if (data) {
+                setTournament(data);
+            } else {
+                notFound();
+            }
+            setLoading(false);
+        };
+        fetchTournament();
+    }
+  }, [params.id]);
 
-  const isSoloTournament = tournament.format.toLowerCase().includes('solo');
+  const isSoloTournament = useMemo(() => tournament?.format.toLowerCase().includes('solo'), [tournament]);
 
   const bracketData = useMemo(() => {
-    if (tournament.status === 'upcoming' && !isSoloTournament) {
+    if (!tournament) return [];
+    if (tournament.status === 'upcoming' && !isSoloTournament && tournament.bracket.length === 0) {
         return generateUpcomingBracket(tournament);
     }
     return tournament.bracket;
   }, [tournament, isSoloTournament]);
 
   const winner = useMemo(() => {
-    if (tournament.status !== 'completed' || !bracketData || bracketData.length === 0) {
+    if (!tournament || tournament.status !== 'completed' || !bracketData || bracketData.length === 0) {
         return null;
     }
     const processed = processBracketForWinners(bracketData);
@@ -145,66 +176,64 @@ export default function BracketPage() {
     const [team1, team2] = finalMatch.teams;
     const [score1, score2] = finalMatch.scores;
     return score1 > score2 ? team1 : team2;
-  }, [tournament.status, bracketData]);
+  }, [tournament, bracketData]);
 
+  const [activeRoundName, setActiveRoundName] = useState('');
+  useEffect(() => {
+      if (bracketData.length > 0) {
+          setActiveRoundName(bracketData[0].name);
+      }
+  }, [bracketData]);
+  
+  if (loading) {
+      return <BracketPageSkeleton />;
+  }
+
+  if (!tournament) {
+      notFound();
+  }
+
+  const roundNames = bracketData?.map(r => r.name) ?? [];
+
+  const BracketHeader = () => (
+    <header className="flex items-center justify-between mb-6">
+        <Button variant="ghost" size="icon" asChild>
+        <Link href={`/tournaments/${tournament.id}`}>
+            <ChevronLeft className="h-6 w-6" />
+        </Link>
+        </Button>
+        <h1 className="text-xl font-bold">Bracket</h1>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="h-6 w-6" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem>Share Bracket</DropdownMenuItem>
+                <DropdownMenuItem>View Rules</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Report an issue</DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    </header>
+  );
 
   if (!isSoloTournament && (!bracketData || bracketData.length === 0)) {
     return (
-        <div className="bg-background min-h-screen text-foreground flex flex-col items-center justify-center p-4">
-             <header className="absolute top-0 left-0 right-0 flex items-center justify-between p-4">
-                <Button variant="ghost" size="icon" asChild>
-                <Link href={`/tournaments/${tournament.id}`}>
-                    <ChevronLeft className="h-6 w-6" />
-                </Link>
-                </Button>
-                <h1 className="text-xl font-bold">Bracket</h1>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-6 w-6" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Share Bracket</DropdownMenuItem>
-                        <DropdownMenuItem>View Rules</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>Report an issue</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </header>
-            <p className="text-muted-foreground text-center">The bracket for this tournament is not available yet.</p>
+        <div className="bg-background min-h-screen text-foreground flex flex-col p-4">
+            <BracketHeader />
+            <div className="flex-grow flex items-center justify-center">
+                <p className="text-muted-foreground text-center">The bracket for this tournament is not available yet.</p>
+            </div>
         </div>
     )
   }
 
-  const [activeRoundName, setActiveRoundName] = useState(bracketData?.[0]?.name ?? '');
-  const roundNames = bracketData?.map(r => r.name) ?? [];
-
   return (
     <div className="bg-background min-h-screen text-foreground pb-24">
         <div className="container mx-auto px-4 py-4">
-            <header className="flex items-center justify-between mb-6">
-                <Button variant="ghost" size="icon" asChild>
-                <Link href={`/tournaments/${tournament.id}`}>
-                    <ChevronLeft className="h-6 w-6" />
-                </Link>
-                </Button>
-                <h1 className="text-xl font-bold">Bracket</h1>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-6 w-6" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Share Bracket</DropdownMenuItem>
-                        <DropdownMenuItem>View Rules</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>Report an issue</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </header>
-
+            <BracketHeader />
             {isSoloTournament ? (
                 <SoloBracket tournament={tournament} />
             ) : (

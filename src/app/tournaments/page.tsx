@@ -3,27 +3,59 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { Tournament, Game } from '@/types';
-import { mockTournaments } from '@/lib/data';
+import { getTournamentsStream } from '@/lib/tournaments-service';
 import TournamentCard from '@/components/tournament-card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 
 type Format = 'all' | 'BR' | 'CS' | 'LONE WOLF';
 type SubMode = 'all' | 'solo' | 'duo' | 'squad';
+
+const TournamentGridSkeleton = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Card key={i}>
+          <Skeleton className="h-48 w-full" />
+          <CardContent className="p-4 space-y-4">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Skeleton className="h-10 w-full" />
+          </CardFooter>
+        </Card>
+      ))}
+    </div>
+);
 
 export default function TournamentsPage() {
   const searchParams = useSearchParams();
   const gameFromQuery = searchParams.get('game') as Game | null;
 
-  const [tournaments, setTournaments] = useState<Tournament[]>(mockTournaments);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedGame, setSelectedGame] = useState<Game | 'all'>(gameFromQuery || 'all');
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'live' | 'upcoming' | 'completed'>('upcoming');
   const [selectedFormat, setSelectedFormat] = useState<Format>('all');
   const [selectedSubMode, setSelectedSubMode] = useState<SubMode>('all');
   const [bookmarked, setBookmarked] = useState<Record<string, boolean>>({});
   const [showBookmarkedOnly, setShowBookmarkedOnly] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = getTournamentsStream((data) => {
+      setTournaments(data);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const gameFromQuery = searchParams.get('game') as Game | null;
@@ -51,12 +83,7 @@ export default function TournamentsPage() {
       const matchesFormat = (() => {
         if (selectedFormat === 'all') return true;
         
-        if (!['BR', 'CS', 'LONE WOLF'].includes(selectedFormat)) {
-            return tournament.format === selectedFormat;
-        }
-
         const [primaryMode, subMode] = tournament.format.split('_');
-
         if (primaryMode !== selectedFormat) return false;
         
         if (selectedSubMode === 'all') return true;
@@ -143,7 +170,9 @@ export default function TournamentsPage() {
           </div>
         </div>
 
-        {filteredTournaments.length > 0 ? (
+        {loading ? (
+            <TournamentGridSkeleton />
+        ) : filteredTournaments.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTournaments.map(tournament => (
               <TournamentCard 

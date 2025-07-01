@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, notFound, useRouter } from 'next/navigation';
-import { mockTournaments } from '@/lib/data';
+import { getTournament, updateTournament } from '@/lib/tournaments-service';
 import type { Tournament } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,44 +12,92 @@ import { EditInfoForm } from '@/components/admin/edit-info-form';
 import { EditRulesForm } from '@/components/admin/edit-rules-form';
 import { BracketEditor } from '@/components/admin/bracket-editor';
 import { ArrowLeft } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const EditTournamentPageSkeleton = () => (
+    <div className="space-y-6 animate-pulse">
+        <div className="flex items-center gap-4">
+            <Skeleton className="h-7 w-7 rounded-md" />
+            <div>
+                <Skeleton className="h-7 w-48 mb-2 rounded-md" />
+                <Skeleton className="h-5 w-64 rounded-md" />
+            </div>
+        </div>
+        <Skeleton className="h-10 w-full rounded-md" />
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-1/3 rounded-md" />
+                <Skeleton className="h-4 w-2/3 rounded-md" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <Skeleton className="h-10 w-full rounded-md" />
+                <Skeleton className="h-10 w-full rounded-md" />
+                <Skeleton className="h-10 w-full rounded-md" />
+            </CardContent>
+        </Card>
+    </div>
+);
 
 export default function EditTournamentPage() {
     const params = useParams<{ id: string }>();
     const router = useRouter();
     const { toast } = useToast();
+    
+    const [tournament, setTournament] = useState<Tournament | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const originalTournament = useMemo(() => mockTournaments.find(t => t.id === params.id), [params.id]);
+    useEffect(() => {
+        if (params.id) {
+            const fetchTournament = async () => {
+                setLoading(true);
+                const data = await getTournament(params.id as string);
+                if (data) {
+                    setTournament(data);
+                } else {
+                    notFound();
+                }
+                setLoading(false);
+            };
+            fetchTournament();
+        }
+    }, [params.id]);
 
-    const [tournament, setTournament] = useState<Tournament | null>(originalTournament ? JSON.parse(JSON.stringify(originalTournament)) : null);
+
+    const handleSave = async (updatedData: Partial<Tournament>) => {
+        if (!tournament) return;
+        const result = await updateTournament(tournament.id, updatedData);
+        if(result.success) {
+            setTournament(prev => prev ? { ...prev, ...updatedData } : null);
+            toast({
+                title: "Changes Saved!",
+                description: "The tournament details have been updated.",
+            });
+        } else {
+            toast({ title: "Error", description: result.error, variant: "destructive" });
+        }
+    };
+    
+    const handleBracketUpdate = async (updatedBracket: Tournament['bracket']) => {
+        if (!tournament) return;
+        const result = await updateTournament(tournament.id, { bracket: updatedBracket });
+        if(result.success) {
+             setTournament(prev => prev ? { ...prev, bracket: updatedBracket } : null);
+            toast({
+                title: "Bracket Updated!",
+                description: "The match results have been saved.",
+            });
+        } else {
+             toast({ title: "Error", description: result.error, variant: "destructive" });
+        }
+    };
+
+    if (loading) {
+        return <EditTournamentPageSkeleton />;
+    }
 
     if (!tournament) {
         notFound();
     }
-
-    const handleSave = (updatedData: Partial<Tournament>) => {
-        setTournament(prev => prev ? { ...prev, ...updatedData } : null);
-        toast({
-            title: "Changes Saved!",
-            description: "The tournament details have been updated.",
-        });
-        // In a real app, you would also save this to your database.
-        const tournamentIndex = mockTournaments.findIndex(t => t.id === tournament.id);
-        if (tournamentIndex !== -1) {
-            mockTournaments[tournamentIndex] = { ...mockTournaments[tournamentIndex], ...updatedData };
-        }
-    };
-    
-    const handleBracketUpdate = (updatedBracket: Tournament['bracket']) => {
-        setTournament(prev => prev ? { ...prev, bracket: updatedBracket } : null);
-        toast({
-            title: "Bracket Updated!",
-            description: "The match results have been saved.",
-        });
-        const tournamentIndex = mockTournaments.findIndex(t => t.id === tournament.id);
-         if (tournamentIndex !== -1) {
-            mockTournaments[tournamentIndex].bracket = updatedBracket;
-        }
-    };
 
     return (
         <div className="space-y-6">

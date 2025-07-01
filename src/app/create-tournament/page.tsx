@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -25,8 +26,9 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Game } from "@/types"
+import type { Game, Tournament } from "@/types"
 import { useToast } from "@/hooks/use-toast"
+import { addTournament } from "@/lib/tournaments-service"
 
 const formSchema = z.object({
   name: z.string().min(5, "Tournament name must be at least 5 characters."),
@@ -40,6 +42,10 @@ const formSchema = z.object({
   entryFee: z.coerce.number().min(0).optional(),
   prizePool: z.string().min(1, "Prize pool is required."),
   rules: z.string().min(50, "Rules must be at least 50 characters long."),
+  format: z.string(), // Will be constructed from mode and teamType
+  map: z.string().optional(),
+  perKillPrize: z.coerce.number().min(0).optional(),
+  version: z.string().optional(),
 }).refine(data => {
     if (data.mode === 'LONE WOLF' && data.teamType === 'SQUAD') {
         return false;
@@ -51,7 +57,8 @@ const formSchema = z.object({
 });
 
 export default function CreateTournamentPage() {
-    const { toast } = useToast()
+    const { toast } = useToast();
+    const router = useRouter();
     const games: Game[] = ['Free Fire', 'PUBG', 'Mobile Legends', 'COD: Mobile'];
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -65,11 +72,16 @@ export default function CreateTournamentPage() {
             maxTeams: 16,
             entryFee: 0,
             prizePool: "1,000",
-            rules: "",
+            rules: "Standard league rules apply. All matches are Best of 3 until the finals, which are Best of 5. No cheating or exploiting bugs. All players must be registered with their official in-game names.",
+            format: "BR_SQUAD",
+            map: "Bermuda",
+            perKillPrize: 10,
+            version: "Mobile",
         },
     })
 
     const mode = form.watch('mode');
+    const teamType = form.watch('teamType');
 
     useEffect(() => {
         if (mode === 'LONE WOLF' && form.getValues('teamType') === 'SQUAD') {
@@ -77,13 +89,26 @@ export default function CreateTournamentPage() {
         }
     }, [mode, form]);
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        console.log(values)
-        toast({
-            title: "Tournament Created!",
-            description: `The tournament "${values.name}" has been successfully created.`,
-        })
-        form.reset();
+    useEffect(() => {
+        form.setValue('format', `${mode}_${teamType}`);
+    }, [mode, teamType, form]);
+
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        const result = await addTournament(values);
+        if (result.success) {
+            toast({
+                title: "Tournament Created!",
+                description: `The tournament "${values.name}" has been successfully created.`,
+            })
+            form.reset();
+            router.push('/admin/tournaments');
+        } else {
+            toast({
+                title: "Error",
+                description: result.error || "Failed to create tournament.",
+                variant: "destructive",
+            })
+        }
     }
   
     return (
@@ -252,7 +277,9 @@ export default function CreateTournamentPage() {
                                 )}
                             />
 
-                            <Button type="submit" size="lg">Create Tournament</Button>
+                            <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+                                {form.formState.isSubmitting ? 'Creating...' : 'Create Tournament'}
+                            </Button>
                         </form>
                     </Form>
                 </CardContent>

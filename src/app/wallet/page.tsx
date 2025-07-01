@@ -19,7 +19,6 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { createPaymentUrl } from "@/lib/payment-actions";
 
@@ -55,40 +54,40 @@ function AddMoneyForm() {
     };
 
     return (
-        <form action={formAction} className="space-y-6 pt-4">
+        <form action={formAction} className="space-y-6 pt-2">
             {state?.error && (
                 <Alert variant="destructive">
                     <AlertDescription>{state.error}</AlertDescription>
                 </Alert>
             )}
-            <div className="space-y-2 text-center">
-                <Label htmlFor="amount" className="text-sm text-muted-foreground">Enter Amount</Label>
-                <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-3xl font-semibold text-muted-foreground">TK</span>
-                    <Input
-                        id="amount"
-                        name="amount"
-                        type="number"
-                        placeholder="0.00"
-                        required
-                        min="10"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        className="h-20 w-full rounded-xl border-2 border-border bg-muted pl-16 pr-4 text-center text-5xl font-bold tracking-tighter focus:bg-background"
-                    />
-                </div>
-            </div>
 
+            <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-3xl font-semibold text-muted-foreground">
+                    TK
+                </span>
+                <Input
+                    id="amount"
+                    name="amount"
+                    type="number"
+                    placeholder="0.00"
+                    required
+                    min="10"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="h-24 w-full rounded-xl border-2 border-border bg-muted/50 pl-16 pr-6 text-center text-6xl font-bold tracking-tighter focus:bg-background"
+                />
+            </div>
+            
             <div>
-                <p className="mb-2 text-center text-sm text-muted-foreground">Or select a quick amount</p>
-                <div className="grid grid-cols-4 gap-2">
+                <p className="mb-3 text-center text-sm font-medium text-muted-foreground">Or choose a quick amount</p>
+                <div className="grid grid-cols-4 gap-3">
                     {quickAmounts.map((value) => (
                         <Button
                             key={value}
                             type="button"
                             variant={amount === value.toString() ? "default" : "outline"}
                             onClick={() => handleQuickAmountClick(value)}
-                            className="h-12 text-lg"
+                            className="h-12 rounded-full text-base font-semibold"
                         >
                             {value}
                         </Button>
@@ -96,28 +95,29 @@ function AddMoneyForm() {
                 </div>
             </div>
             
-            <DialogFooter>
+            <div className="pt-4">
                 <SubmitButton />
-            </DialogFooter>
+            </div>
         </form>
     );
 }
 
 function WithdrawDialogContent() {
     return (
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Withdraw Funds</DialogTitle>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader className="text-center">
+                <DialogTitle className="text-2xl">Withdraw Funds</DialogTitle>
                 <DialogDescription>
                     Withdrawal functionality is coming soon.
                 </DialogDescription>
             </DialogHeader>
-            <div className="py-4 text-center text-muted-foreground">
+            <div className="py-8 text-center text-muted-foreground">
                 <p>This feature is currently under development.</p>
+                <p className="text-sm">We are working hard to bring it to you.</p>
             </div>
              <DialogFooter>
                 <DialogClose asChild>
-                    <Button variant="outline">Close</Button>
+                    <Button variant="outline" className="w-full">Close</Button>
                 </DialogClose>
             </DialogFooter>
         </DialogContent>
@@ -212,14 +212,16 @@ const CardStack = ({ balance }: { balance: number }) => {
                                 <ArrowUp className="mr-2 h-4 w-4" /> Add Money
                             </Button>
                         </DialogTrigger>
-                         <DialogContent className="sm:max-w-md">
-                            <DialogHeader>
-                                <DialogTitle>Add Money</DialogTitle>
-                                <DialogDescription>
+                         <DialogContent className="sm:max-w-md p-0">
+                            <DialogHeader className="p-6 pb-4">
+                                <DialogTitle className="text-2xl text-center">Add Money</DialogTitle>
+                                <DialogDescription className="text-center">
                                    Select or enter an amount to add to your wallet.
                                 </DialogDescription>
                             </DialogHeader>
-                            <AddMoneyForm />
+                            <div className="px-6 pb-6">
+                                <AddMoneyForm />
+                            </div>
                         </DialogContent>
                     </Dialog>
                      <Dialog onOpenChange={handleOpenChange}>

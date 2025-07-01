@@ -79,3 +79,12 @@ export interface PlayerProfile {
   games: number;
   balance: number;
 }
+
+export interface Transaction {
+  id: string;
+  userId: string;
+  amount: number;
+  type: 'deposit' | 'withdrawal' | 'prize' | 'fee';
+  description: string;
+  date: string; // ISO string
+}

@@ -20,15 +20,17 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { createPaymentUrl } from "@/lib/payment-actions";
+import { createPaymentUrl, withdrawAmount } from "@/lib/payment-actions";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { getUserProfileStream } from "@/lib/users-service";
-import type { PlayerProfile } from "@/types";
+import type { PlayerProfile, Transaction } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getTransactionsStream } from "@/lib/transactions-service";
+import { format } from "date-fns";
 
 
 // --- SWIPE BUTTON ---
@@ -98,13 +100,14 @@ function SubmitButton() {
     const { pending } = useFormStatus();
     return (
         <Button type="submit" size="lg" className="w-full" disabled={pending}>
-            {pending ? 'Processing...' : 'Proceed to Pay'}
+            {pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</> : 'Proceed to Pay'}
         </Button>
     );
 }
 
-function AddMoneyForm() {
-    const [state, formAction] = useActionState(createPaymentUrl, null);
+function AddMoneyForm({ profile }: { profile: PlayerProfile | null }) {
+    const createPaymentUrlWithUser = createPaymentUrl.bind(null, profile?.id ?? null);
+    const [state, formAction] = useActionState(createPaymentUrlWithUser, null);
     const [amount, setAmount] = useState('');
 
     const quickAmounts = [100, 200, 500, 1000];
@@ -163,10 +166,11 @@ function AddMoneyForm() {
 }
 
 function WithdrawDialogContent({ closeDialog, profile }: { closeDialog: () => void, profile: PlayerProfile | null }) {
+    const { toast } = useToast();
     const [step, setStep] = useState<'selectMethod' | 'enterAmount' | 'confirm'>('selectMethod');
     const [selectedMethod, setSelectedMethod] = useState('bank');
     const [amount, setAmount] = useState('');
-    const { toast } = useToast();
+    const [isWithdrawing, setIsWithdrawing] = useState(false);
 
     const handleNextFromMethod = () => setStep('enterAmount');
     const handleNextFromAmount = () => {
@@ -185,12 +189,39 @@ function WithdrawDialogContent({ closeDialog, profile }: { closeDialog: () => vo
         else if (step === 'enterAmount') setStep('selectMethod');
     };
 
-    const handleWithdrawalSuccess = () => {
-        toast({
-            title: "Withdrawal Initiated",
-            description: `Your withdrawal of TK ${parseFloat(amount).toFixed(2)} is being processed.`,
-        });
-        closeDialog();
+    const handleWithdrawalSuccess = async () => {
+        if (!profile || !amount || isWithdrawing) return;
+        
+        setIsWithdrawing(true);
+        const withdrawalAmount = parseFloat(amount);
+
+        if (profile.balance < withdrawalAmount) {
+            toast({
+                variant: "destructive",
+                title: "Insufficient Balance",
+                description: "You do not have enough funds to withdraw this amount.",
+            });
+            setIsWithdrawing(false);
+            return;
+        }
+        
+        const withdrawActionWithUser = withdrawAmount.bind(null, profile.id);
+        const result = await withdrawActionWithUser(withdrawalAmount, selectedMethod);
+
+        if (result.success) {
+            toast({
+                title: "Withdrawal Initiated",
+                description: `Your withdrawal of TK ${withdrawalAmount.toFixed(2)} is being processed.`,
+            });
+            closeDialog();
+        } else {
+            toast({
+                title: "Withdrawal Failed",
+                description: result.error || "An unexpected error occurred.",
+                variant: "destructive",
+            });
+        }
+        setIsWithdrawing(false);
     };
 
     const quickAmounts = [100, 200, 500, 1000];
@@ -473,7 +504,7 @@ const CardStack = ({ balance, profile }: { balance: number, profile: PlayerProfi
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="px-6 pb-6">
-                                <AddMoneyForm />
+                                <AddMoneyForm profile={profile} />
                             </div>
                         </DialogContent>
                     </Dialog>
@@ -491,14 +522,12 @@ const CardStack = ({ balance, profile }: { balance: number, profile: PlayerProfi
     );
 }
 
-const TransactionList = () => {
-    // For now, transactions are not stored. This is a placeholder.
-    const transactions: any[] = [];
-
+const TransactionList = ({ transactions }: { transactions: Transaction[] }) => {
     const transactionIcons: Record<string, React.ReactNode> = {
-        deposit: <div className="p-3 bg-green-500/10 rounded-full"><Banknote className="h-5 w-5 text-green-400" /></div>,
-        withdrawal: <div className="p-3 bg-red-500/10 rounded-full"><Gamepad2 className="h-5 w-5 text-red-400" /></div>,
-        reward: <div className="p-3 bg-yellow-500/10 rounded-full"><Gift className="h-5 w-5 text-yellow-400" /></div>,
+        deposit: <div className="p-3 bg-green-500/10 rounded-full"><ArrowUp className="h-5 w-5 text-green-400" /></div>,
+        withdrawal: <div className="p-3 bg-red-500/10 rounded-full"><ArrowDown className="h-5 w-5 text-red-400" /></div>,
+        prize: <div className="p-3 bg-yellow-500/10 rounded-full"><Gift className="h-5 w-5 text-yellow-400" /></div>,
+        fee: <div className="p-3 bg-gray-500/10 rounded-full"><Gamepad2 className="h-5 w-5 text-gray-400" /></div>,
     };
 
     return (
@@ -508,13 +537,13 @@ const TransactionList = () => {
             </div>
             <div className="space-y-3">
                 {transactions.length > 0 ? (
-                    transactions.map((tx, index) => (
-                    <Card key={index} className="bg-card/80 backdrop-blur-sm border-border/50">
+                    transactions.map((tx) => (
+                    <Card key={tx.id} className="bg-card/80 backdrop-blur-sm border-border/50">
                         <CardContent className="p-3 flex items-center gap-4">
-                            {transactionIcons[tx.type]}
+                            {transactionIcons[tx.type] || transactionIcons['fee']}
                             <div className="flex-grow">
                                 <p className="font-semibold">{tx.description}</p>
-                                <p className="text-sm text-muted-foreground">{new Date(tx.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                                <p className="text-sm text-muted-foreground">{format(new Date(tx.date), "PPP, p")}</p>
                             </div>
                             <p className={cn(
                                 "font-bold text-base",
@@ -540,16 +569,23 @@ const TransactionList = () => {
 export default function WalletPage() {
     const { user } = useAuth();
     const [profile, setProfile] = useState<PlayerProfile | null>(null);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (user?.uid) {
-            setLoading(true);
-            const unsubscribe = getUserProfileStream(user.uid, (data) => {
+            const unsubscribeProfile = getUserProfileStream(user.uid, (data) => {
                 setProfile(data);
                 setLoading(false);
             });
-            return () => unsubscribe();
+            const unsubscribeTransactions = getTransactionsStream(user.uid, (data) => {
+                setTransactions(data);
+            });
+
+            return () => {
+                unsubscribeProfile();
+                unsubscribeTransactions();
+            }
         } else if (!user) {
             setLoading(false);
         }
@@ -587,7 +623,7 @@ export default function WalletPage() {
             <WalletHeader profile={profile} />
             <main className="container mx-auto px-4 mt-4 space-y-8">
                 <CardStack balance={balance} profile={profile} />
-                <TransactionList />
+                <TransactionList transactions={transactions} />
             </main>
         </div>
     );

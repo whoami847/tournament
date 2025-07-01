@@ -1,6 +1,19 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import {
+  collection,
+  addDoc,
+  Timestamp,
+  query,
+  where,
+  getDocs,
+  writeBatch,
+  doc,
+  increment,
+  getDoc,
+} from 'firebase/firestore';
+import { firestore } from './firebase';
 
 const RUPANTORPAY_API_URL = 'https://payment.rupantorpay.com/api/payment';
 
@@ -19,8 +32,15 @@ type VerifyPaymentResponse = {
     data?: any; 
 };
 
-// This function is designed to be used with React's useFormState hook.
-export async function createPaymentUrl(state: { error: string } | null, formData: FormData) {
+export async function createPaymentUrl(
+  userId: string | null,
+  state: { error: string } | null,
+  formData: FormData
+) {
+  if (!userId) {
+    return { error: 'User is not authenticated. Please log in again.' };
+  }
+
   const accessToken = process.env.RUPANTORPAY_ACCESS_TOKEN;
   if (!accessToken || accessToken === 'YOUR_SECRET_ACCESS_TOKEN') {
     return { error: 'RupantorPay access token is not configured on the server. Please check your .env file.' };
@@ -28,30 +48,40 @@ export async function createPaymentUrl(state: { error: string } | null, formData
 
   const rawFormData = {
     amount: formData.get('amount'),
-    // Hardcoding placeholder values as the form is simplified
-    customer_name: 'Esports HQ User',
-    customer_email: 'user@esportshq.com',
-    customer_phone: '01234567890',
   };
 
-  // Basic server-side validation for amount only
-  if (!rawFormData.amount) {
-    return { error: 'Amount is required.' };
+  if (!rawFormData.amount || +rawFormData.amount < 10) {
+    return { error: 'Amount is required and must be at least 10.' };
   }
-  
+
+  const userRef = doc(firestore, 'users', userId);
+  const userSnap = await getDoc(userRef);
+  if (!userSnap.exists()) {
+    return { error: 'User profile not found.' };
+  }
+  const userData = userSnap.data();
+
   const transaction_id = `TRX-${Date.now()}`;
-  // In a real app, use the actual base URL from environment variables.
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002';
   const success_url = `${baseUrl}/payment/success`;
   const cancel_url = `${baseUrl}/payment/cancel`;
   const fail_url = `${baseUrl}/payment/fail`;
 
   try {
+    const transactionData = {
+        userId,
+        amount: parseFloat(rawFormData.amount.toString()),
+        status: 'pending',
+        createdAt: Timestamp.now(),
+        transaction_id,
+        type: 'deposit',
+        description: `Deposit via RupantorPay`
+    };
+    await addDoc(collection(firestore, 'transactions'), transactionData);
+
     const response = await fetch(`${RUPANTORPAY_API_URL}/checkout`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         access_token: accessToken,
         transaction_id,
@@ -59,9 +89,9 @@ export async function createPaymentUrl(state: { error: string } | null, formData
         success_url: `${success_url}?transaction_id=${transaction_id}`,
         cancel_url,
         fail_url,
-        customer_name: rawFormData.customer_name,
-        customer_email: rawFormData.customer_email,
-        customer_phone: rawFormData.customer_phone,
+        customer_name: userData.name || 'Esports HQ User',
+        customer_email: userData.email || 'user@esportshq.com',
+        customer_phone: '01234567890', // Placeholder
       }),
     });
 
@@ -89,26 +119,87 @@ export async function verifyPayment(transaction_id: string | null): Promise<Veri
   }
 
   try {
+      const q = query(collection(firestore, 'transactions'), where('transaction_id', '==', transaction_id));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        return { status: 'fail', message: 'Transaction not found in our system.' };
+      }
+      const transactionDoc = querySnapshot.docs[0];
+      const transactionData = transactionDoc.data();
+
+      if (transactionData.status !== 'pending') {
+          return { status: 'success', message: `Transaction was already processed with status: ${transactionData.status}.` };
+      }
+
       const response = await fetch(`${RUPANTORPAY_API_URL}/verify-payment`, {
           method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-              access_token: accessToken,
-              transaction_id: transaction_id,
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ access_token: accessToken, transaction_id: transaction_id }),
       });
       const result: VerifyPaymentResponse = await response.json();
       
-      // In a real application, you would check the payment status from `result.data`
-      // and update your database accordingly before confirming success to the user.
-      // e.g., if (result.data.status === 'COMPLETED') { updateUserWallet(result.data.amount); }
+      const batch = writeBatch(firestore);
+      if (result.status === 'success' && result.data?.status?.toLowerCase() === 'completed') {
+        const userRef = doc(firestore, 'users', transactionData.userId);
+        batch.update(userRef, { balance: increment(transactionData.amount) });
+        batch.update(transactionDoc.ref, { status: 'success' });
+      } else {
+        batch.update(transactionDoc.ref, { status: 'failed', failure_reason: result.message });
+      }
+
+      await batch.commit();
 
       return result;
 
   } catch (error) {
       console.error('Payment verification failed:', error);
       return { status: 'error', message: 'An unexpected error occurred during payment verification.' };
+  }
+}
+
+export async function withdrawAmount(
+  userId: string,
+  amountToWithdraw: number,
+  method: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!userId) {
+    return { success: false, error: 'User not authenticated.' };
+  }
+  if (!amountToWithdraw || amountToWithdraw <= 0) {
+    return { success: false, error: 'Invalid withdrawal amount.' };
+  }
+
+  const userRef = doc(firestore, 'users', userId);
+  const transactionRef = doc(collection(firestore, 'transactions'));
+
+  try {
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists() || userSnap.data().balance < amountToWithdraw) {
+      return { success: false, error: 'Insufficient balance.' };
+    }
+
+    const batch = writeBatch(firestore);
+
+    // Decrease user balance
+    batch.update(userRef, {
+      balance: increment(-amountToWithdraw),
+    });
+
+    // Create a withdrawal transaction log
+    batch.set(transactionRef, {
+      userId,
+      amount: -amountToWithdraw,
+      type: 'withdrawal',
+      description: `Withdrawal to ${method}`,
+      date: Timestamp.now(),
+      status: 'completed', // Withdrawals are instant in this system
+    });
+
+    await batch.commit();
+    return { success: true };
+  } catch (error) {
+    console.error('Error processing withdrawal:', error);
+    return { success: false, error: (error as Error).message };
   }
 }

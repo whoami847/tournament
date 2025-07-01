@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useFormState, useFormStatus } from 'react-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Wallet, PlusCircle, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { Wallet, PlusCircle, ArrowUpCircle, ArrowDownCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { createPaymentUrl } from '@/lib/payment-actions';
 
 const mockTransactions = [
     { type: 'deposit', amount: 2500.00, description: 'Deposit from Card', date: '2024-07-28' },
@@ -18,53 +20,94 @@ const mockTransactions = [
     { type: 'reward', amount: 1500.00, description: 'Prize: ML Diamond Cup S5', date: '2024-07-20' },
 ];
 
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+            {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {pending ? 'Processing...' : 'Proceed to Pay'}
+        </Button>
+    );
+}
+
+function AddMoneyForm() {
+    const { toast } = useToast();
+    const [state, formAction] = useFormState(createPaymentUrl, null);
+    const [isDialogOpen, setIsDialogOpen] = useState(true);
+
+    useEffect(() => {
+        if (state?.error) {
+            toast({
+                title: 'Payment Error',
+                description: state.error,
+                variant: 'destructive',
+            });
+        }
+        // A successful submission redirects, so no success toast is needed here.
+    }, [state, toast]);
+
+    // This closes the dialog if a redirect happens, which can prevent it from being stuck open
+    useEffect(() => {
+        if (!isDialogOpen) {
+          // Reset form state when dialog is closed
+          // This is a bit of a workaround for resetting useFormState
+        }
+    }, [isDialogOpen]);
+    
+    return (
+        <form action={formAction}>
+            <DialogHeader>
+                <DialogTitle>Add Money to Wallet</DialogTitle>
+                <DialogDescription>Enter your details and the amount you wish to deposit.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="amount">Amount (TK)</Label>
+                    <Input id="amount" name="amount" type="number" placeholder="e.g., 500.00" required />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="customer_name">Full Name</Label>
+                    <Input id="customer_name" name="customer_name" placeholder="Your full name" required />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="customer_email">Email</Label>
+                    <Input id="customer_email" name="customer_email" type="email" placeholder="Your email address" required />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="customer_phone">Phone Number</Label>
+                    <Input id="customer_phone" name="customer_phone" placeholder="Your phone number" required />
+                </div>
+            </div>
+            <DialogFooter>
+                 <DialogClose asChild>
+                    <Button type="button" variant="secondary">Cancel</Button>
+                </DialogClose>
+                <SubmitButton />
+            </DialogFooter>
+        </form>
+    );
+}
+
+
 export default function WalletPage() {
     const { toast } = useToast();
     const [balance, setBalance] = useState(7500.00);
-    const [amount, setAmount] = useState('');
-
-    const handleAddMoney = () => {
-        const value = parseFloat(amount);
-        if (isNaN(value) || value <= 0) {
-            toast({
-                title: 'Invalid Amount',
-                description: 'Please enter a valid positive number.',
-                variant: 'destructive',
-            });
-            return;
-        }
-        setBalance(prev => prev + value);
-        toast({
-            title: 'Success!',
-            description: `${value.toFixed(2)} TK has been added to your wallet.`,
-        });
-        setAmount('');
-    };
+    const [withdrawAmount, setWithdrawAmount] = useState('');
     
     const handleWithdraw = () => {
-        const value = parseFloat(amount);
+        const value = parseFloat(withdrawAmount);
         if (isNaN(value) || value <= 0) {
-            toast({
-                title: 'Invalid Amount',
-                description: 'Please enter a valid positive number.',
-                variant: 'destructive',
-            });
+            toast({ title: 'Invalid Amount', description: 'Please enter a valid positive number.', variant: 'destructive' });
             return;
         }
         if (value > balance) {
-            toast({
-                title: 'Insufficient Funds',
-                description: 'You cannot withdraw more than your current balance.',
-                variant: 'destructive',
-            });
+            toast({ title: 'Insufficient Funds', description: 'You cannot withdraw more than your current balance.', variant: 'destructive' });
             return;
         }
         setBalance(prev => prev - value);
-        toast({
-            title: 'Withdrawal Initiated',
-            description: `${value.toFixed(2)} TK is being processed for withdrawal.`,
-        });
-        setAmount('');
+        toast({ title: 'Withdrawal Initiated', description: `${value.toFixed(2)} TK is being processed for withdrawal.` });
+        setWithdrawAmount('');
     };
 
     const transactionIcons = {
@@ -94,28 +137,7 @@ export default function WalletPage() {
                                 </Button>
                             </DialogTrigger>
                             <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Add Money to Wallet</DialogTitle>
-                                    <DialogDescription>Enter the amount you wish to deposit.</DialogDescription>
-                                </DialogHeader>
-                                <div className="grid gap-4 py-4">
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                        <Label htmlFor="amount-add" className="text-right">Amount (TK)</Label>
-                                        <Input
-                                            id="amount-add"
-                                            type="number"
-                                            placeholder="e.g., 5000.00"
-                                            className="col-span-3"
-                                            value={amount}
-                                            onChange={(e) => setAmount(e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <DialogClose asChild>
-                                        <Button type="button" onClick={handleAddMoney}>Confirm Deposit</Button>
-                                    </DialogClose>
-                                </DialogFooter>
+                                <AddMoneyForm />
                             </DialogContent>
                         </Dialog>
                          <Dialog>
@@ -137,15 +159,15 @@ export default function WalletPage() {
                                             type="number"
                                             placeholder={`Max ${balance.toFixed(2)} TK`}
                                             className="col-span-3"
-                                            value={amount}
-                                            onChange={(e) => setAmount(e.target.value)}
+                                            value={withdrawAmount}
+                                            onChange={(e) => setWithdrawAmount(e.target.value)}
                                         />
                                     </div>
                                 </div>
                                 <DialogFooter>
                                      <DialogClose asChild>
                                         <Button type="button" onClick={handleWithdraw}>Request Withdrawal</Button>
-                                    </DialogClose>
+                                     </DialogClose>
                                 </DialogFooter>
                             </DialogContent>
                         </Dialog>

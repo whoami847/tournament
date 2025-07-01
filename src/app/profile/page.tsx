@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,15 +13,25 @@ import {
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, User, Gamepad2, Globe, Calendar, Users, Shield, Trophy, Star, Flame, LogOut } from 'lucide-react';
+} from "@/components/ui/dropdown-menu";
+import { 
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MoreHorizontal, User, Gamepad2, Globe, Calendar, Users, Shield, Trophy, Star, Flame, LogOut, Pencil } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { signOutUser } from '@/lib/auth-service';
 import { useRouter } from 'next/navigation';
 
 // --- MOCK DATA (will be replaced by dynamic data) ---
-const teamInfo = {
+const initialTeamInfo = {
     name: "Cosmic Knights",
     avatar: "https://placehold.co/96x96.png",
     dataAiHint: "knight helmet logo",
@@ -71,10 +82,66 @@ const UserInfo = () => {
     );
 };
 
-const TeamInfo = () => (
+const TeamInfo = () => {
+    const [teamInfo, setTeamInfo] = useState(initialTeamInfo);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editForm, setEditForm] = useState({ name: '', avatar: '' });
+
+    const handleOpenDialog = () => {
+        setEditForm({ name: teamInfo.name, avatar: teamInfo.avatar });
+        setIsDialogOpen(true);
+    };
+
+    const handleSaveChanges = (e: React.FormEvent) => {
+        e.preventDefault();
+        setTeamInfo(prev => ({ ...prev, name: editForm.name, avatar: editForm.avatar }));
+        setIsDialogOpen(false);
+    };
+
+    return (
     <Card>
-        <CardHeader>
+        <CardHeader className="flex-row items-center justify-between">
             <CardTitle>My Team</CardTitle>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={handleOpenDialog}>
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Team Information</DialogTitle>
+                        <DialogDescription>
+                            Update your team's name and avatar. Changes are not saved to the database yet.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSaveChanges} className="space-y-4 pt-4">
+                        <div>
+                            <Label htmlFor="teamName" className="text-right">
+                                Team Name
+                            </Label>
+                            <Input
+                                id="teamName"
+                                value={editForm.name}
+                                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                className="mt-2"
+                            />
+                        </div>
+                        <div>
+                            <Label htmlFor="avatarUrl" className="text-right">
+                                Avatar URL
+                            </Label>
+                            <Input
+                                id="avatarUrl"
+                                value={editForm.avatar}
+                                onChange={(e) => setEditForm({ ...editForm, avatar: e.target.value })}
+                                className="mt-2"
+                            />
+                        </div>
+                        <Button type="submit" className="w-full">Save changes</Button>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </CardHeader>
         <CardContent>
             <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
@@ -106,7 +173,8 @@ const TeamInfo = () => (
             </div>
         </CardContent>
     </Card>
-);
+    );
+};
 
 const Achievements = () => (
     <Card>

@@ -72,7 +72,7 @@ function AddMoneyForm() {
     )
 }
 
-function WithdrawDialog() {
+function WithdrawDialogContent() {
     return (
         <DialogContent>
             <DialogHeader>
@@ -111,21 +111,7 @@ const WalletHeader = () => (
     </header>
 );
 
-const CardStack = () => {
-    const [cardNumber, setCardNumber] = React.useState('**** **** **** ****');
-
-    React.useEffect(() => {
-        const generateCardNumber = () => {
-            let num = '';
-            for (let i = 0; i < 4; i++) {
-                num += Math.floor(1000 + Math.random() * 9000).toString();
-                if (i < 3) num += ' ';
-            }
-            return num;
-        };
-        setCardNumber(generateCardNumber());
-    }, []);
-
+const CardStack = ({ balance }: { balance: number }) => {
     return (
         <div className="relative h-60 flex items-center justify-center group">
             {/* Bottom Card */}
@@ -153,21 +139,46 @@ const CardStack = () => {
                 className="absolute w-full max-w-[320px] h-52 rounded-2xl bg-black p-6 text-white shadow-2xl flex flex-col justify-between transition-transform duration-500 ease-out group-hover:scale-105 group-hover:-translate-y-6"
                 style={{ zIndex: 30 }}
             >
-                <div className="flex justify-end items-start">
+                 <div className="flex justify-between items-start">
+                    <div>
+                        <p className="text-xs uppercase text-gray-400">Card Holder Name</p>
+                        <p className="font-medium tracking-wider">Mapple</p>
+                    </div>
                     <p className="font-bold text-lg italic">Game Card</p>
                 </div>
-                <div>
-                    <p className="text-2xl font-mono tracking-widest">{cardNumber}</p>
-                    <div className="flex justify-between items-end mt-4">
-                        <div>
-                            <p className="text-xs uppercase text-gray-400">Card Holder Name</p>
-                            <p className="font-medium tracking-wider">Mapple</p>
-                        </div>
-                        <div>
-                             <p className="text-xs uppercase text-gray-400">Expiry Date</p>
-                             <p className="font-medium text-2xl">∞</p>
-                        </div>
-                    </div>
+
+                <div className="mt-auto mb-2">
+                    <p className="text-xs uppercase text-gray-400">Current Balance</p>
+                    <p className="text-3xl font-bold tracking-tight">
+                        {balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TK
+                    </p>
+                </div>
+
+                <div className="flex justify-start gap-4">
+                    <Dialog>
+                        <DialogTrigger asChild>
+                             <Button className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
+                                <ArrowUp className="mr-2 h-4 w-4" /> Add Money
+                            </Button>
+                        </DialogTrigger>
+                         <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Add Money to Wallet</DialogTitle>
+                                <DialogDescription>
+                                    Enter the amount you wish to deposit.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <AddMoneyForm />
+                        </DialogContent>
+                    </Dialog>
+                     <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
+                                <ArrowDown className="mr-2 h-4 w-4" /> Withdraw
+                            </Button>
+                        </DialogTrigger>
+                        <WithdrawDialogContent />
+                    </Dialog>
                 </div>
             </div>
         </div>
@@ -214,44 +225,7 @@ export default function WalletPage() {
         <div className="bg-gradient-to-b from-amber-900/10 via-background to-background min-h-screen text-foreground pb-24">
             <WalletHeader />
             <main className="container mx-auto px-4 mt-4 space-y-8">
-                
-                <section className="text-center space-y-4">
-                     <div>
-                        <p className="text-sm text-muted-foreground">Current Balance</p>
-                        <p className="text-4xl font-bold tracking-tight">
-                            {totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TK
-                        </p>
-                    </div>
-                    <div className="flex justify-center gap-4">
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white font-bold">
-                                    <ArrowUp className="mr-2 h-5 w-5" /> Add Money
-                                </Button>
-                            </DialogTrigger>
-                             <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Add Money to Wallet</DialogTitle>
-                                    <DialogDescription>
-                                        Enter the amount you wish to deposit.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <AddMoneyForm />
-                            </DialogContent>
-                        </Dialog>
-                         <Dialog>
-                            <DialogTrigger asChild>
-                                <Button size="lg" variant="secondary" className="font-bold">
-                                    <ArrowDown className="mr-2 h-5 w-5" /> Withdraw
-                                </Button>
-                            </DialogTrigger>
-                            <WithdrawDialog />
-                        </Dialog>
-                    </div>
-                </section>
-
-                <CardStack />
-
+                <CardStack balance={totalBalance} />
                 <TransactionList />
             </main>
         </div>

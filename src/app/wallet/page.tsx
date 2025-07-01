@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Banknote, Gamepad2, Gift, ArrowUp, ArrowDown, Landmark, CreditCard, Wallet, Globe, ChevronDown, ArrowLeft, ArrowRight, ChevronsRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import React, { useState, useEffect, useActionState } from 'react';
+import React, { useState, useEffect, useActionState, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   Dialog,
@@ -24,6 +24,7 @@ import { createPaymentUrl } from "@/lib/payment-actions";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 
 // --- MOCK DATA ---
 const mockTransactions = [
@@ -34,6 +35,67 @@ const mockTransactions = [
 ];
 
 const totalBalance = mockTransactions.reduce((acc, tx) => acc + tx.amount, 0);
+
+// --- SWIPE BUTTON ---
+const SwipeButton = ({ onSwipeSuccess }: { onSwipeSuccess: () => void }) => {
+    const [isSwiping, setIsSwiping] = useState(false);
+    const [sliderPosition, setSliderPosition] = useState(0);
+    const sliderRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const handlePointerMove = (clientX: number) => {
+        if (!isSwiping || !sliderRef.current || !containerRef.current) return;
+        const containerRect = containerRef.current.getBoundingClientRect();
+        let newX = clientX - containerRect.left - (sliderRef.current.offsetWidth / 2);
+
+        const maxPosition = containerRect.width - sliderRef.current.offsetWidth;
+
+        newX = Math.max(0, Math.min(newX, maxPosition));
+        setSliderPosition(newX);
+
+        if (newX >= maxPosition - 5) { // Threshold for success
+            onSwipeSuccess();
+            setIsSwiping(false);
+        }
+    };
+
+    const handlePointerUp = () => {
+        if (!isSwiping) return;
+        setIsSwiping(false);
+        if (sliderRef.current) {
+            sliderRef.current.style.transition = 'left 0.3s ease-out';
+            setSliderPosition(0);
+            setTimeout(() => {
+                if (sliderRef.current) sliderRef.current.style.transition = '';
+            }, 300);
+        }
+    };
+
+    return (
+        <div
+            ref={containerRef}
+            className="w-full h-14 bg-black dark:bg-black rounded-full relative flex items-center justify-center overflow-hidden select-none"
+            onPointerMove={(e) => isSwiping && handlePointerMove(e.clientX)}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
+            onTouchMove={(e) => isSwiping && handlePointerMove(e.touches[0].clientX)}
+            onTouchEnd={handlePointerUp}
+        >
+            <div
+                ref={sliderRef}
+                className="h-12 w-12 bg-white/10 rounded-full absolute top-1/2 -translate-y-1/2 flex items-center justify-center z-10 cursor-grab active:cursor-grabbing"
+                style={{ left: `${sliderPosition}px` }}
+                onPointerDown={() => setIsSwiping(true)}
+                onTouchStart={() => setIsSwiping(true)}
+            >
+                <ArrowRight className="h-5 w-5 text-white" />
+            </div>
+            <span className="font-semibold text-white/50 animate-pulse">Swipe to withdraw</span>
+            <ChevronsRight className="h-5 w-5 absolute right-4 text-white/50" />
+        </div>
+    );
+};
+
 
 // --- FORM COMPONENTS ---
 
@@ -105,22 +167,35 @@ function AddMoneyForm() {
     );
 }
 
-function WithdrawDialogContent() {
+function WithdrawDialogContent({ closeDialog }: { closeDialog: () => void }) {
     const [step, setStep] = useState<'selectMethod' | 'enterAmount' | 'confirm'>('selectMethod');
     const [selectedMethod, setSelectedMethod] = useState('bank');
     const [amount, setAmount] = useState('');
+    const { toast } = useToast();
 
     const handleNextFromMethod = () => setStep('enterAmount');
     const handleNextFromAmount = () => {
         if (amount && parseFloat(amount) > 0) {
             setStep('confirm');
         } else {
-            alert("Please enter a valid amount.");
+            toast({
+                variant: "destructive",
+                title: "Invalid Amount",
+                description: "Please enter a valid amount to withdraw.",
+            })
         }
     };
     const handleBack = () => {
         if (step === 'confirm') setStep('enterAmount');
         else if (step === 'enterAmount') setStep('selectMethod');
+    };
+
+    const handleWithdrawalSuccess = () => {
+        toast({
+            title: "Withdrawal Initiated",
+            description: `Your withdrawal of TK ${parseFloat(amount).toFixed(2)} is being processed.`,
+        });
+        closeDialog();
     };
 
     const quickAmounts = [100, 200, 500, 1000];
@@ -228,15 +303,7 @@ function WithdrawDialogContent() {
                         </main>
                     </div>
                     <footer className="px-6 pb-6 mt-4">
-                        <Button size="lg" className="w-full h-14 bg-black dark:bg-black text-white dark:text-white hover:bg-black/80">
-                            <div className="flex items-center justify-between w-full">
-                                <div className="p-2 bg-white/10 rounded-md">
-                                    <ArrowRight className="h-5 w-5" />
-                                </div>
-                                <span className="font-semibold">Swipe to withdraw</span>
-                                <ChevronsRight className="h-5 w-5" />
-                            </div>
-                        </Button>
+                        <SwipeButton onSwipeSuccess={handleWithdrawalSuccess} />
                     </footer>
                 </DialogContent>
             );
@@ -315,11 +382,19 @@ const WalletHeader = () => (
 
 const CardStack = ({ balance }: { balance: number }) => {
     const [isFanned, setIsFanned] = useState(false);
+    const [isWithdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
 
-    const handleOpenChange = (open: boolean) => {
+    const handleAddMoneyOpenChange = (open: boolean) => {
         if (!open) {
             setIsFanned(false);
         }
+    };
+    
+    const handleWithdrawOpenChange = (open: boolean) => {
+        if (!open) {
+            setIsFanned(false);
+        }
+        setWithdrawDialogOpen(open);
     };
 
     return (
@@ -380,7 +455,7 @@ const CardStack = ({ balance }: { balance: number }) => {
                 </div>
 
                 <div className="flex justify-start gap-4">
-                     <Dialog onOpenChange={handleOpenChange}>
+                     <Dialog onOpenChange={handleAddMoneyOpenChange}>
                         <DialogTrigger asChild>
                              <Button onClick={() => setIsFanned(true)} className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
                                 <ArrowUp className="mr-2 h-4 w-4" /> Add Money
@@ -398,13 +473,13 @@ const CardStack = ({ balance }: { balance: number }) => {
                             </div>
                         </DialogContent>
                     </Dialog>
-                     <Dialog onOpenChange={handleOpenChange}>
+                     <Dialog open={isWithdrawDialogOpen} onOpenChange={handleWithdrawOpenChange}>
                         <DialogTrigger asChild>
-                            <Button onClick={() => setIsFanned(true)} variant="secondary" className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
+                            <Button onClick={() => { setIsFanned(true); setWithdrawDialogOpen(true); }} variant="secondary" className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
                                 <ArrowDown className="mr-2 h-4 w-4" /> Withdraw
                             </Button>
                         </DialogTrigger>
-                        <WithdrawDialogContent />
+                        <WithdrawDialogContent closeDialog={() => handleWithdrawOpenChange(false)} />
                     </Dialog>
                 </div>
             </div>

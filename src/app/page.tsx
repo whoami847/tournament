@@ -12,7 +12,8 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import Link from 'next/link';
 import { getTournamentsStream } from '@/lib/tournaments-service';
 import { getBannersStream } from '@/lib/banners-service';
-import type { Tournament, Game, FeaturedBanner } from '@/types';
+import { getGamesStream } from '@/lib/games-service';
+import type { Tournament, Game, FeaturedBanner, GameCategory } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
@@ -28,24 +29,10 @@ import { useAuth } from '@/hooks/use-auth';
 
 // --- MOCK DATA ---
 
-const gamesData = [
-    { name: 'Free Fire', categories: 'Battle Royale • Action', image: 'https://placehold.co/400x200.png', dataAiHint: 'fire character action',},
-    { name: 'PUBG', categories: 'Battle Royale • FPS', image: 'https://placehold.co/400x200.png', dataAiHint: 'soldier helmet',},
-    { name: 'Mobile Legends', categories: 'MOBA • Strategy', image: 'https://placehold.co/400x200.png', dataAiHint: 'fantasy characters',},
-    { name: 'COD: Mobile', categories: 'FPS • Action', image: 'https://placehold.co/400x200.png', dataAiHint: 'modern warfare soldier',},
-];
-
 const topPlayersData = [
     { rank: 1, name: 'Jonathan Gaming', role: 'Player', winrate: '95%', games: 127, avatar: 'https://placehold.co/48x48.png', dataAiHint: 'male gamer headset',},
     { rank: 2, name: 'ScoutOP', role: 'Player', winrate: '87%', games: 98, avatar: 'https://placehold.co/48x48.png', dataAiHint: 'male gamer intense',},
     { rank: 3, name: 'Mortal', role: 'Player', winrate: '82.5%', games: 64, avatar: 'https://placehold.co/48x48.png', dataAiHint: 'male gamer smiling',},
-];
-
-const gameFilterData = [
-    { name: 'Free Fire' as Game, displayName: 'Free Fire', image: 'https://placehold.co/400x400.png', dataAiHint: 'fire character action' },
-    { name: 'PUBG' as Game, displayName: 'PUBG', image: 'https://placehold.co/400x400.png', dataAiHint: 'soldier helmet' },
-    { name: 'Mobile Legends' as Game, displayName: 'Mobile Legends', image: 'https://placehold.co/400x400.png', dataAiHint: 'fantasy characters' },
-    { name: 'COD: Mobile' as Game, displayName: 'COD: Mobile', image: 'https://placehold.co/400x400.png', dataAiHint: 'modern warfare soldier' },
 ];
 
 
@@ -172,11 +159,11 @@ const LiveEvents = ({tournaments}: {tournaments: Tournament[]}) => (
     </div>
 );
 
-const GamesList = () => (
+const GamesList = ({ games }: { games: GameCategory[] }) => (
     <div className="-mx-4">
         <Carousel opts={{ align: "start", loop: false }} className="w-full">
             <CarouselContent className="pl-4">
-            {gamesData.map((game, i) => (
+            {games.map((game, i) => (
                 <CarouselItem key={i} className="basis-3/5">
                     <Card className="relative h-28 border-none overflow-hidden rounded-xl">
                         <Image src={game.image} alt={game.name} fill className="object-cover" data-ai-hint={game.dataAiHint}/>
@@ -214,19 +201,19 @@ const TopPlayers = () => (
     </div>
 );
 
-const GameFilter = () => (
+const GameFilter = ({ games }: { games: GameCategory[] }) => (
     <div className="grid grid-cols-2 gap-4 mb-6">
-        {gameFilterData.map((game) => (
+        {games.map((game) => (
             <Link 
-                key={game.name} 
+                key={game.id} 
                 href={`/tournaments?game=${encodeURIComponent(game.name)}`} 
                 className="rounded-xl overflow-hidden cursor-pointer border-2 border-transparent transition-all bg-card hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
             >
                 <div className="relative aspect-square bg-muted">
-                    <Image src={game.image} alt={game.displayName} fill className="object-cover" data-ai-hint={game.dataAiHint}/>
+                    <Image src={game.image} alt={game.name} fill className="object-cover" data-ai-hint={game.dataAiHint}/>
                 </div>
                 <div className="p-3">
-                    <h4 className="font-semibold text-center text-sm uppercase">{game.displayName}</h4>
+                    <h4 className="font-semibold text-center text-sm uppercase">{game.name}</h4>
                 </div>
             </Link>
         ))}
@@ -238,6 +225,7 @@ const GameFilter = () => (
 export default function HomePage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [banners, setBanners] = useState<FeaturedBanner[]>([]);
+  const [games, setGames] = useState<GameCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -250,9 +238,14 @@ export default function HomePage() {
         setBanners(data);
     });
 
+    const unsubscribeGames = getGamesStream((data) => {
+        setGames(data);
+    });
+
     return () => {
         unsubscribeTournaments();
         unsubscribeBanners();
+        unsubscribeGames();
     };
   }, []);
 
@@ -275,11 +268,11 @@ export default function HomePage() {
           )}
           <section>
             <SectionHeader title="Upcoming Matches" actionText="All tournaments" actionHref="/tournaments" />
-            <GameFilter />
+            <GameFilter games={games.slice(0, 4)} />
           </section>
           <section>
             <SectionHeader title="Our Supported Games" actionText="All games" actionHref="#" />
-            <GamesList />
+            <GamesList games={games} />
           </section>
           <section>
             <SectionHeader title="Top Players" actionText="Full Ranking" actionHref="#" />

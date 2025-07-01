@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -26,13 +26,14 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import type { Game, Tournament } from "@/types"
+import type { Game, GameCategory, Tournament } from "@/types"
 import { useToast } from "@/hooks/use-toast"
 import { addTournament } from "@/lib/tournaments-service"
+import { getGamesStream } from "@/lib/games-service"
 
 const formSchema = z.object({
   name: z.string().min(5, "Tournament name must be at least 5 characters."),
-  game: z.enum(["Free Fire", "PUBG", "Mobile Legends", "COD: Mobile"]),
+  game: z.string().min(1, "Please select a game."),
   startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Please enter a valid date and time.",
   }),
@@ -59,13 +60,18 @@ const formSchema = z.object({
 export default function CreateTournamentPage() {
     const { toast } = useToast();
     const router = useRouter();
-    const games: Game[] = ['Free Fire', 'PUBG', 'Mobile Legends', 'COD: Mobile'];
+    const [games, setGames] = useState<GameCategory[]>([]);
+
+    useEffect(() => {
+        const unsubscribe = getGamesStream(setGames);
+        return () => unsubscribe();
+    }, []);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: "",
-            game: "Free Fire",
+            game: undefined,
             startDate: "",
             mode: "BR",
             teamType: "SQUAD",
@@ -94,7 +100,7 @@ export default function CreateTournamentPage() {
     }, [mode, teamType, form]);
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
-        const result = await addTournament(values);
+        const result = await addTournament(values as Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket' | 'image' | 'dataAiHint'>);
         if (result.success) {
             toast({
                 title: "Tournament Created!",
@@ -149,7 +155,7 @@ export default function CreateTournamentPage() {
                                                 </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
-                                                    {games.map(game => <SelectItem key={game} value={game}>{game}</SelectItem>)}
+                                                    {games.map(game => <SelectItem key={game.id} value={game.name}>{game.name}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
                                         <FormMessage />

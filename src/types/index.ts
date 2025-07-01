@@ -1,4 +1,4 @@
-export type Game = 'Free Fire' | 'PUBG' | 'Mobile Legends' | 'COD: Mobile';
+export type Game = string;
 
 export interface GameCategory {
   id: string;

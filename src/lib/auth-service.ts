@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
 import type { AuthUser } from '@/types';
+import { createUserProfile } from './users-service';
 
 export function onAuthStateChanged(callback: (user: AuthUser | null) => void) {
   return _onAuthStateChanged(auth, (user: User | null) => {
@@ -25,16 +26,20 @@ export function onAuthStateChanged(callback: (user: AuthUser | null) => void) {
   });
 }
 
-export function signUp(email: string, password: string): Promise<UserCredential> {
-  return createUserWithEmailAndPassword(auth, email, password);
+export async function signUp(email: string, password: string): Promise<UserCredential> {
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  await createUserProfile(userCredential.user);
+  return userCredential;
 }
 
 export function signIn(email: string, password: string): Promise<UserCredential> {
   return signInWithEmailAndPassword(auth, email, password);
 }
 
-export function signInWithGoogle(): Promise<UserCredential> {
-  return signInWithPopup(auth, googleProvider);
+export async function signInWithGoogle(): Promise<UserCredential> {
+  const userCredential = await signInWithPopup(auth, googleProvider);
+  await createUserProfile(userCredential.user);
+  return userCredential;
 }
 
 export function signOutUser(): Promise<void> {

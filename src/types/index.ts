@@ -64,3 +64,16 @@ export interface FeaturedBanner {
   image: string;
   dataAiHint: string;
 }
+
+export interface PlayerProfile {
+  id: string; // This will be the user's UID
+  name: string;
+  email: string;
+  avatar: string;
+  gamerId: string;
+  country: string;
+  joined: string; // ISO String
+  role: string;
+  winrate: number;
+  games: number;
+}

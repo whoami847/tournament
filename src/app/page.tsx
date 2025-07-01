@@ -13,7 +13,8 @@ import Link from 'next/link';
 import { getTournamentsStream } from '@/lib/tournaments-service';
 import { getBannersStream } from '@/lib/banners-service';
 import { getGamesStream } from '@/lib/games-service';
-import type { Tournament, Game, FeaturedBanner, GameCategory } from '@/types';
+import { getTopPlayersStream } from '@/lib/users-service';
+import type { Tournament, Game, FeaturedBanner, GameCategory, PlayerProfile } from '@/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
@@ -25,15 +26,12 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/hooks/use-auth';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 // --- MOCK DATA ---
 
-const topPlayersData = [
-    { rank: 1, name: 'Jonathan Gaming', role: 'Player', winrate: '95%', games: 127, avatar: 'https://placehold.co/48x48.png', dataAiHint: 'male gamer headset',},
-    { rank: 2, name: 'ScoutOP', role: 'Player', winrate: '87%', games: 98, avatar: 'https://placehold.co/48x48.png', dataAiHint: 'male gamer intense',},
-    { rank: 3, name: 'Mortal', role: 'Player', winrate: '82.5%', games: 64, avatar: 'https://placehold.co/48x48.png', dataAiHint: 'male gamer smiling',},
-];
+// This has been removed and is now fetched from Firestore.
 
 
 // --- SUB-COMPONENTS ---
@@ -180,26 +178,58 @@ const GamesList = ({ games }: { games: GameCategory[] }) => (
     </div>
 );
 
-const TopPlayers = () => (
+const TopPlayersSkeleton = () => (
     <div className="space-y-2">
-        {topPlayersData.map(p => (
-            <Card key={p.rank} className="p-3 bg-card flex items-center gap-4 border-none">
-                <div className="relative h-12 w-12 flex-shrink-0">
-                    <Avatar className="h-12 w-12 border-2 border-primary/50"><AvatarImage src={p.avatar} data-ai-hint={p.dataAiHint}/><AvatarFallback>{p.name.charAt(0)}</AvatarFallback></Avatar>
-                    <Badge className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground h-5 w-5 p-0 flex items-center justify-center text-xs font-bold border-2 border-background">{p.rank}</Badge>
+        {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 p-3 bg-card border-none rounded-md">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="flex-grow space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/4" />
                 </div>
-                <div className="flex-grow">
-                    <p className="font-bold">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">{p.role}</p>
+                <div className="text-right space-y-2">
+                     <Skeleton className="h-4 w-12 ml-auto" />
+                     <Skeleton className="h-3 w-20 ml-auto" />
                 </div>
-                <div className="text-right">
-                    <p className="font-bold text-primary">{p.winrate}</p>
-                    <p className="text-xs text-muted-foreground">{p.games} Games</p>
-                </div>
-            </Card>
+            </div>
         ))}
     </div>
 );
+
+const TopPlayers = ({ players, loading }: { players: PlayerProfile[], loading: boolean }) => {
+    if (loading) {
+        return <TopPlayersSkeleton />;
+    }
+
+    if (players.length === 0) {
+        return (
+            <Card className="p-3 bg-card flex items-center justify-center border-none h-24">
+                <p className="text-muted-foreground">No top players data available yet.</p>
+            </Card>
+        );
+    }
+
+    return (
+        <div className="space-y-2">
+            {players.map((p, index) => (
+                <Card key={p.id} className="p-3 bg-card flex items-center gap-4 border-none">
+                    <div className="relative h-12 w-12 flex-shrink-0">
+                        <Avatar className="h-12 w-12 border-2 border-primary/50"><AvatarImage src={p.avatar} data-ai-hint="gamer avatar" /><AvatarFallback>{p.name.charAt(0)}</AvatarFallback></Avatar>
+                        <Badge className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground h-5 w-5 p-0 flex items-center justify-center text-xs font-bold border-2 border-background">{index + 1}</Badge>
+                    </div>
+                    <div className="flex-grow">
+                        <p className="font-bold">{p.name}</p>
+                        <p className="text-xs text-muted-foreground">{p.role}</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="font-bold text-primary">{p.winrate}%</p>
+                        <p className="text-xs text-muted-foreground">{p.games} Games</p>
+                    </div>
+                </Card>
+            ))}
+        </div>
+    );
+};
 
 const GameFilter = ({ games }: { games: GameCategory[] }) => (
     <div className="grid grid-cols-2 gap-4 mb-6">
@@ -226,7 +256,9 @@ export default function HomePage() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [banners, setBanners] = useState<FeaturedBanner[]>([]);
   const [games, setGames] = useState<GameCategory[]>([]);
+  const [topPlayers, setTopPlayers] = useState<PlayerProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingPlayers, setLoadingPlayers] = useState(true);
 
   useEffect(() => {
     const unsubscribeTournaments = getTournamentsStream((data) => {
@@ -242,10 +274,16 @@ export default function HomePage() {
         setGames(data);
     });
 
+    const unsubscribeTopPlayers = getTopPlayersStream((data) => {
+        setTopPlayers(data);
+        setLoadingPlayers(false);
+    }, 3);
+
     return () => {
         unsubscribeTournaments();
         unsubscribeBanners();
         unsubscribeGames();
+        unsubscribeTopPlayers();
     };
   }, []);
 
@@ -276,7 +314,7 @@ export default function HomePage() {
           </section>
           <section>
             <SectionHeader title="Top Players" actionText="Full Ranking" actionHref="#" />
-            <TopPlayers />
+            <TopPlayers players={topPlayers} loading={loadingPlayers} />
           </section>
         </div>
       </div>

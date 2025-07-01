@@ -1,13 +1,13 @@
 
 'use client';
 
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { AreaChart } from 'recharts';
 import type { ChartConfig } from '@/components/ui/chart';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Search, ArrowRight, Banknote, Gamepad2, Gift } from 'lucide-react';
+import { Search, Banknote, Gamepad2, Gift } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
 
@@ -84,42 +84,41 @@ const ContactList = () => (
 
 const CardStack = () => {
     return (
-        <div className="relative h-56 flex items-center justify-center my-4">
+        <div className="relative h-60 flex items-center justify-center group">
             {/* Bottom Card */}
             <div 
-                className="absolute w-full max-w-sm h-52 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 p-6 text-white shadow-lg"
-                style={{ transform: 'translate(0px, 20px) rotate(-8deg)', zIndex: 10 }}
+                className="absolute w-full max-w-[320px] h-52 rounded-2xl bg-gradient-to-br from-[#4A2E0C] to-[#8C5A2D] p-6 text-white shadow-lg transition-transform duration-500 ease-out group-hover:-translate-y-2 group-hover:rotate-[-8deg]"
+                style={{ transform: 'translateY(24px) rotate(-6deg)', zIndex: 10 }}
             >
                 <div className="flex justify-between items-start">
-                    <p className="font-bold">NICK OHMY</p>
+                    <p className="font-bold tracking-wider">NICK OHMY</p>
                     <p className="font-bold text-2xl italic">VISA</p>
                 </div>
             </div>
              {/* Middle Card */}
             <div 
-                className="absolute w-full max-w-sm h-52 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 p-6 text-white shadow-lg"
-                style={{ transform: 'translate(0px, 10px) rotate(-4deg)', zIndex: 20 }}
+                className="absolute w-full max-w-[320px] h-52 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 p-6 text-white shadow-lg transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:rotate-[-4deg]"
+                style={{ transform: 'translateY(12px) rotate(-3deg)', zIndex: 20 }}
             >
                  <div className="flex justify-between items-start">
-                    <p className="font-bold">NICK OHMY</p>
+                    <p className="font-bold tracking-wider">NICK OHMY</p>
                     <p className="font-bold text-2xl italic">VISA</p>
                 </div>
             </div>
              {/* Top Card */}
             <div 
-                className="absolute w-full max-w-sm h-52 rounded-2xl bg-gray-900 p-6 text-white shadow-2xl flex flex-col justify-between"
+                className="absolute w-full max-w-[320px] h-52 rounded-2xl bg-black p-6 text-white shadow-2xl flex flex-col justify-between transition-transform duration-500 ease-out group-hover:scale-105 group-hover:-translate-y-6"
                 style={{ zIndex: 30 }}
             >
-                <div className="flex justify-between items-start">
-                    <p className="font-bold">NICK OHMY</p>
+                <div className="flex justify-end items-start">
                     <p className="font-bold text-2xl italic">VISA</p>
                 </div>
                 <div>
                     <p className="text-2xl font-mono tracking-widest">1234 5678 9000 0000</p>
-                    <div className="flex justify-between items-end mt-2">
+                    <div className="flex justify-between items-end mt-4">
                         <div>
                             <p className="text-xs uppercase text-gray-400">Card Holder Name</p>
-                            <p className="font-medium">NICK OHMY</p>
+                            <p className="font-medium tracking-wider">NICK OHMY</p>
                         </div>
                         <div>
                              <p className="text-xs uppercase text-gray-400">Expiry Date</p>
@@ -153,25 +152,6 @@ const BalanceAnalytics = () => (
             <div className="h-[150px] w-full">
                 <ChartContainer config={chartConfig}>
                     <AreaChart accessibilityLayer data={chartData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
-                        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" />
-                        <XAxis
-                            dataKey="month"
-                            tickLine={false}
-                            axisLine={false}
-                            tickMargin={8}
-                            tickFormatter={(value) => value.slice(0, 3)}
-                            className="text-xs"
-                        />
-                         <YAxis
-                            tickLine={false}
-                            axisLine={false}
-                            tickMargin={8}
-                            hide
-                        />
-                        <ChartTooltip
-                            cursor={true}
-                            content={<ChartTooltipContent indicator="dot" />}
-                        />
                         <defs>
                             <linearGradient id="fillIncome" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
@@ -182,6 +162,10 @@ const BalanceAnalytics = () => (
                                 <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.1} />
                             </linearGradient>
                         </defs>
+                        <ChartTooltip
+                            cursor={true}
+                            content={<ChartTooltipContent indicator="dot" />}
+                        />
                         <Area
                             dataKey="income"
                             type="natural"
@@ -251,5 +235,3 @@ export default function WalletPage() {
         </div>
     );
 }
-
-    

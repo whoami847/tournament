@@ -1,12 +1,27 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Search, Banknote, Gamepad2, Gift } from 'lucide-react';
+import { Search, Banknote, Gamepad2, Gift, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
+import { createPaymentUrl } from '@/lib/payment-actions';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 // --- MOCK DATA ---
 const mockTransactions = [
@@ -15,6 +30,69 @@ const mockTransactions = [
     { type: 'withdrawal', amount: -1000.00, description: 'Entry Fee: CODM Battle Arena', date: '2024-07-26' },
     { type: 'reward', amount: 1500.00, description: 'Prize: ML Diamond Cup S5', date: '2024-07-20' },
 ];
+
+const totalBalance = mockTransactions.reduce((acc, tx) => acc + tx.amount, 0);
+
+// --- FORM COMPONENTS ---
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" className="w-full" disabled={pending}>
+            {pending ? 'Processing...' : 'Proceed to Pay'}
+        </Button>
+    );
+}
+
+function AddMoneyForm() {
+    const [state, formAction] = useActionState(createPaymentUrl, null);
+
+    return (
+        <form action={formAction} className="space-y-4">
+            {state?.error && (
+                <Alert variant="destructive">
+                    <AlertDescription>{state.error}</AlertDescription>
+                </Alert>
+            )}
+            <div className="space-y-2">
+                <Label htmlFor="amount">Amount (TK)</Label>
+                <Input
+                    id="amount"
+                    name="amount"
+                    type="number"
+                    placeholder="e.g. 500"
+                    required
+                    min="10"
+                />
+            </div>
+            <DialogFooter>
+                <SubmitButton />
+            </DialogFooter>
+        </form>
+    )
+}
+
+function WithdrawDialog() {
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Withdraw Funds</DialogTitle>
+                <DialogDescription>
+                    Withdrawal functionality is coming soon.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 text-center text-muted-foreground">
+                <p>This feature is currently under development.</p>
+            </div>
+             <DialogFooter>
+                <DialogClose asChild>
+                    <Button variant="outline">Close</Button>
+                </DialogClose>
+            </DialogFooter>
+        </DialogContent>
+    )
+}
+
 
 // --- SUB-COMPONENTS ---
 
@@ -51,7 +129,7 @@ const CardStack = () => {
     return (
         <div className="relative h-60 flex items-center justify-center group">
             {/* Bottom Card */}
-            <div 
+            <div
                 className="absolute w-full max-w-[320px] h-52 rounded-2xl bg-gradient-to-br from-[#4A2E0C] to-[#8C5A2D] p-6 text-white shadow-lg transition-transform duration-500 ease-out group-hover:-translate-y-2 group-hover:rotate-[-8deg]"
                 style={{ transform: 'translateY(24px) rotate(-6deg)', zIndex: 10 }}
             >
@@ -61,7 +139,7 @@ const CardStack = () => {
                 </div>
             </div>
              {/* Middle Card */}
-            <div 
+            <div
                 className="absolute w-full max-w-[320px] h-52 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 p-6 text-white shadow-lg transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:rotate-[-4deg]"
                 style={{ transform: 'translateY(12px) rotate(-3deg)', zIndex: 20 }}
             >
@@ -71,7 +149,7 @@ const CardStack = () => {
                 </div>
             </div>
              {/* Top Card */}
-            <div 
+            <div
                 className="absolute w-full max-w-[320px] h-52 rounded-2xl bg-black p-6 text-white shadow-2xl flex flex-col justify-between transition-transform duration-500 ease-out group-hover:scale-105 group-hover:-translate-y-6"
                 style={{ zIndex: 30 }}
             >
@@ -136,7 +214,44 @@ export default function WalletPage() {
         <div className="bg-gradient-to-b from-amber-900/10 via-background to-background min-h-screen text-foreground pb-24">
             <WalletHeader />
             <main className="container mx-auto px-4 mt-4 space-y-8">
+                
+                <section className="text-center space-y-4">
+                     <div>
+                        <p className="text-sm text-muted-foreground">Current Balance</p>
+                        <p className="text-4xl font-bold tracking-tight">
+                            {totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TK
+                        </p>
+                    </div>
+                    <div className="flex justify-center gap-4">
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button size="lg" className="bg-green-500 hover:bg-green-600 text-white font-bold">
+                                    <ArrowUp className="mr-2 h-5 w-5" /> Add Money
+                                </Button>
+                            </DialogTrigger>
+                             <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Add Money to Wallet</DialogTitle>
+                                    <DialogDescription>
+                                        Enter the amount you wish to deposit.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <AddMoneyForm />
+                            </DialogContent>
+                        </Dialog>
+                         <Dialog>
+                            <DialogTrigger asChild>
+                                <Button size="lg" variant="secondary" className="font-bold">
+                                    <ArrowDown className="mr-2 h-5 w-5" /> Withdraw
+                                </Button>
+                            </DialogTrigger>
+                            <WithdrawDialog />
+                        </Dialog>
+                    </div>
+                </section>
+
                 <CardStack />
+
                 <TransactionList />
             </main>
         </div>

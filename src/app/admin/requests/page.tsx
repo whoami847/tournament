@@ -39,13 +39,11 @@ export default function AdminRequestsPage() {
             <CardContent>
                 <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center">
                     <div className="flex items-center gap-2 p-1 bg-muted rounded-full flex-wrap self-start">
-                        <Button variant={selectedGame === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedGame('all')}>All Games</Button>
                         {games.map(game => (
                             <Button key={game} variant={selectedGame === game ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedGame(game)}>{game}</Button>
                         ))}
                     </div>
                      <div className="flex items-center gap-2 p-1 bg-muted rounded-full flex-wrap self-start">
-                        <Button variant={selectedTeamType === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedTeamType('all')}>All Types</Button>
                         {teamTypes.map(type => (
                             <Button key={type} variant={selectedTeamType === type ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedTeamType(type)}>{type}</Button>
                         ))}

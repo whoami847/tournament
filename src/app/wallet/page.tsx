@@ -44,14 +44,10 @@ function AddMoneyForm() {
                 variant: 'destructive',
             });
         }
-        // A successful submission redirects, so no success toast is needed here.
     }, [state, toast]);
 
-    // This closes the dialog if a redirect happens, which can prevent it from being stuck open
     useEffect(() => {
         if (!isDialogOpen) {
-          // Reset form state when dialog is closed
-          // This is a bit of a workaround for resetting useFormState
         }
     }, [isDialogOpen]);
     

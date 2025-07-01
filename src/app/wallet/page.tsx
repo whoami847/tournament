@@ -5,8 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Search, Banknote, Gamepad2, Gift, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import React, { useState } from 'react';
-import { useActionState, useFormStatus } from 'react';
+import React, { useState, useEffect, useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import {
   Dialog,
   DialogContent,

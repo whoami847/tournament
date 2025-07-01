@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Banknote, Gamepad2, Gift, ArrowUp, ArrowDown, Landmark, CreditCard, Wallet, Globe, ChevronDown } from 'lucide-react';
+import { Banknote, Gamepad2, Gift, ArrowUp, ArrowDown, Landmark, CreditCard, Wallet, Globe, ChevronDown, ArrowLeft, ArrowRight, ChevronsRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React, { useState, useEffect, useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
@@ -23,6 +23,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { createPaymentUrl } from "@/lib/payment-actions";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
 
 // --- MOCK DATA ---
 const mockTransactions = [
@@ -105,70 +106,196 @@ function AddMoneyForm() {
 }
 
 function WithdrawDialogContent() {
+    const [step, setStep] = useState<'selectMethod' | 'enterAmount' | 'confirm'>('selectMethod');
     const [selectedMethod, setSelectedMethod] = useState('bank');
+    const [amount, setAmount] = useState('');
 
-    return (
-        <DialogContent className="sm:max-w-md p-0">
-            <DialogHeader className="p-6 pb-4">
-                <DialogTitle className="text-xl text-center font-semibold">From Account</DialogTitle>
-            </DialogHeader>
-            <div className="px-6 pb-6 space-y-6">
-                {/* User Info */}
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
-                    <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-background flex items-center justify-center border">
-                           <Globe className="h-5 w-5 text-muted-foreground" />
+    const handleNextFromMethod = () => setStep('enterAmount');
+    const handleNextFromAmount = () => {
+        if (amount && parseFloat(amount) > 0) {
+            setStep('confirm');
+        } else {
+            alert("Please enter a valid amount.");
+        }
+    };
+    const handleBack = () => {
+        if (step === 'confirm') setStep('enterAmount');
+        else if (step === 'enterAmount') setStep('selectMethod');
+    };
+
+    const quickAmounts = [100, 200, 500, 1000];
+    const handleQuickAmountClick = (value: number) => {
+        setAmount(value.toString());
+    };
+
+    switch (step) {
+        case 'enterAmount':
+            return (
+                <DialogContent className="sm:max-w-md p-0">
+                    <DialogHeader className="p-6 pb-4">
+                        <Button variant="ghost" size="icon" className="absolute left-4 top-4" onClick={handleBack}>
+                            <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                        <DialogTitle className="text-xl text-center">Withdraw Amount</DialogTitle>
+                        <DialogDescription className="text-center">Select or enter an amount to withdraw.</DialogDescription>
+                    </DialogHeader>
+                    <div className="px-6 pb-6 space-y-6">
+                        <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-3xl font-semibold text-muted-foreground">TK</span>
+                            <Input
+                                id="withdraw-amount"
+                                name="withdraw-amount"
+                                type="number"
+                                placeholder="0.00"
+                                required
+                                min="10"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                className="h-24 w-full rounded-xl border-2 border-border bg-muted/50 pl-16 pr-6 text-center text-6xl font-bold tracking-tighter focus:bg-background"
+                            />
                         </div>
                         <div>
-                            <p className="font-semibold">Mapple</p>
-                            <p className="text-sm text-muted-foreground">80412682</p>
+                            <p className="mb-3 text-center text-sm font-medium text-muted-foreground">Or choose a quick amount</p>
+                            <div className="grid grid-cols-4 gap-3">
+                                {quickAmounts.map((value) => (
+                                    <Button key={value} type="button" variant={amount === value.toString() ? "default" : "outline"} onClick={() => handleQuickAmountClick(value)} className="h-12 rounded-full text-base font-semibold">
+                                        {value}
+                                    </Button>
+                                ))}
+                            </div>
                         </div>
+                        <Button size="lg" className="w-full !mt-8" onClick={handleNextFromAmount}>
+                            Confirm Amount
+                        </Button>
                     </div>
-                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                </div>
+                </DialogContent>
+            );
 
-                {/* Withdrawal Methods */}
-                <RadioGroup value={selectedMethod} onValueChange={setSelectedMethod} className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div>
-                            <RadioGroupItem value="g-wallet" id="g-wallet" className="sr-only peer" />
-                            <Label
-                                htmlFor="g-wallet"
-                                className="flex h-full items-center justify-center gap-2 rounded-lg border-2 border-muted bg-muted/60 p-4 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 text-foreground font-semibold"
-                            >
-                                <Wallet className="h-5 w-5" />
-                                G-wallet
-                            </Label>
-                        </div>
-                        <div>
-                            <RadioGroupItem value="card" id="card" className="sr-only peer" />
-                            <Label
-                                htmlFor="card"
-                                className="flex h-full items-center justify-center gap-2 rounded-lg border-2 border-muted bg-muted/60 p-4 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 text-foreground font-semibold"
-                            >
-                                <CreditCard className="h-5 w-5" />
-                                Card
-                            </Label>
-                        </div>
-                    </div>
-                    <div>
-                        <RadioGroupItem value="bank" id="bank" className="sr-only peer" />
-                        <Label
-                            htmlFor="bank"
-                            className="flex items-center justify-center gap-2 rounded-lg border-2 border-transparent bg-muted/60 p-4 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground text-foreground font-semibold"
-                        >
-                            <Landmark className="h-5 w-5" />
-                            Bank Account
-                        </Label>
-                    </div>
-                </RadioGroup>
+        case 'confirm':
+            const transactionId = `#${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(10 + Math.random() * 90)}`;
+            const fromAccountNumber = 'Mapple (80412682)'; 
+            const toAccountDetails = {
+                bank: 'Bank Account ending in **6789',
+                card: 'Card ending in **1234',
+                'g-wallet': 'G-Wallet (mapple_gaming_123)',
+            }[selectedMethod] || 'Selected Account';
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            const formattedTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-                 <Button size="lg" className="w-full !mt-8">
-                    Next
-                </Button>
-            </div>
-        </DialogContent>
-    );
+            return (
+                <DialogContent className="sm:max-w-md p-0 bg-stone-100 dark:bg-stone-900 border-none rounded-2xl overflow-hidden">
+                    <div className="p-6">
+                        <header className="flex justify-between items-center mb-8">
+                             <Button variant="ghost" size="icon" onClick={handleBack} className="text-black dark:text-white">
+                                <ArrowLeft className="h-5 w-5" />
+                            </Button>
+                            <div className="flex-grow flex flex-col items-start ml-4">
+                                <h1 className="text-3xl font-bold text-black dark:text-white">Withdrawing Money</h1>
+                                <p className="text-sm text-stone-500 dark:text-stone-400">{formattedDate} &nbsp; {formattedTime}</p>
+                            </div>
+                            <Button variant="ghost" size="icon" className="text-black dark:text-white">
+                                <Globe className="h-6 w-6" />
+                            </Button>
+                        </header>
+                        <main className="space-y-6">
+                            <div className="text-center space-y-1">
+                                <p className="text-sm text-stone-500 dark:text-stone-400">Amount</p>
+                                <p className="text-5xl font-bold text-black dark:text-white">TK {parseFloat(amount).toFixed(2)}</p>
+                            </div>
+                            <div className="bg-white dark:bg-stone-800 p-4 rounded-xl space-y-4 text-black dark:text-white">
+                                <div className="flex justify-between">
+                                    <div>
+                                        <p className="text-xs text-stone-500 dark:text-stone-400">Transaction ID</p>
+                                        <p className="font-semibold">{transactionId}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-xs text-stone-500 dark:text-stone-400">Transaction Type</p>
+                                        <p className="font-semibold">Withdrawal</p>
+                                    </div>
+                                </div>
+                                <Separator className="bg-stone-200 dark:bg-stone-700" />
+                                <div>
+                                    <p className="text-xs text-stone-500 dark:text-stone-400">From Account</p>
+                                    <p className="font-semibold">{fromAccountNumber}</p>
+                                </div>
+                                <Separator className="bg-stone-200 dark:bg-stone-700" />
+                                <div>
+                                    <p className="text-xs text-stone-500 dark:text-stone-400">Withdrawing to</p>
+                                    <p className="font-semibold">{toAccountDetails}</p>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                    <footer className="px-6 pb-6 mt-4">
+                        <Button size="lg" className="w-full h-14 bg-black dark:bg-black text-white dark:text-white hover:bg-black/80">
+                            <div className="flex items-center justify-between w-full">
+                                <div className="p-2 bg-white/10 rounded-md">
+                                    <ArrowRight className="h-5 w-5" />
+                                </div>
+                                <span className="font-semibold">Swipe to withdraw</span>
+                                <ChevronsRight className="h-5 w-5" />
+                            </div>
+                        </Button>
+                    </footer>
+                </DialogContent>
+            );
+        
+        default: // 'selectMethod'
+            return (
+                <DialogContent className="sm:max-w-md p-0">
+                    <DialogHeader className="p-6 pb-4">
+                        <DialogTitle className="text-xl text-center font-semibold">From Account</DialogTitle>
+                    </DialogHeader>
+                    <div className="px-6 pb-6 space-y-6">
+                        {/* User Info */}
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
+                             <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-background flex items-center justify-center border">
+                                   <Globe className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                                <div>
+                                    <p className="font-semibold">Mapple</p>
+                                    <p className="text-sm text-muted-foreground">80412682</p>
+                                </div>
+                            </div>
+                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                        </div>
+    
+                        {/* Withdrawal Methods */}
+                        <RadioGroup value={selectedMethod} onValueChange={setSelectedMethod} className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <RadioGroupItem value="g-wallet" id="g-wallet" className="sr-only peer" />
+                                    <Label htmlFor="g-wallet" className="flex h-full items-center justify-center gap-2 rounded-lg border-2 border-muted bg-muted/60 p-4 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 text-foreground font-semibold">
+                                        <Wallet className="h-5 w-5" />
+                                        G-wallet
+                                    </Label>
+                                </div>
+                                <div>
+                                    <RadioGroupItem value="card" id="card" className="sr-only peer" />
+                                    <Label htmlFor="card" className="flex h-full items-center justify-center gap-2 rounded-lg border-2 border-muted bg-muted/60 p-4 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 text-foreground font-semibold">
+                                        <CreditCard className="h-5 w-5" />
+                                        Card
+                                    </Label>
+                                </div>
+                            </div>
+                            <div>
+                                <RadioGroupItem value="bank" id="bank" className="sr-only peer" />
+                                <Label htmlFor="bank" className="flex items-center justify-center gap-2 rounded-lg border-2 border-transparent bg-muted/60 p-4 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground text-foreground font-semibold">
+                                    <Landmark className="h-5 w-5" />
+                                    Bank Account
+                                </Label>
+                            </div>
+                        </RadioGroup>
+    
+                        <Button size="lg" className="w-full !mt-8" onClick={handleNextFromMethod}>
+                            Next
+                        </Button>
+                    </div>
+                </DialogContent>
+            );
+    }
 }
 
 

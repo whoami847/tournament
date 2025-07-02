@@ -39,7 +39,7 @@ const formSchema = z.object({
   }),
   mode: z.enum(["BR", "CS", "LONE WOLF"], { required_error: "Please select a mode." }),
   teamType: z.enum(["SOLO", "DUO", "SQUAD"], { required_error: "Please select a team type." }),
-  maxTeams: z.coerce.number().int().min(4, "Must have at least 4 teams.").max(64, "Cannot exceed 64 teams."),
+  maxTeams: z.coerce.number().int().min(2, "Must have at least 2 teams/players.").max(64, "Cannot exceed 64 teams."),
   entryFee: z.coerce.number().min(0).optional(),
   prizePool: z.string().min(1, "Prize pool is required."),
   rules: z.string().min(50, "Rules must be at least 50 characters long."),
@@ -230,7 +230,7 @@ export default function CreateTournamentPage() {
                                     name="maxTeams"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Max Teams</FormLabel>
+                                            <FormLabel>{teamType === 'SOLO' ? 'Players' : 'Teams'}</FormLabel>
                                             <FormControl>
                                                 <Input type="number" {...field} />
                                             </FormControl>

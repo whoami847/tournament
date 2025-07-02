@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,11 +25,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MoreHorizontal, User, Gamepad2, Globe, Calendar, Users, Shield, Trophy, Star, Flame, LogOut, Pencil } from 'lucide-react';
+import { MoreHorizontal, User, Gamepad2, Mail, Calendar, Users, Shield, Trophy, Star, Flame, LogOut, Pencil } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { signOutUser } from '@/lib/auth-service';
 import { useRouter } from 'next/navigation';
+import { getUserProfileStream } from '@/lib/users-service';
+import type { PlayerProfile } from '@/types';
 
 // --- MOCK DATA (will be replaced by dynamic data) ---
 const initialTeamInfo = {
@@ -65,18 +68,18 @@ const InfoItem = ({ icon: Icon, label, value }: { icon: LucideIcon, label: strin
     </div>
 );
 
-const UserInfo = () => {
-    const { user } = useAuth();
+const UserInfo = ({ profile, user }: { profile: PlayerProfile | null, user: ReturnType<typeof useAuth>['user'] }) => {
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                <InfoItem icon={User} label="Full Name" value={user?.displayName || 'N/A'} />
-                <InfoItem icon={Gamepad2} label="Email" value={user?.email || 'N/A'} />
-                <InfoItem icon={Globe} label="Country" value={"India"} />
-                <InfoItem icon={Calendar} label="Joined" value={"December 2022"} />
+                <InfoItem icon={User} label="Full Name" value={profile?.name || 'N/A'} />
+                <InfoItem icon={Mail} label="Email" value={profile?.email || 'N/A'} />
+                <InfoItem icon={Gamepad2} label="Gamer ID" value={profile?.gamerId || 'N/A'} />
+                <InfoItem icon={Shield} label="User ID" value={user?.uid || 'N/A'} />
+                <InfoItem icon={Calendar} label="Joined" value={profile?.joined ? format(new Date(profile.joined), 'PPP') : 'N/A'} />
             </CardContent>
         </Card>
     );
@@ -201,13 +204,23 @@ const Achievements = () => (
 export default function ProfilePage() {
     const { user } = useAuth();
     const router = useRouter();
+    const [profile, setProfile] = useState<PlayerProfile | null>(null);
+
+    useEffect(() => {
+        if (user?.uid) {
+            const unsubscribe = getUserProfileStream(user.uid, (data) => {
+                setProfile(data);
+            });
+            return () => unsubscribe();
+        }
+    }, [user]);
 
     const handleLogout = async () => {
         await signOutUser();
         router.push('/login');
     };
     
-    const displayName = user?.displayName || user?.email?.split('@')[0] || 'Player';
+    const displayName = profile?.name || user?.displayName || user?.email?.split('@')[0] || 'Player';
     const fallback = displayName.charAt(0).toUpperCase();
 
     return (
@@ -251,7 +264,7 @@ export default function ProfilePage() {
             <div className="relative z-10 -mt-16 flex flex-col items-center text-center px-4">
                 <div className="relative">
                     <Avatar className="h-28 w-28 border-4 border-background">
-                        <AvatarImage src={user?.photoURL || ''} alt={displayName} data-ai-hint="fantasy character" />
+                        <AvatarImage src={profile?.avatar || user?.photoURL || ''} alt={displayName} data-ai-hint="fantasy character" />
                         <AvatarFallback>{fallback}</AvatarFallback>
                     </Avatar>
                     <div className="absolute bottom-1 right-1 h-5 w-5 bg-teal-400 rounded-full border-2 border-background" />
@@ -269,7 +282,7 @@ export default function ProfilePage() {
                         <TabsTrigger value="success" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Achievements</TabsTrigger>
                     </TabsList>
                     <TabsContent value="info" className="mt-4">
-                        <UserInfo />
+                        <UserInfo profile={profile} user={user} />
                     </TabsContent>
                     <TabsContent value="team" className="mt-4">
                         <TeamInfo />

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -78,35 +77,36 @@ const MatchCard = ({ match }: { match: UserMatchResult }) => {
 
 // Main page component
 export default function ResultsPage() {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const [profile, setProfile] = useState<PlayerProfile | null>(null);
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [dataLoading, setDataLoading] = useState(true);
 
     useEffect(() => {
-        if (user?.uid) {
+        if (authLoading) return; // Wait for authentication to resolve
+
+        if (user) {
+            setDataLoading(true);
             const unsubProfile = getUserProfileStream(user.uid, (data) => {
                 setProfile(data);
-                 if (tournaments.length > 0) {
-                    setLoading(false);
-                }
+                // We'll handle loading state together with tournaments
             });
             const unsubTournaments = getTournamentsStream((data) => {
                 setTournaments(data);
-                if (profile !== null) {
-                    setLoading(false);
-                }
+                setDataLoading(false); // Set loading to false once we have tournaments
             });
             return () => {
                 unsubProfile();
                 unsubTournaments();
             };
-        } else if (user === null) {
-            setLoading(false);
+        } else {
+            // Not logged in
+            setDataLoading(false);
         }
-    }, [user, profile, tournaments.length]);
+    }, [user, authLoading]);
 
     const userMatches = useMemo(() => {
+        // Wait until we have all the necessary data
         if (!profile || tournaments.length === 0) {
             return [];
         }
@@ -114,6 +114,11 @@ export default function ResultsPage() {
         const allMatches: UserMatchResult[] = [];
 
         for (const tournament of tournaments) {
+            // We only care about tournaments the user participated in that are live or completed.
+            if (tournament.status === 'upcoming') {
+                continue;
+            }
+
             const userTeam = tournament.participants.find(p => 
                 p.members?.some(m => m.gamerId === profile.gamerId)
             );
@@ -125,43 +130,50 @@ export default function ResultsPage() {
                     if (!match.teams[0] || !match.teams[1]) continue;
 
                     const isUserInMatch = match.teams.some(t => t?.id === userTeam.id);
+                    if (!isUserInMatch) continue;
 
-                    if (isUserInMatch) {
-                        let status: UserMatchResult['status'] = 'pending';
-                        if (match.status === 'live' || (tournament.status === 'live' && match.status !== 'completed')) {
-                            status = 'live';
-                        } else if (match.status === 'completed') {
-                            const userIsTeam1 = match.teams[0]?.id === userTeam.id;
-                            const userTeamWon = (userIsTeam1 && match.scores[0] > match.scores[1]) || (!userIsTeam1 && match.scores[1] > match.scores[0]);
-                            status = userTeamWon ? 'victory' : 'defeat';
-                        }
-                        
-                        // only add if not pending or if it's live
-                        if (status !== 'pending' || tournament.status === 'live') {
-                           allMatches.push({
-                                id: match.id,
-                                tournamentId: tournament.id,
-                                tournamentName: tournament.name,
-                                game: tournament.game,
-                                team1: match.teams[0],
-                                team2: match.teams[1],
-                                score1: match.scores[0],
-                                score2: match.scores[1],
-                                userTeam,
-                                status,
-                            });
-                        }
+                    let status: UserMatchResult['status'] = 'pending';
+                    
+                    if (match.status === 'live') {
+                        status = 'live';
+                    } else if (match.status === 'completed') {
+                        const userIsTeam1 = match.teams[0]?.id === userTeam.id;
+                        const userTeamWon = (userIsTeam1 && match.scores[0] > match.scores[1]) || (!userIsTeam1 && match.scores[1] > match.scores[0]);
+                        status = userTeamWon ? 'victory' : 'defeat';
+                    } else if (tournament.status === 'completed' && match.status !== 'completed') {
+                        // If tournament is over but this match wasn't explicitly marked as won,
+                        // it's considered a loss for history purposes.
+                        status = 'defeat';
+                    }
+
+                    // Only show matches that are live or have a definitive outcome.
+                    if (status === 'live' || status === 'victory' || status === 'defeat') {
+                        allMatches.push({
+                            id: match.id,
+                            tournamentId: tournament.id,
+                            tournamentName: tournament.name,
+                            game: tournament.game,
+                            team1: match.teams[0],
+                            team2: match.teams[1],
+                            score1: match.scores[0],
+                            score2: match.scores[1],
+                            userTeam,
+                            status,
+                        });
                     }
                 }
             }
         }
         
         return allMatches.sort((a,b) => {
-            if (a.status === 'live') return -1;
-            if (b.status === 'live') return 1;
-            return 0; // could sort by date here if available
+            if (a.status === 'live' && b.status !== 'live') return -1;
+            if (b.status === 'live' && a.status !== 'live') return 1;
+            // Potentially add date sorting here later if needed
+            return 0;
         });
     }, [profile, tournaments]);
+    
+    const loading = authLoading || dataLoading;
 
     if (loading) {
         return (
@@ -182,7 +194,7 @@ export default function ResultsPage() {
         );
     }
     
-    if (userMatches.length === 0) {
+    if (!loading && userMatches.length === 0) {
         return (
             <div className="container mx-auto px-4 py-8 md:pb-8 pb-24 flex flex-col items-center justify-center min-h-[60vh] text-center">
                 <ShieldOff className="h-16 w-16 text-muted-foreground/50 mb-4" />
@@ -225,4 +237,3 @@ export default function ResultsPage() {
         </div>
     );
 }
-

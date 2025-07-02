@@ -115,12 +115,12 @@ const TeamInfo = () => {
                     <DialogHeader>
                         <DialogTitle>Edit Team Information</DialogTitle>
                         <DialogDescription>
-                            Update your team's name and avatar. Changes are not saved to the database yet.
+                            Update your team's name, members, and avatar. Changes are not saved to the database yet.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSaveChanges} className="space-y-4 pt-4">
                         <div>
-                            <Label htmlFor="teamName" className="text-right">
+                            <Label htmlFor="teamName">
                                 Team Name
                             </Label>
                             <Input
@@ -130,8 +130,12 @@ const TeamInfo = () => {
                                 className="mt-2"
                             />
                         </div>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <Button type="button" variant="outline" className="flex-1">Add member using UID</Button>
+                            <Button type="button" variant="outline" className="flex-1">Add member manually</Button>
+                        </div>
                         <div>
-                            <Label htmlFor="avatarUrl" className="text-right">
+                            <Label htmlFor="avatarUrl">
                                 Avatar URL
                             </Label>
                             <Input

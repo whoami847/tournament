@@ -9,9 +9,12 @@ import {
   Timestamp,
   query,
   orderBy,
+  arrayUnion,
+  increment,
+  writeBatch,
 } from 'firebase/firestore';
 import { firestore } from './firebase';
-import type { Tournament } from '@/types';
+import type { Tournament, Team } from '@/types';
 
 // Helper to convert Firestore doc to Tournament type
 const fromFirestore = (doc: any): Tournament => {
@@ -114,6 +117,38 @@ export const deleteTournament = async (id: string) => {
     return { success: true };
   } catch (error) {
     console.error('Error deleting tournament: ', error);
+    return { success: false, error: (error as Error).message };
+  }
+};
+
+export const joinTournament = async (
+  tournamentId: string,
+  newParticipant: Team
+) => {
+  const tournamentRef = doc(firestore, 'tournaments', tournamentId);
+  
+  try {
+    const docSnap = await getDoc(tournamentRef);
+    if (!docSnap.exists()) {
+      return { success: false, error: 'Tournament not found.' };
+    }
+    const tournamentData = docSnap.data() as Tournament;
+    if (tournamentData.teamsCount >= tournamentData.maxTeams) {
+        return { success: false, error: 'Tournament is already full.' };
+    }
+
+    const batch = writeBatch(firestore);
+    
+    batch.update(tournamentRef, {
+      participants: arrayUnion(newParticipant),
+      teamsCount: increment(1),
+    });
+
+    await batch.commit();
+    return { success: true };
+
+  } catch (error) {
+    console.error('Error joining tournament:', error);
     return { success: false, error: (error as Error).message };
   }
 };

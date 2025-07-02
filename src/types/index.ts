@@ -14,6 +14,7 @@ export interface Team {
   name: string;
   avatar: string;
   dataAiHint?: string;
+  members?: { name: string; gamerId: string }[];
 }
 
 export interface Match {

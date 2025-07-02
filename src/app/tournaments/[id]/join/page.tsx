@@ -14,8 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
 import { User, Users, Shield, ArrowLeft } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import { getTournament } from '@/lib/tournaments-service';
-import type { Tournament } from '@/types';
+import { getTournament, joinTournament } from '@/lib/tournaments-service';
+import type { Tournament, Team } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Zod schema for a single player
@@ -88,6 +88,7 @@ export default function JoinTournamentPage() {
     const { toast } = useToast();
     const [tournament, setTournament] = useState<Tournament | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         if (params.id) {
@@ -144,14 +145,34 @@ export default function JoinTournamentPage() {
         }
     }, [teamType]);
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: z.infer<typeof formSchema>) {
         if (!tournament) return;
-        console.log(values);
-        toast({
-            title: "Registration Submitted!",
-            description: `Your registration for "${tournament.name}" has been received.`,
-        });
-        router.push(`/tournaments/${tournament.id}`);
+        setIsSubmitting(true);
+
+        const newParticipant: Team = {
+            id: `team-${Date.now()}`,
+            name: values.teamName || values.players[0].name,
+            avatar: 'https://placehold.co/40x40.png',
+            dataAiHint: 'team logo',
+            members: values.players.map(p => ({ name: p.name, gamerId: p.id })),
+        };
+
+        const result = await joinTournament(tournament.id, newParticipant);
+
+        if (result.success) {
+            toast({
+                title: "Registration Submitted!",
+                description: `You have successfully joined "${tournament.name}".`,
+            });
+            router.push(`/tournaments/${tournament.id}`);
+        } else {
+            toast({
+                title: "Registration Failed",
+                description: result.error || "An unexpected error occurred.",
+                variant: "destructive",
+            });
+        }
+        setIsSubmitting(false);
     }
 
     if (loading) {
@@ -280,7 +301,9 @@ export default function JoinTournamentPage() {
                             </div>
                             
                             <div className="flex justify-center">
-                                <Button type="submit" size="lg">Submit Registration</Button>
+                                <Button type="submit" size="lg" disabled={isSubmitting}>
+                                    {isSubmitting ? 'Submitting...' : 'Submit Registration'}
+                                </Button>
                             </div>
                         </form>
                     </Form>

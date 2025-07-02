@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Round, Team, Match } from '@/types';
 import { produce } from 'immer';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,10 @@ const getWinner = (match: Match): Team | null => {
 
 export function BracketEditor({ bracket: initialBracket, participants, onUpdate }: BracketEditorProps) {
     const [bracket, setBracket] = useState(initialBracket);
+
+    useEffect(() => {
+        setBracket(initialBracket);
+    }, [initialBracket]);
 
     const handleSetWinner = (roundIndex: number, matchIndex: number, winnerIndex: number) => {
         if (!window.confirm("Are you sure you want to set this team as the winner? This action cannot be undone.")) {
@@ -156,7 +160,7 @@ export function BracketEditor({ bracket: initialBracket, participants, onUpdate 
                                         {[team1, team2].map((team, teamIndex) => {
                                             const isWinner = isCompleted && match.scores[teamIndex] > 0;
                                             return (
-                                            <div key={teamIndex} className="flex items-center gap-2">
+                                            <div key={team?.id || teamIndex} className="flex items-center gap-2">
                                                 {team ? (
                                                     <>
                                                         <Avatar className="h-8 w-8"><AvatarImage src={team.avatar} data-ai-hint="team logo" /><AvatarFallback>{team.name.charAt(0)}</AvatarFallback></Avatar>

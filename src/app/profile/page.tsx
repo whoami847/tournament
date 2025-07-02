@@ -15,13 +15,26 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, User, Gamepad2, Mail, Calendar, Users, Shield, Trophy, Star, Flame, LogOut } from 'lucide-react';
+import { MoreHorizontal, User, Gamepad2, Mail, Calendar, Users, Shield, Trophy, Star, Flame, LogOut, Pencil } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { signOutUser } from '@/lib/auth-service';
 import { useRouter } from 'next/navigation';
 import { getUserProfileStream } from '@/lib/users-service';
 import type { PlayerProfile } from '@/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
+
 
 // --- MOCK DATA (will be replaced by dynamic data) ---
 const initialTeamInfo = {
@@ -58,7 +71,7 @@ const InfoItem = ({ icon: Icon, label, value }: { icon: LucideIcon, label: strin
     </div>
 );
 
-const UserInfo = ({ profile, user }: { profile: PlayerProfile | null, user: ReturnType<typeof useAuth>['user'] }) => {
+const UserInfo = ({ profile }: { profile: PlayerProfile | null }) => {
     return (
         <Card>
             <CardHeader>
@@ -67,8 +80,8 @@ const UserInfo = ({ profile, user }: { profile: PlayerProfile | null, user: Retu
             <CardContent className="space-y-4">
                 <InfoItem icon={User} label="Full Name" value={profile?.name || 'N/A'} />
                 <InfoItem icon={Mail} label="Email" value={profile?.email || 'N/A'} />
-                <InfoItem icon={Gamepad2} label="Gamer ID" value={profile?.gamerId || 'N/A'} />
-                <InfoItem icon={Shield} label="User ID" value={user?.uid || 'N/A'} />
+                <InfoItem icon={Gamepad2} label="Game Name" value={'Not Set'} />
+                <InfoItem icon={Shield} label="Gamer ID" value={profile?.gamerId || 'N/A'} />
                 <InfoItem icon={Calendar} label="Joined" value={profile?.joined ? format(new Date(profile.joined), 'PPP') : 'N/A'} />
             </CardContent>
         </Card>
@@ -76,20 +89,67 @@ const UserInfo = ({ profile, user }: { profile: PlayerProfile | null, user: Retu
 };
 
 const TeamInfo = () => {
+    const { toast } = useToast();
+    const [teamInfo, setTeamInfo] = useState(initialTeamInfo);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState({ name: teamInfo.name, avatar: teamInfo.avatar });
+
+    const handleSave = () => {
+        setTeamInfo(prev => ({...prev, name: editForm.name, avatar: editForm.avatar }));
+        setIsEditing(false);
+        toast({
+            title: "Team Updated",
+            description: "Your team information has been updated locally.",
+        });
+    }
+    
     return (
     <Card>
         <CardHeader className="flex-row items-center justify-between">
             <CardTitle>My Team</CardTitle>
+             <Dialog open={isEditing} onOpenChange={setIsEditing}>
+                <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Team Information</DialogTitle>
+                         <DialogDescription>
+                            Update your team's name and avatar. Changes are not saved to the database yet.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="team-name">Team Name</Label>
+                            <Input id="team-name" value={editForm.name} onChange={(e) => setEditForm(prev => ({...prev, name: e.target.value}))} />
+                        </div>
+                         <div className="flex gap-2">
+                            <Button>Add member using UID</Button>
+                            <Button>Add member manually</Button>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="avatar-url">Avatar URL</Label>
+                            <Input id="avatar-url" value={editForm.avatar} onChange={(e) => setEditForm(prev => ({...prev, avatar: e.target.value}))} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditing(false)}>Close</Button>
+                        <Button onClick={handleSave}>Save changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </CardHeader>
         <CardContent>
             <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
                 <Avatar className="h-24 w-24 border-4 border-primary/20">
-                    <AvatarImage src={initialTeamInfo.avatar} alt={initialTeamInfo.name} data-ai-hint={initialTeamInfo.dataAiHint} />
-                    <AvatarFallback>{initialTeamInfo.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={teamInfo.avatar} alt={teamInfo.name} data-ai-hint={teamInfo.dataAiHint} />
+                    <AvatarFallback>{teamInfo.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <h3 className="text-2xl font-bold">{initialTeamInfo.name}</h3>
-                    <p className="font-medium text-primary">{initialTeamInfo.role}</p>
+                    <h3 className="text-2xl font-bold">{teamInfo.name}</h3>
+                    <p className="font-medium text-primary">{teamInfo.role}</p>
                 </div>
             </div>
             <div className="mt-6">
@@ -98,7 +158,7 @@ const TeamInfo = () => {
                     Team Members
                 </h4>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {initialTeamInfo.members.map(member => (
+                    {teamInfo.members.map(member => (
                         <div key={member.name} className="flex items-center gap-3 rounded-md bg-muted p-2">
                             <Avatar className="h-8 w-8">
                                 <AvatarImage src={member.avatar} alt={member.name} data-ai-hint={member.dataAiHint} />
@@ -219,7 +279,7 @@ export default function ProfilePage() {
                         <TabsTrigger value="success" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Achievements</TabsTrigger>
                     </TabsList>
                     <TabsContent value="info" className="mt-4">
-                        <UserInfo profile={profile} user={user} />
+                        <UserInfo profile={profile} />
                     </TabsContent>
                     <TabsContent value="team" className="mt-4">
                         <TeamInfo />

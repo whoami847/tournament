@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import type { GameCategory } from '@/types';
+import { ImageUpload } from './image-upload';
 
 const formSchema = z.object({
   name: z.string().min(2, "Game name must be at least 2 characters."),
   categories: z.string().min(3, "Please enter at least one category."),
-  image: z.string().url("Please enter a valid image URL."),
+  image: z.string().url("Please upload an image for the game."),
   dataAiHint: z.string().optional(),
 });
 
@@ -30,13 +31,30 @@ export function GameForm({ game, onSubmit, isSubmitting }: GameFormProps) {
             name: game?.name || '',
             categories: game?.categories || '',
             image: game?.image || '',
-            dataAiHint: game?.dataAiHint || '',
+            dataAiHint: game?.dataAiHint || 'game logo',
         },
     });
 
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                    control={form.control}
+                    name="image"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Game Image</FormLabel>
+                            <FormControl>
+                                <ImageUpload
+                                    initialImageUrl={field.value}
+                                    onUploadComplete={(url) => form.setValue('image', url, { shouldValidate: true })}
+                                    storagePath="games"
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <FormField
                     control={form.control}
                     name="name"
@@ -55,17 +73,6 @@ export function GameForm({ game, onSubmit, isSubmitting }: GameFormProps) {
                         <FormItem>
                             <FormLabel>Categories</FormLabel>
                             <FormControl><Input placeholder="e.g., Battle Royale • Action" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="image"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Image URL</FormLabel>
-                            <FormControl><Input placeholder="https://placehold.co/400x200.png" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )}

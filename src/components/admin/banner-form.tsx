@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import type { FeaturedBanner } from '@/types';
+import { ImageUpload } from './image-upload';
 
 const formSchema = z.object({
   game: z.string().min(2, "Game name is required."),
   name: z.string().min(5, "Banner title must be at least 5 characters."),
   date: z.string().min(5, "Date is required."),
-  image: z.string().url("Please enter a valid image URL."),
+  image: z.string().url("Please upload an image."),
   dataAiHint: z.string().min(2, "AI hint is required."),
 });
 
@@ -31,14 +32,31 @@ export function BannerForm({ banner, onSubmit, isSubmitting }: BannerFormProps) 
             game: banner?.game || '',
             name: banner?.name || '',
             date: banner?.date || '',
-            image: banner?.image || 'https://placehold.co/800x400.png',
-            dataAiHint: banner?.dataAiHint || '',
+            image: banner?.image || '',
+            dataAiHint: banner?.dataAiHint || 'esports banner action',
         },
     });
 
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                 <FormField
+                    control={form.control}
+                    name="image"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Banner Image</FormLabel>
+                            <FormControl>
+                                <ImageUpload
+                                    initialImageUrl={field.value}
+                                    onUploadComplete={(url) => form.setValue('image', url, { shouldValidate: true })}
+                                    storagePath="banners"
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem><FormLabel>Banner Title</FormLabel><FormControl><Input placeholder="e.g., Free Fire World Series" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
@@ -47,9 +65,6 @@ export function BannerForm({ banner, onSubmit, isSubmitting }: BannerFormProps) 
                 )} />
                 <FormField control={form.control} name="date" render={({ field }) => (
                     <FormItem><FormLabel>Date & Time</FormLabel><FormControl><Input placeholder="e.g., 10.11.2024 • 18:00" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="image" render={({ field }) => (
-                    <FormItem><FormLabel>Image URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="dataAiHint" render={({ field }) => (
                     <FormItem><FormLabel>Image AI Hint</FormLabel><FormControl><Input placeholder="e.g., fire battle action" {...field} /></FormControl><FormMessage /></FormItem>

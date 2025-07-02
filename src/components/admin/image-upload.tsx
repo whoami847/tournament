@@ -12,6 +12,60 @@ interface ImageUploadProps {
   onUploadComplete: (url: string) => void;
 }
 
+const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            return reject(new Error('Failed to get canvas context.'));
+          }
+  
+          // Keep aspect ratio
+          let { width, height } = img;
+          const maxDim = 1280; // Max dimension for width or height
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round(height * (maxDim / width));
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round(width * (maxDim / height));
+              height = maxDim;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+  
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                return reject(new Error('Canvas to Blob failed.'));
+              }
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            },
+            'image/jpeg',
+            0.7 // 70% quality
+          );
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+};
+
 export function ImageUpload({ initialImageUrl = '', onUploadComplete }: ImageUploadProps) {
   const [imageUrl, setImageUrl] = useState<string>(initialImageUrl);
   const [uploading, setUploading] = useState(false);
@@ -21,58 +75,59 @@ export function ImageUpload({ initialImageUrl = '', onUploadComplete }: ImageUpl
   const { toast } = useToast();
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    let file = event.target.files?.[0];
     if (!file) return;
-
-    // Safety check for file size to avoid exceeding Firestore document limits
-    if (file.size > 500 * 1024) { // 500KB limit
-      const errorMsg = "Image is too large. Please upload an image smaller than 500KB.";
-      setError(errorMsg);
-      toast({
-        title: 'Upload Failed',
-        description: errorMsg,
-        variant: 'destructive',
-      });
-      return;
-    }
 
     setUploading(true);
     setError(null);
     setProgress(0);
 
-    const reader = new FileReader();
+    try {
+        if (file.size > 500 * 1024) { // 500KB limit
+            toast({
+                title: 'Compressing Large Image',
+                description: "This may take a moment...",
+            });
+            file = await compressImage(file);
+        }
 
-    reader.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const progress = (event.loaded / event.total) * 100;
-        setProgress(progress);
-      }
-    };
+        const reader = new FileReader();
 
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setImageUrl(base64String);
-      onUploadComplete(base64String);
-      setUploading(false);
-      setProgress(100);
-      toast({
-        title: 'Image Processed',
-        description: 'The image is ready to be saved with the form.',
-      });
-    };
+        reader.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const progress = (event.loaded / event.total) * 100;
+            setProgress(progress);
+          }
+        };
 
-    reader.onerror = () => {
-      const errorMessage = 'Failed to read the file.';
-      setError(errorMessage);
-      setUploading(false);
-      toast({
-        title: 'Upload Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    };
+        reader.onloadend = () => {
+          const base64String = reader.result as string;
+          setImageUrl(base64String);
+          onUploadComplete(base64String);
+          setUploading(false);
+          setProgress(100);
+          toast({
+            title: 'Image Processed',
+            description: 'The image is ready to be saved with the form.',
+          });
+        };
 
-    reader.readAsDataURL(file);
+        reader.onerror = () => {
+          throw new Error('Failed to read the file.');
+        };
+
+        reader.readAsDataURL(file);
+
+    } catch(e) {
+        const errorMessage = (e as Error).message || 'An unexpected error occurred during image processing.';
+        setError(errorMessage);
+        setUploading(false);
+        toast({
+            title: 'Upload Failed',
+            description: errorMessage,
+            variant: 'destructive',
+        });
+    }
   };
 
   const triggerFileSelect = () => {

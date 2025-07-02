@@ -16,6 +16,62 @@ import { ArrowLeft, Camera } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EditProfileForm, type EditProfileFormValues } from '@/components/profile/edit-profile-form';
 
+// Helper function to compress images
+const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            return reject(new Error('Failed to get canvas context.'));
+          }
+  
+          // Keep aspect ratio
+          let { width, height } = img;
+          const maxDim = 1024; // Max dimension for profile pictures
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round(height * (maxDim / width));
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round(width * (maxDim / height));
+              height = maxDim;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+  
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                return reject(new Error('Canvas to Blob failed.'));
+              }
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            },
+            'image/jpeg',
+            0.7 // 70% quality
+          );
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+};
+
+
 export default function EditProfilePage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -41,31 +97,42 @@ export default function EditProfilePage() {
     }
   }, [user]);
 
-  const handleImageChange = (
+  const handleImageChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
     setImagePreview: React.Dispatch<React.SetStateAction<string | null>>
   ) => {
-    const file = event.target.files?.[0];
+    let file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 500 * 1024) { // 500KB limit
-      toast({
-        title: 'Upload Failed',
-        description: "Image is too large. Please upload an image smaller than 500KB.",
-        variant: 'destructive',
-      });
-      return;
-    }
+    try {
+        if (file.size > 500 * 1024) { // 500KB limit
+            toast({
+                title: 'Compressing Large Image',
+                description: "This may take a moment...",
+            });
+            file = await compressImage(file);
+        }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-       toast({
-        title: 'Image Ready',
-        description: 'Image has been updated. Click "Save Changes" to apply.',
-      });
-    };
-    reader.readAsDataURL(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result as string);
+            toast({
+                title: 'Image Ready',
+                description: 'Image has been updated. Click "Save Changes" to apply.',
+            });
+        };
+        reader.onerror = () => {
+            throw new Error('Failed to read the file.');
+        };
+        reader.readAsDataURL(file);
+
+    } catch (e) {
+        toast({
+            title: 'Upload Failed',
+            description: (e as Error).message || "An unexpected error occurred.",
+            variant: 'destructive',
+        });
+    }
   };
 
   const handleProfileUpdate = async (data: EditProfileFormValues) => {

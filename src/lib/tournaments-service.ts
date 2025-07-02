@@ -44,7 +44,7 @@ const fromFirestore = (doc: any): Tournament => {
   return a
 };
 
-export const addTournament = async (tournament: Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket' | 'image' | 'dataAiHint'>) => {
+export const addTournament = async (tournament: Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket'>) => {
   try {
     const newTournament = {
       ...tournament,
@@ -55,8 +55,8 @@ export const addTournament = async (tournament: Omit<Tournament, 'id' | 'created
       status: 'upcoming', 
       participants: [],
       bracket: [],
-      image: 'https://placehold.co/600x400.png',
-      dataAiHint: 'esports tournament'
+      image: tournament.image || 'https://placehold.co/600x400.png',
+      dataAiHint: tournament.dataAiHint || 'esports tournament'
     };
     await addDoc(collection(firestore, 'tournaments'), newTournament);
     return { success: true };

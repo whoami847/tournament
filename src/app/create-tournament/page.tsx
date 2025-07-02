@@ -26,14 +26,17 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import type { Game, GameCategory, Tournament } from "@/types"
+import type { GameCategory, Tournament } from "@/types"
 import { useToast } from "@/hooks/use-toast"
 import { addTournament } from "@/lib/tournaments-service"
 import { getGamesStream } from "@/lib/games-service"
+import { ImageUpload } from "@/components/admin/image-upload"
 
 const formSchema = z.object({
   name: z.string().min(5, "Tournament name must be at least 5 characters."),
   game: z.string().min(1, "Please select a game."),
+  image: z.string().min(1, "Please upload a tournament banner."),
+  dataAiHint: z.string().min(1, "AI Hint is required for the image."),
   startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Please enter a valid date and time.",
   }),
@@ -72,6 +75,8 @@ export default function CreateTournamentPage() {
         defaultValues: {
             name: "",
             game: undefined,
+            image: "",
+            dataAiHint: "esports tournament banner",
             startDate: "",
             mode: "BR",
             teamType: "SQUAD",
@@ -100,7 +105,7 @@ export default function CreateTournamentPage() {
     }, [mode, teamType, form]);
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
-        const result = await addTournament(values as Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket' | 'image' | 'dataAiHint'>);
+        const result = await addTournament(values as Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket'>);
         if (result.success) {
             toast({
                 title: "Tournament Created!",
@@ -127,6 +132,35 @@ export default function CreateTournamentPage() {
                 <CardContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                            <FormField
+                                control={form.control}
+                                name="image"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Tournament Banner</FormLabel>
+                                        <FormControl>
+                                            <ImageUpload
+                                                onUploadComplete={(url) => {
+                                                    form.setValue('image', url, { shouldValidate: true });
+                                                }}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name="dataAiHint"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Image AI Hint</FormLabel>
+                                        <FormControl><Input placeholder="e.g., fire battle action" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            
                             <FormField
                                 control={form.control}
                                 name="name"
@@ -283,9 +317,14 @@ export default function CreateTournamentPage() {
                                 )}
                             />
 
-                            <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
-                                {form.formState.isSubmitting ? 'Creating...' : 'Create Tournament'}
-                            </Button>
+                            <div className="flex items-center gap-4">
+                                <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+                                    {form.formState.isSubmitting ? 'Creating...' : 'Create Tournament'}
+                                </Button>
+                                <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>
+                                    Cancel
+                                </Button>
+                            </div>
                         </form>
                     </Form>
                 </CardContent>

@@ -95,7 +95,7 @@ export function ImageUpload({ initialImageUrl = '', onUploadComplete, storagePat
       )}
       
       {!uploading && !imageUrl &&
-        <Button onClick={triggerFileSelect} disabled={uploading} className="w-full">
+        <Button type="button" onClick={triggerFileSelect} disabled={uploading} className="w-full">
             <Camera className="mr-2 h-4 w-4" />
             Upload Image
         </Button>

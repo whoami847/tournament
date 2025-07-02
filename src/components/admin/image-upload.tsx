@@ -2,20 +2,17 @@
 
 import { useState, useRef } from 'react';
 import Image from 'next/image';
-import { uploadImage } from '@/lib/storage-service';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Camera, CheckCircle, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Camera, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ImageUploadProps {
   initialImageUrl?: string;
   onUploadComplete: (url: string) => void;
-  storagePath: string;
 }
 
-export function ImageUpload({ initialImageUrl = '', onUploadComplete, storagePath }: ImageUploadProps) {
+export function ImageUpload({ initialImageUrl = '', onUploadComplete }: ImageUploadProps) {
   const [imageUrl, setImageUrl] = useState<string>(initialImageUrl);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -27,29 +24,55 @@ export function ImageUpload({ initialImageUrl = '', onUploadComplete, storagePat
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Safety check for file size to avoid exceeding Firestore document limits
+    if (file.size > 500 * 1024) { // 500KB limit
+      const errorMsg = "Image is too large. Please upload an image smaller than 500KB.";
+      setError(errorMsg);
+      toast({
+        title: 'Upload Failed',
+        description: errorMsg,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setUploading(true);
     setError(null);
     setProgress(0);
 
-    try {
-      const downloadURL = await uploadImage(file, storagePath, setProgress);
-      setImageUrl(downloadURL);
-      onUploadComplete(downloadURL);
+    const reader = new FileReader();
+
+    reader.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const progress = (event.loaded / event.total) * 100;
+        setProgress(progress);
+      }
+    };
+
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setImageUrl(base64String);
+      onUploadComplete(base64String);
+      setUploading(false);
+      setProgress(100);
       toast({
-        title: 'Upload Successful',
-        description: 'Your image has been uploaded and saved.',
+        title: 'Image Processed',
+        description: 'The image is ready to be saved with the form.',
       });
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
+    };
+
+    reader.onerror = () => {
+      const errorMessage = 'Failed to read the file.';
       setError(errorMessage);
+      setUploading(false);
       toast({
         title: 'Upload Failed',
         description: errorMessage,
         variant: 'destructive',
       });
-    } finally {
-      setUploading(false);
-    }
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const triggerFileSelect = () => {
@@ -90,7 +113,7 @@ export function ImageUpload({ initialImageUrl = '', onUploadComplete, storagePat
       {uploading && (
         <div className="space-y-2">
             <Progress value={progress} />
-            <p className="text-sm text-center text-muted-foreground">{`Uploading... ${Math.round(progress)}%`}</p>
+            <p className="text-sm text-center text-muted-foreground">{`Processing... ${Math.round(progress)}%`}</p>
         </div>
       )}
       

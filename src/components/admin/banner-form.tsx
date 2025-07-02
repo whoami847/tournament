@@ -50,7 +50,6 @@ export function BannerForm({ banner, onSubmit, isSubmitting }: BannerFormProps) 
                                 <ImageUpload
                                     initialImageUrl={field.value}
                                     onUploadComplete={(url) => form.setValue('image', url, { shouldValidate: true })}
-                                    storagePath="banners"
                                 />
                             </FormControl>
                             <FormMessage />

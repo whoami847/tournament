@@ -48,7 +48,6 @@ export function GameForm({ game, onSubmit, isSubmitting }: GameFormProps) {
                                 <ImageUpload
                                     initialImageUrl={field.value}
                                     onUploadComplete={(url) => form.setValue('image', url, { shouldValidate: true })}
-                                    storagePath="games"
                                 />
                             </FormControl>
                             <FormMessage />

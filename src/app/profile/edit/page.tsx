@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
@@ -22,20 +22,63 @@ export default function EditProfilePage() {
   const { toast } = useToast();
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user?.uid) {
       const unsubscribe = getUserProfileStream(user.uid, (data) => {
         setProfile(data);
+        if (data) {
+          setAvatarPreview(data.avatar);
+          setBannerPreview(data.banner || "https://placehold.co/800x300.png");
+        }
       });
       return () => unsubscribe();
     }
   }, [user]);
 
+  const handleImageChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setImagePreview: React.Dispatch<React.SetStateAction<string | null>>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 500 * 1024) { // 500KB limit
+      toast({
+        title: 'Upload Failed',
+        description: "Image is too large. Please upload an image smaller than 500KB.",
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+       toast({
+        title: 'Image Ready',
+        description: 'Image has been updated. Click "Save Changes" to apply.',
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleProfileUpdate = async (data: EditProfileFormValues) => {
     if (!user?.uid) return;
     setIsSubmitting(true);
-    const result = await updateUserProfile(user.uid, data);
+    
+    const updateData: Partial<PlayerProfile> = {
+        ...data,
+        avatar: avatarPreview || profile?.avatar,
+        banner: bannerPreview || profile?.banner,
+    };
+
+    const result = await updateUserProfile(user.uid, updateData);
     if (result.success) {
       toast({
         title: "Profile Updated",
@@ -52,7 +95,7 @@ export default function EditProfilePage() {
     setIsSubmitting(false);
   };
 
-  if (!profile) {
+  if (!profile || !avatarPreview || !bannerPreview) {
     return (
       <div className="pb-24 animate-pulse">
         <div className="relative h-48 w-full bg-muted"></div>
@@ -81,10 +124,26 @@ export default function EditProfilePage() {
 
   return (
     <div className="pb-24">
+      {/* Hidden file inputs */}
+      <input
+        type="file"
+        ref={bannerInputRef}
+        onChange={(e) => handleImageChange(e, setBannerPreview)}
+        className="hidden"
+        accept="image/png, image/jpeg, image/webp"
+      />
+      <input
+        type="file"
+        ref={avatarInputRef}
+        onChange={(e) => handleImageChange(e, setAvatarPreview)}
+        className="hidden"
+        accept="image/png, image/jpeg, image/webp"
+      />
+
       {/* Header Section */}
       <div className="relative h-48 w-full group">
         <Image
-          src={profile.banner || "https://placehold.co/800x300.png"}
+          src={bannerPreview}
           alt="Profile banner"
           data-ai-hint="abstract background"
           fill
@@ -102,10 +161,10 @@ export default function EditProfilePage() {
             variant="outline"
             size="sm"
             className="absolute bottom-4 right-4 bg-black/50 text-white hover:bg-black/70 hover:text-white border-white/50"
-            disabled
+            onClick={() => bannerInputRef.current?.click()}
         >
             <Camera className="mr-2 h-4 w-4" />
-            Upload
+            Upload Banner
         </Button>
       </div>
 
@@ -113,15 +172,17 @@ export default function EditProfilePage() {
       <div className="relative z-10 -mt-16 flex flex-col items-center text-center px-4">
         <div className="relative group">
             <Avatar className="h-28 w-28 border-4 border-background">
-              <AvatarImage src={profile.avatar || ''} alt="Avatar" data-ai-hint="fantasy character" />
+              <AvatarImage src={avatarPreview} alt="Avatar" data-ai-hint="fantasy character" />
               <AvatarFallback>{displayName.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
-             <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+             <div 
+                className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                onClick={() => avatarInputRef.current?.click()}
+              >
                 <Button
                     variant="ghost"
                     size="icon"
                     className="h-12 w-12 rounded-full text-white hover:bg-black/50 hover:text-white"
-                    disabled
                 >
                     <Camera className="h-6 w-6" />
                 </Button>

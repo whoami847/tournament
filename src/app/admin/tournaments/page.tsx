@@ -2,13 +2,13 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { getTournamentsStream, deleteTournament } from '@/lib/tournaments-service';
+import { getTournamentsStream, deleteTournament, updateTournament } from '@/lib/tournaments-service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { Tournament } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,6 +31,22 @@ export default function AdminTournamentsPage() {
         if (!tournaments) return [];
         return tournaments.filter((tournament: Tournament) => tournament.status === selectedStatus);
     }, [tournaments, selectedStatus]);
+
+    const handleStatusChange = async (tournamentId: string, tournamentName: string, status: 'live' | 'completed') => {
+        const result = await updateTournament(tournamentId, { status });
+        if (result.success) {
+            toast({
+                title: "Status Updated",
+                description: `"${tournamentName}" has been updated to ${status}.`,
+            });
+        } else {
+             toast({
+                title: "Error",
+                description: result.error || "Failed to update status.",
+                variant: "destructive",
+            });
+        }
+    };
 
     const handleDelete = async (tournamentId: string, tournamentName: string) => {
         if (confirm(`Are you sure you want to delete the tournament: "${tournamentName}"?`)) {
@@ -132,6 +148,19 @@ export default function AdminTournamentsPage() {
                                                     <DropdownMenuItem asChild>
                                                         <Link href={`/tournaments/${tournament.id}`}>View Details</Link>
                                                     </DropdownMenuItem>
+                                                    
+                                                    {tournament.status === 'upcoming' && (
+                                                        <DropdownMenuItem onSelect={() => handleStatusChange(tournament.id, tournament.name, 'live')}>
+                                                            Go Live
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    {tournament.status === 'live' && (
+                                                        <DropdownMenuItem onSelect={() => handleStatusChange(tournament.id, tournament.name, 'completed')}>
+                                                            Mark as Completed
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    
+                                                    <DropdownMenuSeparator />
                                                     <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => handleDelete(tournament.id, tournament.name)}>Delete</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -173,6 +202,19 @@ export default function AdminTournamentsPage() {
                                             <DropdownMenuItem asChild>
                                                 <Link href={`/tournaments/${tournament.id}`}>View Details</Link>
                                             </DropdownMenuItem>
+
+                                            {tournament.status === 'upcoming' && (
+                                                <DropdownMenuItem onSelect={() => handleStatusChange(tournament.id, tournament.name, 'live')}>
+                                                    Go Live
+                                                </DropdownMenuItem>
+                                            )}
+                                            {tournament.status === 'live' && (
+                                                <DropdownMenuItem onSelect={() => handleStatusChange(tournament.id, tournament.name, 'completed')}>
+                                                    Mark as Completed
+                                                </DropdownMenuItem>
+                                            )}
+
+                                            <DropdownMenuSeparator />
                                             <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => handleDelete(tournament.id, tournament.name)}>Delete</DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>

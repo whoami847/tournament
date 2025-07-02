@@ -56,7 +56,6 @@ export default function AdminUsersPage() {
                                     <TableRow>
                                         <TableHead>User</TableHead>
                                         <TableHead>Gamer ID</TableHead>
-                                        <TableHead>Country</TableHead>
                                         <TableHead>Joined Date</TableHead>
                                         <TableHead><span className="sr-only">Actions</span></TableHead>
                                     </TableRow>
@@ -74,7 +73,6 @@ export default function AdminUsersPage() {
                                                 </div>
                                             </TableCell>
                                             <TableCell>{user.gamerId}</TableCell>
-                                            <TableCell>{user.country}</TableCell>
                                             <TableCell>{format(new Date(user.joined), 'PPP')}</TableCell>
                                             <TableCell>
                                                 <DropdownMenu>
@@ -94,7 +92,7 @@ export default function AdminUsersPage() {
                                         </TableRow>
                                     )) : (
                                         <TableRow>
-                                            <TableCell colSpan={5} className="h-24 text-center">No users found.</TableCell>
+                                            <TableCell colSpan={4} className="h-24 text-center">No users found.</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
@@ -131,8 +129,7 @@ export default function AdminUsersPage() {
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </div>
-                                        <div className="mt-4 flex justify-between text-sm text-muted-foreground pt-4 border-t border-muted-foreground/20">
-                                            <span>Country: <span className="font-medium text-foreground">{user.country}</span></span>
+                                        <div className="mt-4 flex justify-end text-sm text-muted-foreground pt-4 border-t border-muted-foreground/20">
                                             <span>Joined: <span className="font-medium text-foreground">{format(new Date(user.joined), 'PPP')}</span></span>
                                         </div>
                                     </div>

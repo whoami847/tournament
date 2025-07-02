@@ -7,6 +7,7 @@ import {
   query,
   orderBy,
   limit,
+  updateDoc,
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { firestore } from './firebase';
@@ -21,7 +22,6 @@ const fromFirestore = (doc: any): PlayerProfile => {
     email: data.email,
     avatar: data.avatar,
     gamerId: data.gamerId,
-    country: data.country,
     joined: data.joined,
     role: data.role,
     winrate: data.winrate,
@@ -41,7 +41,6 @@ export const createUserProfile = async (user: User) => {
       email: user.email || '',
       avatar: user.photoURL || `https://placehold.co/40x40.png`,
       gamerId: `player_${Math.random().toString(36).substring(2, 9)}`,
-      country: 'India',
       joined: new Date().toISOString(),
       role: 'Player',
       winrate: 0,
@@ -95,4 +94,15 @@ export const getUserProfileStream = (userId: string, callback: (profile: PlayerP
     });
 
     return unsubscribe;
+};
+
+export const updateUserProfile = async (userId: string, data: Partial<Pick<PlayerProfile, 'name' | 'gamerId' | 'avatar'>>) => {
+  try {
+    const userRef = doc(firestore, 'users', userId);
+    await updateDoc(userRef, data);
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    return { success: false, error: (error as Error).message };
+  }
 };

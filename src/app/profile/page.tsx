@@ -21,7 +21,6 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,8 +29,10 @@ import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { signOutUser } from '@/lib/auth-service';
 import { useRouter } from 'next/navigation';
-import { getUserProfileStream } from '@/lib/users-service';
+import { getUserProfileStream, updateUserProfile } from '@/lib/users-service';
 import type { PlayerProfile } from '@/types';
+import { useToast } from "@/hooks/use-toast";
+import { EditProfileForm, type EditProfileFormValues } from '@/components/profile/edit-profile-form';
 
 // --- MOCK DATA (will be replaced by dynamic data) ---
 const initialTeamInfo = {
@@ -106,11 +107,17 @@ const TeamInfo = () => {
         <CardHeader className="flex-row items-center justify-between">
             <CardTitle>My Team</CardTitle>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={handleOpenDialog}>
-                        <Pencil className="h-4 w-4" />
-                    </Button>
-                </DialogTrigger>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                         <Button variant="ghost" size="icon">
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={handleOpenDialog}>Edit Team</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Team Information</DialogTitle>
@@ -208,7 +215,11 @@ const Achievements = () => (
 export default function ProfilePage() {
     const { user } = useAuth();
     const router = useRouter();
+    const { toast } = useToast();
     const [profile, setProfile] = useState<PlayerProfile | null>(null);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
 
     useEffect(() => {
         if (user?.uid) {
@@ -222,6 +233,26 @@ export default function ProfilePage() {
     const handleLogout = async () => {
         await signOutUser();
         router.push('/login');
+    };
+
+    const handleProfileUpdate = async (data: EditProfileFormValues) => {
+        if (!user?.uid) return;
+        setIsSubmitting(true);
+        const result = await updateUserProfile(user.uid, data);
+        if (result.success) {
+            toast({
+                title: "Profile Updated",
+                description: "Your profile information has been successfully updated.",
+            });
+            setIsEditDialogOpen(false);
+        } else {
+            toast({
+                title: "Error",
+                description: result.error || "Failed to update profile.",
+                variant: "destructive",
+            });
+        }
+        setIsSubmitting(false);
     };
     
     const displayName = profile?.name || user?.displayName || user?.email?.split('@')[0] || 'Player';
@@ -247,7 +278,7 @@ export default function ProfilePage() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Edit Profile</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}>Edit Profile</DropdownMenuItem>
                             <DropdownMenuItem>Settings</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
@@ -263,6 +294,25 @@ export default function ProfilePage() {
                 </div>
                 <h1 className="absolute top-16 left-4 text-2xl font-bold text-white sm:top-6">Profile</h1>
             </div>
+
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Profile</DialogTitle>
+                        <DialogDescription>
+                            Make changes to your profile here. Click save when you're done.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {profile && (
+                        <EditProfileForm
+                            profile={profile}
+                            onSubmit={handleProfileUpdate}
+                            isSubmitting={isSubmitting}
+                            onClose={() => setIsEditDialogOpen(false)}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
 
             {/* Profile Info Section */}
             <div className="relative z-10 -mt-16 flex flex-col items-center text-center px-4">

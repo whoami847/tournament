@@ -4,7 +4,6 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useParams, notFound, useRouter } from 'next/navigation';
-import { mockTournaments } from '@/lib/data';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -13,9 +12,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
-import { User, Users, Shield } from 'lucide-react';
-import React from 'react';
-import { Badge } from '@/components/ui/badge';
+import { User, Users, Shield, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { getTournament } from '@/lib/tournaments-service';
+import type { Tournament } from '@/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Zod schema for a single player
 const playerSchema = z.object({
@@ -38,18 +39,74 @@ const getTeamType = (format: string): 'SOLO' | 'DUO' | 'SQUAD' => {
   return 'SQUAD'; // Default to SQUAD if format is unexpected
 };
 
+const JoinPageSkeleton = () => (
+    <div className="container mx-auto px-4 py-8 md:pb-8 pb-24 animate-pulse">
+        <Card className="max-w-4xl mx-auto">
+            <CardHeader className="text-center">
+                <Skeleton className="h-9 w-3/4 mx-auto" />
+                <Skeleton className="h-6 w-1/2 mx-auto mt-2" />
+            </CardHeader>
+            <CardContent className="space-y-8">
+                <div className="space-y-4">
+                    <Skeleton className="h-6 w-1/3 mx-auto" />
+                    <Skeleton className="h-4 w-2/3 mx-auto" />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                        <Skeleton className="h-28 w-full" />
+                    </div>
+                </div>
+                <Skeleton className="h-px w-full" />
+                <div className="space-y-6">
+                    <Skeleton className="h-8 w-1/3 mx-auto" />
+                    <div className="p-4 border rounded-lg bg-background shadow-sm relative">
+                        <Skeleton className="h-5 w-16 absolute -top-3 left-4" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                           <div>
+                                <Skeleton className="h-4 w-24 mb-2" />
+                                <Skeleton className="h-10 w-full" />
+                           </div>
+                           <div>
+                                <Skeleton className="h-4 w-24 mb-2" />
+                                <Skeleton className="h-10 w-full" />
+                           </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex justify-center">
+                    <Skeleton className="h-12 w-48" />
+                </div>
+            </CardContent>
+        </Card>
+    </div>
+);
+
+
 export default function JoinTournamentPage() {
     const params = useParams<{ id: string }>();
     const router = useRouter();
     const { toast } = useToast();
+    const [tournament, setTournament] = useState<Tournament | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const tournament = mockTournaments.find(t => t.id === params.id);
+    useEffect(() => {
+        if (params.id) {
+            const fetchTournament = async () => {
+                setLoading(true);
+                const data = await getTournament(params.id);
+                if (data) {
+                    setTournament(data);
+                } else {
+                    notFound();
+                }
+                setLoading(false);
+            };
+            fetchTournament();
+        }
+    }, [params.id]);
 
-    if (!tournament) {
-        notFound();
-    }
 
-    const teamType = getTeamType(tournament.format);
+    const teamType = tournament ? getTeamType(tournament.format) : 'SQUAD';
     const initialRegistrationSize = teamType === 'SOLO' ? 1 : 1;
 
     // State to manage how many players are being registered
@@ -81,16 +138,28 @@ export default function JoinTournamentPage() {
         // If tournament type is solo, always set player count to 1
         if (teamType === 'SOLO') {
             setRegistrationSize(1);
+        } else {
+            // When tournament data loads, reset to 1
+            setRegistrationSize(1);
         }
     }, [teamType]);
 
     function onSubmit(values: z.infer<typeof formSchema>) {
+        if (!tournament) return;
         console.log(values);
         toast({
             title: "Registration Submitted!",
             description: `Your registration for "${tournament.name}" has been received.`,
         });
         router.push(`/tournaments/${tournament.id}`);
+    }
+
+    if (loading) {
+        return <JoinPageSkeleton />;
+    }
+
+    if (!tournament) {
+        notFound();
     }
 
     const registrationOptions = () => {
@@ -137,6 +206,12 @@ export default function JoinTournamentPage() {
 
     return (
         <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
+             <div className="relative">
+                <Button variant="outline" size="icon" className="absolute -top-4 -left-2" onClick={() => router.back()}>
+                    <ArrowLeft className="h-4 w-4" />
+                    <span className="sr-only">Back</span>
+                </Button>
+            </div>
             <Card className="max-w-4xl mx-auto">
                 <CardHeader className="text-center">
                     <CardTitle className="text-3xl">Register for Tournament</CardTitle>
@@ -171,7 +246,7 @@ export default function JoinTournamentPage() {
                                 <h3 className="font-semibold text-xl text-center">Player Information</h3>
                                 {fields.map((field, index) => (
                                     <div key={field.id} className="p-4 border rounded-lg bg-background shadow-sm relative">
-                                        <Badge variant="secondary" className="absolute -top-3 left-4">{`Player ${index + 1}`}</Badge>
+                                        <span className="absolute -top-3 left-4 bg-background px-1 text-sm text-muted-foreground">{`Player ${index + 1}`}</span>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                                             <FormField
                                                 control={form.control}

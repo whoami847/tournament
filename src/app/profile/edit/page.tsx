@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -11,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Camera } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EditProfileForm, type EditProfileFormValues } from '@/components/profile/edit-profile-form';
 
@@ -68,7 +69,6 @@ export default function EditProfilePage() {
                     <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full" /></div>
                     <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full" /></div>
                     <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full" /></div>
-                    <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full" /></div>
                     <Skeleton className="h-12 w-32" />
                 </CardContent>
             </Card>
@@ -82,7 +82,7 @@ export default function EditProfilePage() {
   return (
     <div className="pb-24">
       {/* Header Section */}
-      <div className="relative h-48 w-full">
+      <div className="relative h-48 w-full group">
         <Image
           src={profile.banner || "https://placehold.co/800x300.png"}
           alt="Profile banner"
@@ -98,14 +98,35 @@ export default function EditProfilePage() {
             </Button>
         </div>
         <h1 className="absolute top-16 left-4 text-2xl font-bold text-white sm:top-6">Edit Profile</h1>
+        <Button
+            variant="outline"
+            size="sm"
+            className="absolute bottom-4 right-4 bg-black/50 text-white hover:bg-black/70 hover:text-white border-white/50"
+            disabled
+        >
+            <Camera className="mr-2 h-4 w-4" />
+            Upload
+        </Button>
       </div>
 
       {/* Profile Info Section */}
       <div className="relative z-10 -mt-16 flex flex-col items-center text-center px-4">
-        <Avatar className="h-28 w-28 border-4 border-background">
-          <AvatarImage src={profile.avatar || ''} alt="Avatar" data-ai-hint="fantasy character" />
-          <AvatarFallback>{displayName.charAt(0).toUpperCase()}</AvatarFallback>
-        </Avatar>
+        <div className="relative group">
+            <Avatar className="h-28 w-28 border-4 border-background">
+              <AvatarImage src={profile.avatar || ''} alt="Avatar" data-ai-hint="fantasy character" />
+              <AvatarFallback>{displayName.charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
+             <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-12 w-12 rounded-full text-white hover:bg-black/50 hover:text-white"
+                    disabled
+                >
+                    <Camera className="h-6 w-6" />
+                </Button>
+            </div>
+        </div>
       </div>
 
       <div className="px-4 mt-6">

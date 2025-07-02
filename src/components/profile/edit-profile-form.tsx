@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -10,9 +11,8 @@ import type { PlayerProfile } from '@/types';
 
 const formSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters.").max(50, "Name cannot exceed 50 characters."),
+  gameName: z.string().min(2, "Game name must be at least 2 characters.").max(50, "Game name cannot exceed 50 characters.").optional().or(z.literal('')),
   gamerId: z.string().min(3, "Gamer ID must be at least 3 characters.").max(30, "Gamer ID cannot exceed 30 characters."),
-  avatar: z.string().url("Please enter a valid URL for your avatar.").optional().or(z.literal('')),
-  banner: z.string().url("Please enter a valid URL for your banner.").optional().or(z.literal('')),
 });
 
 export type EditProfileFormValues = z.infer<typeof formSchema>;
@@ -29,9 +29,8 @@ export function EditProfileForm({ profile, onSubmit, isSubmitting, onClose }: Ed
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: profile.name || '',
+            gameName: profile.gameName === 'Not Set' ? '' : profile.gameName || '',
             gamerId: profile.gamerId || '',
-            avatar: profile.avatar || '',
-            banner: profile.banner || '',
         },
     });
 
@@ -45,24 +44,17 @@ export function EditProfileForm({ profile, onSubmit, isSubmitting, onClose }: Ed
                         <FormMessage />
                     </FormItem>
                 )} />
+                <FormField control={form.control} name="gameName" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Game Name</FormLabel>
+                        <FormControl><Input placeholder="e.g., Free Fire" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
                  <FormField control={form.control} name="gamerId" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Gamer ID</FormLabel>
                         <FormControl><Input placeholder="Your unique gamer ID" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={form.control} name="avatar" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Avatar URL</FormLabel>
-                        <FormControl><Input placeholder="https://example.com/avatar.png" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={form.control} name="banner" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Banner URL</FormLabel>
-                        <FormControl><Input placeholder="https://example.com/banner.png" {...field} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />

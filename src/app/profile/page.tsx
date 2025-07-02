@@ -1,3 +1,4 @@
+
 "use client"
 
 import Image from 'next/image';
@@ -80,7 +81,7 @@ const UserInfo = ({ profile }: { profile: PlayerProfile | null }) => {
             <CardContent className="space-y-4">
                 <InfoItem icon={User} label="Full Name" value={profile?.name || 'N/A'} />
                 <InfoItem icon={Mail} label="Email" value={profile?.email || 'N/A'} />
-                <InfoItem icon={Gamepad2} label="Game Name" value={'Not Set'} />
+                <InfoItem icon={Gamepad2} label="Game Name" value={profile?.gameName || 'Not Set'} />
                 <InfoItem icon={Shield} label="Gamer ID" value={profile?.gamerId || 'N/A'} />
                 <InfoItem icon={Calendar} label="Joined" value={profile?.joined ? format(new Date(profile.joined), 'PPP') : 'N/A'} />
             </CardContent>

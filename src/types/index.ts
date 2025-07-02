@@ -1,3 +1,4 @@
+
 export type Game = string;
 
 export interface GameCategory {
@@ -72,6 +73,7 @@ export interface PlayerProfile {
   email: string;
   avatar: string;
   banner?: string;
+  gameName?: string;
   gamerId: string;
   joined: string; // ISO String
   role: string;

@@ -1,75 +1,43 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
-import { useMemo } from 'react';
-import type { Game, Team } from '@/types';
+import { useMemo, useState, useEffect } from 'react';
+import type { Game, Team, Tournament, PlayerProfile } from '@/types';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
-import { ShieldOff } from 'lucide-react';
+import { ShieldOff, Loader2 } from 'lucide-react';
+import { getTournamentsStream } from '@/lib/tournaments-service';
+import { getUserProfileStream } from '@/lib/users-service';
 
 // Define a new type for user-specific match results
 type UserMatchResult = {
-    id: string;
+    id: string; // match id
+    tournamentId: string;
     tournamentName: string;
     game: Game;
     team1: Team;
     team2: Team;
     score1: number;
     score2: number;
-    userTeamName: string; // The name of the team the user was on
-    status: 'live' | 'victory' | 'defeat';
+    userTeam: Team;
+    status: 'live' | 'victory' | 'defeat' | 'pending';
 };
-
-// Create mock data for a specific user, e.g., 'Mapple'.
-// In a real app, this would be fetched from Firestore based on the user's ID.
-const mockUserMatches: UserMatchResult[] = [
-    {
-        id: 'match1',
-        tournamentName: 'Free Fire Pro Series',
-        game: 'Free Fire',
-        team1: { id: 't1', name: 'Cosmic Knights', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'knight helmet' },
-        team2: { id: 't2', name: 'Vortex Vipers', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'viper snake' },
-        score1: 0,
-        score2: 0,
-        userTeamName: 'Cosmic Knights',
-        status: 'live',
-    },
-    {
-        id: 'match2',
-        tournamentName: 'PUBG Mobile Global Championship',
-        game: 'PUBG',
-        team1: { id: 't1', name: 'Cosmic Knights', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'knight helmet' },
-        team2: { id: 't3', name: 'Rogue Warriors', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'warrior axe' },
-        score1: 2,
-        score2: 1,
-        userTeamName: 'Cosmic Knights',
-        status: 'victory',
-    },
-    {
-        id: 'match3',
-        tournamentName: 'COD:M Masters',
-        game: 'COD: Mobile',
-        team1: { id: 't4', name: 'Team Shadow', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'shadow hooded' },
-        team2: { id: 't1', name: 'Cosmic Knights', avatar: 'https://placehold.co/48x48.png', dataAiHint: 'knight helmet' },
-        score1: 2,
-        score2: 1,
-        userTeamName: 'Cosmic Knights',
-        status: 'defeat',
-    },
-];
 
 // Reusable MatchCard component
 const MatchCard = ({ match }: { match: UserMatchResult }) => {
-    const isUserTeam1 = match.team1.name === match.userTeamName;
-    const userWon = (match.status === 'victory' && isUserTeam1) || (match.status === 'defeat' && !isUserTeam1);
+    const isUserTeam1 = match.team1.id === match.userTeam.id;
     
     const statusBadges = {
         live: <Badge className="bg-red-500/90 text-white border-none animate-pulse">Live</Badge>,
         victory: <Badge className="bg-green-500/80 text-green-50 border-none">Victory</Badge>,
-        defeat: <Badge className="bg-destructive/80 text-destructive-foreground border-none">Defeat</Badge>
+        defeat: <Badge className="bg-destructive/80 text-destructive-foreground border-none">Defeat</Badge>,
+        pending: <Badge variant="outline">Pending</Badge>
     };
+
+    const isWinner = match.status === 'victory';
 
     return (
         <Card className="bg-card border-border/50 overflow-hidden">
@@ -83,7 +51,7 @@ const MatchCard = ({ match }: { match: UserMatchResult }) => {
                 </div>
                 <div className="flex items-center justify-between space-x-4">
                      <div className="flex flex-col items-center text-center gap-2 flex-1">
-                        <Avatar className={cn("h-12 w-12", match.status !== 'live' && isUserTeam1 && userWon && "border-2 border-amber-400", match.status !== 'live' && isUserTeam1 && !userWon && "opacity-60")}>
+                        <Avatar className={cn("h-12 w-12", isUserTeam1 && isWinner && "border-2 border-amber-400", isUserTeam1 && match.status === 'defeat' && "opacity-60")}>
                             <AvatarImage src={match.team1.avatar} data-ai-hint={match.team1.dataAiHint} />
                             <AvatarFallback>{match.team1.name.substring(0,2)}</AvatarFallback>
                         </Avatar>
@@ -95,7 +63,7 @@ const MatchCard = ({ match }: { match: UserMatchResult }) => {
                         <span className={cn(match.score2 > match.score1 && "text-foreground")}>{match.score2}</span>
                      </div>
                      <div className="flex flex-col items-center text-center gap-2 flex-1">
-                        <Avatar className={cn("h-12 w-12", match.status !== 'live' && !isUserTeam1 && userWon && "border-2 border-amber-400", match.status !== 'live' && !isUserTeam1 && !userWon && "opacity-60")}>
+                        <Avatar className={cn("h-12 w-12", !isUserTeam1 && isWinner && "border-2 border-amber-400", !isUserTeam1 && match.status === 'defeat' && "opacity-60")}>
                             <AvatarImage src={match.team2.avatar} data-ai-hint={match.team2.dataAiHint} />
                             <AvatarFallback>{match.team2.name.substring(0,2)}</AvatarFallback>
                         </Avatar>
@@ -111,23 +79,109 @@ const MatchCard = ({ match }: { match: UserMatchResult }) => {
 // Main page component
 export default function ResultsPage() {
     const { user } = useAuth();
+    const [profile, setProfile] = useState<PlayerProfile | null>(null);
+    const [tournaments, setTournaments] = useState<Tournament[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // In a real app, this data would be fetched based on the user's ID.
-    // For now, we are filtering mock data based on the logged-in user's display name.
-    const userMatches = useMemo(() => {
-        if (user?.displayName === "Mapple") { // Simulate data for a specific user
-            return mockUserMatches;
+    useEffect(() => {
+        if (user?.uid) {
+            const unsubProfile = getUserProfileStream(user.uid, (data) => {
+                setProfile(data);
+                 if (tournaments.length > 0) {
+                    setLoading(false);
+                }
+            });
+            const unsubTournaments = getTournamentsStream((data) => {
+                setTournaments(data);
+                if (profile !== null) {
+                    setLoading(false);
+                }
+            });
+            return () => {
+                unsubProfile();
+                unsubTournaments();
+            };
+        } else if (user === null) {
+            setLoading(false);
         }
-        return [];
-    }, [user]);
+    }, [user, profile, tournaments.length]);
 
-    const liveMatch = userMatches.find(m => m.status === 'live');
-    const recentMatches = userMatches.filter(m => m.status !== 'live');
+    const userMatches = useMemo(() => {
+        if (!profile || tournaments.length === 0) {
+            return [];
+        }
 
-    if (!user) {
-        return null; // Or a loading indicator
+        const allMatches: UserMatchResult[] = [];
+
+        for (const tournament of tournaments) {
+            const userTeam = tournament.participants.find(p => 
+                p.members?.some(m => m.gamerId === profile.gamerId)
+            );
+
+            if (!userTeam) continue;
+
+            for (const round of tournament.bracket) {
+                for (const match of round.matches) {
+                    if (!match.teams[0] || !match.teams[1]) continue;
+
+                    const isUserInMatch = match.teams.some(t => t?.id === userTeam.id);
+
+                    if (isUserInMatch) {
+                        let status: UserMatchResult['status'] = 'pending';
+                        if (match.status === 'live' || (tournament.status === 'live' && match.status !== 'completed')) {
+                            status = 'live';
+                        } else if (match.status === 'completed') {
+                            const userIsTeam1 = match.teams[0]?.id === userTeam.id;
+                            const userTeamWon = (userIsTeam1 && match.scores[0] > match.scores[1]) || (!userIsTeam1 && match.scores[1] > match.scores[0]);
+                            status = userTeamWon ? 'victory' : 'defeat';
+                        }
+                        
+                        // only add if not pending or if it's live
+                        if (status !== 'pending' || tournament.status === 'live') {
+                           allMatches.push({
+                                id: match.id,
+                                tournamentId: tournament.id,
+                                tournamentName: tournament.name,
+                                game: tournament.game,
+                                team1: match.teams[0],
+                                team2: match.teams[1],
+                                score1: match.scores[0],
+                                score2: match.scores[1],
+                                userTeam,
+                                status,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        
+        return allMatches.sort((a,b) => {
+            if (a.status === 'live') return -1;
+            if (b.status === 'live') return 1;
+            return 0; // could sort by date here if available
+        });
+    }, [profile, tournaments]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-screen w-screen bg-background fixed inset-0 z-50">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
     }
-
+    
+    if (!user) {
+         return (
+            <div className="container mx-auto px-4 py-8 md:pb-8 pb-24 flex flex-col items-center justify-center min-h-[60vh] text-center">
+                <h2 className="text-2xl font-bold">Please log in</h2>
+                <p className="text-muted-foreground mt-2 max-w-md">
+                   You need to be logged in to see your match history.
+                </p>
+            </div>
+        );
+    }
+    
     if (userMatches.length === 0) {
         return (
             <div className="container mx-auto px-4 py-8 md:pb-8 pb-24 flex flex-col items-center justify-center min-h-[60vh] text-center">
@@ -139,6 +193,9 @@ export default function ResultsPage() {
             </div>
         );
     }
+
+    const liveMatch = userMatches.find(m => m.status === 'live');
+    const recentMatches = userMatches.filter(m => m.status !== 'live');
     
     return (
         <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
@@ -168,3 +225,4 @@ export default function ResultsPage() {
         </div>
     );
 }
+

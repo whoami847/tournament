@@ -71,6 +71,7 @@ export interface PlayerProfile {
   name: string;
   email: string;
   avatar: string;
+  banner?: string;
   gamerId: string;
   joined: string; // ISO String
   role: string;

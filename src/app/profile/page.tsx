@@ -15,24 +15,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { MoreHorizontal, User, Gamepad2, Mail, Calendar, Users, Shield, Trophy, Star, Flame, LogOut, Pencil } from 'lucide-react';
+import { MoreHorizontal, User, Gamepad2, Mail, Calendar, Users, Shield, Trophy, Star, Flame, LogOut } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { signOutUser } from '@/lib/auth-service';
 import { useRouter } from 'next/navigation';
-import { getUserProfileStream, updateUserProfile } from '@/lib/users-service';
+import { getUserProfileStream } from '@/lib/users-service';
 import type { PlayerProfile } from '@/types';
-import { useToast } from "@/hooks/use-toast";
-import { EditProfileForm, type EditProfileFormValues } from '@/components/profile/edit-profile-form';
 
 // --- MOCK DATA (will be replaced by dynamic data) ---
 const initialTeamInfo = {
@@ -87,85 +76,20 @@ const UserInfo = ({ profile, user }: { profile: PlayerProfile | null, user: Retu
 };
 
 const TeamInfo = () => {
-    const [teamInfo, setTeamInfo] = useState(initialTeamInfo);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editForm, setEditForm] = useState({ name: '', avatar: '' });
-
-    const handleOpenDialog = () => {
-        setEditForm({ name: teamInfo.name, avatar: teamInfo.avatar });
-        setIsDialogOpen(true);
-    };
-
-    const handleSaveChanges = (e: React.FormEvent) => {
-        e.preventDefault();
-        setTeamInfo(prev => ({ ...prev, name: editForm.name, avatar: editForm.avatar }));
-        setIsDialogOpen(false);
-    };
-
     return (
     <Card>
         <CardHeader className="flex-row items-center justify-between">
             <CardTitle>My Team</CardTitle>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                         <Button variant="ghost" size="icon">
-                            <Pencil className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuItem onSelect={handleOpenDialog}>Edit Team</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Edit Team Information</DialogTitle>
-                        <DialogDescription>
-                            Update your team's name, members, and avatar. Changes are not saved to the database yet.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleSaveChanges} className="space-y-4 pt-4">
-                        <div>
-                            <Label htmlFor="teamName">
-                                Team Name
-                            </Label>
-                            <Input
-                                id="teamName"
-                                value={editForm.name}
-                                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                                className="mt-2"
-                            />
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                            <Button type="button" variant="outline" className="flex-1">Add member using UID</Button>
-                            <Button type="button" variant="outline" className="flex-1">Add member manually</Button>
-                        </div>
-                        <div>
-                            <Label htmlFor="avatarUrl">
-                                Avatar URL
-                            </Label>
-                            <Input
-                                id="avatarUrl"
-                                value={editForm.avatar}
-                                onChange={(e) => setEditForm({ ...editForm, avatar: e.target.value })}
-                                className="mt-2"
-                            />
-                        </div>
-                        <Button type="submit" className="w-full">Save changes</Button>
-                    </form>
-                </DialogContent>
-            </Dialog>
         </CardHeader>
         <CardContent>
             <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
                 <Avatar className="h-24 w-24 border-4 border-primary/20">
-                    <AvatarImage src={teamInfo.avatar} alt={teamInfo.name} data-ai-hint={teamInfo.dataAiHint} />
-                    <AvatarFallback>{teamInfo.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={initialTeamInfo.avatar} alt={initialTeamInfo.name} data-ai-hint={initialTeamInfo.dataAiHint} />
+                    <AvatarFallback>{initialTeamInfo.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <h3 className="text-2xl font-bold">{teamInfo.name}</h3>
-                    <p className="font-medium text-primary">{teamInfo.role}</p>
+                    <h3 className="text-2xl font-bold">{initialTeamInfo.name}</h3>
+                    <p className="font-medium text-primary">{initialTeamInfo.role}</p>
                 </div>
             </div>
             <div className="mt-6">
@@ -174,7 +98,7 @@ const TeamInfo = () => {
                     Team Members
                 </h4>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {teamInfo.members.map(member => (
+                    {initialTeamInfo.members.map(member => (
                         <div key={member.name} className="flex items-center gap-3 rounded-md bg-muted p-2">
                             <Avatar className="h-8 w-8">
                                 <AvatarImage src={member.avatar} alt={member.name} data-ai-hint={member.dataAiHint} />
@@ -215,11 +139,7 @@ const Achievements = () => (
 export default function ProfilePage() {
     const { user } = useAuth();
     const router = useRouter();
-    const { toast } = useToast();
     const [profile, setProfile] = useState<PlayerProfile | null>(null);
-    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
 
     useEffect(() => {
         if (user?.uid) {
@@ -234,26 +154,6 @@ export default function ProfilePage() {
         await signOutUser();
         router.push('/login');
     };
-
-    const handleProfileUpdate = async (data: EditProfileFormValues) => {
-        if (!user?.uid) return;
-        setIsSubmitting(true);
-        const result = await updateUserProfile(user.uid, data);
-        if (result.success) {
-            toast({
-                title: "Profile Updated",
-                description: "Your profile information has been successfully updated.",
-            });
-            setIsEditDialogOpen(false);
-        } else {
-            toast({
-                title: "Error",
-                description: result.error || "Failed to update profile.",
-                variant: "destructive",
-            });
-        }
-        setIsSubmitting(false);
-    };
     
     const displayName = profile?.name || user?.displayName || user?.email?.split('@')[0] || 'Player';
     const fallback = displayName.charAt(0).toUpperCase();
@@ -263,7 +163,7 @@ export default function ProfilePage() {
             {/* Header Section */}
             <div className="relative h-48 w-full">
                 <Image
-                    src="https://placehold.co/800x300.png"
+                    src={profile?.banner || "https://placehold.co/800x300.png"}
                     alt="Profile banner"
                     data-ai-hint="abstract background"
                     fill
@@ -278,7 +178,9 @@ export default function ProfilePage() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}>Edit Profile</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/profile/edit">Edit Profile</Link>
+                            </DropdownMenuItem>
                             <DropdownMenuItem>Settings</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
@@ -294,25 +196,6 @@ export default function ProfilePage() {
                 </div>
                 <h1 className="absolute top-16 left-4 text-2xl font-bold text-white sm:top-6">Profile</h1>
             </div>
-
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Edit Profile</DialogTitle>
-                        <DialogDescription>
-                            Make changes to your profile here. Click save when you're done.
-                        </DialogDescription>
-                    </DialogHeader>
-                    {profile && (
-                        <EditProfileForm
-                            profile={profile}
-                            onSubmit={handleProfileUpdate}
-                            isSubmitting={isSubmitting}
-                            onClose={() => setIsEditDialogOpen(false)}
-                        />
-                    )}
-                </DialogContent>
-            </Dialog>
 
             {/* Profile Info Section */}
             <div className="relative z-10 -mt-16 flex flex-col items-center text-center px-4">

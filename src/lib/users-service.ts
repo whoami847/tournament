@@ -21,6 +21,7 @@ const fromFirestore = (doc: any): PlayerProfile => {
     name: data.name,
     email: data.email,
     avatar: data.avatar,
+    banner: data.banner || 'https://placehold.co/800x300.png',
     gamerId: data.gamerId,
     joined: data.joined,
     role: data.role,
@@ -40,6 +41,7 @@ export const createUserProfile = async (user: User) => {
       name: user.displayName || user.email?.split('@')[0] || 'New Player',
       email: user.email || '',
       avatar: user.photoURL || `https://placehold.co/40x40.png`,
+      banner: 'https://placehold.co/800x300.png',
       gamerId: `player_${Math.random().toString(36).substring(2, 9)}`,
       joined: new Date().toISOString(),
       role: 'Player',
@@ -96,7 +98,7 @@ export const getUserProfileStream = (userId: string, callback: (profile: PlayerP
     return unsubscribe;
 };
 
-export const updateUserProfile = async (userId: string, data: Partial<Pick<PlayerProfile, 'name' | 'gamerId' | 'avatar'>>) => {
+export const updateUserProfile = async (userId: string, data: Partial<Pick<PlayerProfile, 'name' | 'gamerId' | 'avatar' | 'banner'>>) => {
   try {
     const userRef = doc(firestore, 'users', userId);
     await updateDoc(userRef, data);

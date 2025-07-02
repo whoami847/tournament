@@ -149,7 +149,7 @@ export default function AdminGamesPage() {
                                                 <DropdownMenuItem onClick={() => openDialog(game)}>
                                                     Edit
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleDelete(game.id, game.name)} className="text-destructive focus:text-destructive">
+                                                <DropdownMenuItem onSelect={() => handleDelete(game.id, game.name)} className="text-destructive focus:text-destructive">
                                                     Delete
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>

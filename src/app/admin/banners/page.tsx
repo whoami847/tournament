@@ -151,7 +151,7 @@ export default function AdminBannersPage() {
                                                 <DropdownMenuItem onClick={() => openDialog(banner)}>
                                                     Edit
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleDelete(banner.id, banner.name)} className="text-destructive focus:text-destructive">
+                                                <DropdownMenuItem onSelect={() => handleDelete(banner.id, banner.name)} className="text-destructive focus:text-destructive">
                                                     Delete
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>

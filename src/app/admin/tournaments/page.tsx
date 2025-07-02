@@ -132,7 +132,7 @@ export default function AdminTournamentsPage() {
                                                     <DropdownMenuItem asChild>
                                                         <Link href={`/tournaments/${tournament.id}`}>View Details</Link>
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(tournament.id, tournament.name)}>Delete</DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => handleDelete(tournament.id, tournament.name)}>Delete</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -173,7 +173,7 @@ export default function AdminTournamentsPage() {
                                             <DropdownMenuItem asChild>
                                                 <Link href={`/tournaments/${tournament.id}`}>View Details</Link>
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(tournament.id, tournament.name)}>Delete</DropdownMenuItem>
+                                            <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => handleDelete(tournament.id, tournament.name)}>Delete</DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>

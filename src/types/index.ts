@@ -30,6 +30,16 @@ export interface Round {
   matches: Match[];
 }
 
+export interface PlacementPoint {
+  place: number;
+  points: number;
+}
+
+export interface PointSystem {
+  perKillPoints: number;
+  placementPoints: PlacementPoint[];
+}
+
 export interface Tournament {
   id: string;
   name: string;
@@ -50,6 +60,7 @@ export interface Tournament {
   map?: string;
   version?: string;
   createdAt?: string;
+  pointSystem?: PointSystem;
 }
 
 export interface AuthUser {

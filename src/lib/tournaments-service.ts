@@ -40,11 +40,12 @@ const fromFirestore = (doc: any): Tournament => {
     map: data.map,
     version: data.version,
     createdAt: new Date(data.createdAt.seconds * 1000).toISOString(),
+    pointSystem: data.pointSystem || { perKillPoints: 0, placementPoints: [] },
   };
   return a
 };
 
-export const addTournament = async (tournament: Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket'>) => {
+export const addTournament = async (tournament: Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket' | 'pointSystem'>) => {
   try {
     const newTournament = {
       ...tournament,
@@ -56,7 +57,14 @@ export const addTournament = async (tournament: Omit<Tournament, 'id' | 'created
       participants: [],
       bracket: [],
       image: tournament.image || 'https://placehold.co/600x400.png',
-      dataAiHint: tournament.dataAiHint || 'esports tournament'
+      dataAiHint: tournament.dataAiHint || 'esports tournament',
+      pointSystem: { perKillPoints: 1, placementPoints: [
+          { place: 1, points: 15 },
+          { place: 2, points: 12 },
+          { place: 3, points: 10 },
+          { place: 4, points: 8 },
+        ] 
+      },
     };
     await addDoc(collection(firestore, 'tournaments'), newTournament);
     return { success: true };

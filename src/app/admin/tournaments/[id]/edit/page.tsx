@@ -13,6 +13,7 @@ import { EditRulesForm } from '@/components/admin/edit-rules-form';
 import { BracketEditor } from '@/components/admin/bracket-editor';
 import { ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EditPointsForm } from '@/components/admin/edit-points-form';
 
 const EditTournamentPageSkeleton = () => (
     <div className="space-y-6 animate-pulse">
@@ -113,10 +114,11 @@ export default function EditTournamentPage() {
             </div>
 
             <Tabs defaultValue="info">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="info">Info</TabsTrigger>
                     <TabsTrigger value="rules">Rules</TabsTrigger>
                     <TabsTrigger value="bracket">Bracket</TabsTrigger>
+                    <TabsTrigger value="points">Points</TabsTrigger>
                 </TabsList>
                 <TabsContent value="info">
                     <Card>
@@ -152,6 +154,17 @@ export default function EditTournamentPage() {
                                 participants={tournament.participants}
                                 onUpdate={handleBracketUpdate}
                             />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="points">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Point System</CardTitle>
+                            <CardDescription>Define the scoring system for placement and kills.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <EditPointsForm tournament={tournament} onSave={handleSave} />
                         </CardContent>
                     </Card>
                 </TabsContent>

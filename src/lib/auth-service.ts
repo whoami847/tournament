@@ -4,6 +4,7 @@ import {
   signInWithPopup,
   signOut,
   onAuthStateChanged as _onAuthStateChanged,
+  updateProfile,
   type User,
   type UserCredential,
 } from 'firebase/auth';
@@ -26,8 +27,13 @@ export function onAuthStateChanged(callback: (user: AuthUser | null) => void) {
   });
 }
 
-export async function signUp(email: string, password: string): Promise<UserCredential> {
+export async function signUp(email: string, password: string, fullName: string): Promise<UserCredential> {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  // Update the user's profile with the full name
+  await updateProfile(userCredential.user, {
+    displayName: fullName,
+  });
+  // Create the corresponding profile in Firestore
   await createUserProfile(userCredential.user);
   return userCredential;
 }

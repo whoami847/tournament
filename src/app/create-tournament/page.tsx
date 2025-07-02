@@ -64,6 +64,7 @@ export default function CreateTournamentPage() {
     const { toast } = useToast();
     const router = useRouter();
     const [games, setGames] = useState<GameCategory[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const unsubscribe = getGamesStream(setGames);
@@ -105,20 +106,31 @@ export default function CreateTournamentPage() {
     }, [mode, teamType, form]);
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
-        const result = await addTournament(values as Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket'>);
-        if (result.success) {
-            toast({
-                title: "Tournament Created!",
-                description: `The tournament "${values.name}" has been successfully created.`,
-            })
-            form.reset();
-            router.push('/admin/tournaments');
-        } else {
-            toast({
+        setIsSubmitting(true);
+        try {
+            const result = await addTournament(values as Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket'>);
+            if (result.success) {
+                toast({
+                    title: "Tournament Created!",
+                    description: `The tournament "${values.name}" has been successfully created.`,
+                })
+                form.reset();
+                router.push('/admin/tournaments');
+            } else {
+                toast({
+                    title: "Error",
+                    description: result.error || "Failed to create tournament.",
+                    variant: "destructive",
+                })
+            }
+        } catch (error) {
+             toast({
                 title: "Error",
-                description: result.error || "Failed to create tournament.",
+                description: "An unexpected error occurred while creating the tournament.",
                 variant: "destructive",
-            })
+            });
+        } finally {
+            setIsSubmitting(false);
         }
     }
   
@@ -318,8 +330,8 @@ export default function CreateTournamentPage() {
                             />
 
                             <div className="flex items-center gap-4">
-                                <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
-                                    {form.formState.isSubmitting ? 'Creating...' : 'Create Tournament'}
+                                <Button type="submit" size="lg" disabled={isSubmitting}>
+                                    {isSubmitting ? 'Creating...' : 'Create Tournament'}
                                 </Button>
                                 <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>
                                     Cancel

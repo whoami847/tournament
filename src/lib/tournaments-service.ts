@@ -12,6 +12,7 @@ import {
   arrayUnion,
   increment,
   writeBatch,
+  setDoc,
 } from 'firebase/firestore';
 import { firestore } from './firebase';
 import type { Tournament, Team, Match, Round } from '@/types';
@@ -46,7 +47,7 @@ const fromFirestore = (doc: any): Tournament => {
 };
 
 // Helper to generate an empty bracket structure based on the maximum number of teams
-const generateBracketStructure = (maxTeams: number): Round[] => {
+const generateBracketStructure = (maxTeams: number, tournamentId: string): Round[] => {
     // Round up maxTeams to the next power of 2 for a standard bracket (e.g., 12 -> 16)
     let bracketSize = 2;
     while (bracketSize < maxTeams) {
@@ -69,7 +70,7 @@ const generateBracketStructure = (maxTeams: number): Round[] => {
         const roundName = roundNamesMap[currentTeams] || `Round of ${currentTeams}`;
         const numMatches = currentTeams / 2;
         const matches: Match[] = Array.from({ length: numMatches }, (_, i) => ({
-            id: `${roundName.replace(/\s+/g, '-')}-m${i + 1}`,
+            id: `${tournamentId}_${roundName.replace(/\s+/g, '-')}_m${i + 1}`,
             name: `${roundName} #${i + 1}`,
             teams: [null, null],
             scores: [0, 0],
@@ -86,6 +87,9 @@ const generateBracketStructure = (maxTeams: number): Round[] => {
 
 export const addTournament = async (tournament: Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket' | 'pointSystem'>) => {
   try {
+    const newTournamentRef = doc(collection(firestore, 'tournaments'));
+    const tournamentId = newTournamentRef.id;
+
     const newTournament = {
       ...tournament,
       startDate: Timestamp.fromDate(new Date(tournament.startDate)),
@@ -94,7 +98,7 @@ export const addTournament = async (tournament: Omit<Tournament, 'id' | 'created
       teamsCount: 0,
       status: 'upcoming', 
       participants: [],
-      bracket: generateBracketStructure(tournament.maxTeams), // Auto-generate bracket
+      bracket: generateBracketStructure(tournament.maxTeams, tournamentId), // Auto-generate bracket
       image: tournament.image || 'https://placehold.co/600x400.png',
       dataAiHint: tournament.dataAiHint || 'esports tournament',
       pointSystem: { perKillPoints: 1, placementPoints: [
@@ -105,7 +109,7 @@ export const addTournament = async (tournament: Omit<Tournament, 'id' | 'created
         ] 
       },
     };
-    await addDoc(collection(firestore, 'tournaments'), newTournament);
+    await setDoc(newTournamentRef, newTournament);
     return { success: true };
   } catch (error) {
     console.error('Error adding tournament: ', error);

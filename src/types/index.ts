@@ -62,6 +62,7 @@ export interface Tournament {
   map?: string;
   version?: string;
   createdAt?: string;
+  pointSystemEnabled?: boolean;
   pointSystem?: PointSystem;
 }
 

@@ -80,20 +80,23 @@ export default function ResultsPage() {
     const { user, loading: authLoading } = useAuth();
     const [profile, setProfile] = useState<PlayerProfile | null>(null);
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
-    const [dataLoading, setDataLoading] = useState(true);
+    const [profileLoading, setProfileLoading] = useState(true);
+    const [tournamentsLoading, setTournamentsLoading] = useState(true);
+
 
     useEffect(() => {
         if (authLoading) return; // Wait for authentication to resolve
 
         if (user) {
-            setDataLoading(true);
+            setProfileLoading(true);
+            setTournamentsLoading(true);
             const unsubProfile = getUserProfileStream(user.uid, (data) => {
                 setProfile(data);
-                // We'll handle loading state together with tournaments
+                setProfileLoading(false);
             });
             const unsubTournaments = getTournamentsStream((data) => {
                 setTournaments(data);
-                setDataLoading(false); // Set loading to false once we have tournaments
+                setTournamentsLoading(false);
             });
             return () => {
                 unsubProfile();
@@ -101,7 +104,8 @@ export default function ResultsPage() {
             };
         } else {
             // Not logged in
-            setDataLoading(false);
+            setProfileLoading(false);
+            setTournamentsLoading(false);
         }
     }, [user, authLoading]);
 
@@ -173,7 +177,7 @@ export default function ResultsPage() {
         });
     }, [profile, tournaments]);
     
-    const loading = authLoading || dataLoading;
+    const loading = authLoading || profileLoading || tournamentsLoading;
 
     if (loading) {
         return (

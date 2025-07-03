@@ -6,7 +6,7 @@ import { produce } from 'immer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Swords, Trophy, Crown, Video, User, CheckCircle, Clock, Send, Hourglass } from 'lucide-react';
+import { Swords, Trophy, Crown, Video, User, CheckCircle, Clock, Send, Hourglass, Dices } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -162,6 +162,16 @@ const roundAbbreviationMap: Record<string, string> = {
     'Finals': 'Finals', 'Semi-finals': 'Semis', 'Quarter-finals': 'Quarters', 'Round of 16': 'R16', 'Round of 32': 'R32', 'Round of 64': 'R64',
 };
 
+// Fisher-Yates shuffle algorithm to randomize team order
+const shuffleArray = (array: any[]) => {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+};
+
+
 export function BracketEditor({ bracket: initialBracket, participants, onUpdate, tournamentId }: BracketEditorProps) {
     const { toast } = useToast();
     const [bracket, setBracket] = useState(initialBracket);
@@ -190,6 +200,54 @@ export function BracketEditor({ bracket: initialBracket, participants, onUpdate,
                 variant: "destructive"
             });
         }
+    };
+
+    const handleLottery = () => {
+        if (participants.length < 2) {
+            toast({
+                title: "Not enough participants",
+                description: "You need at least 2 teams to run a lottery.",
+                variant: "destructive",
+            });
+            return;
+        }
+    
+        const newBracket = produce(bracket, draft => {
+            if (!draft || draft.length === 0) return;
+    
+            // Shuffle participants for random assignment
+            const shuffledParticipants = shuffleArray([...participants]);
+    
+            // Clear all teams from the entire bracket first to handle re-lottery
+            draft.forEach(round => {
+                round.matches.forEach(match => {
+                    match.teams = [null, null];
+                    match.status = 'pending';
+                    match.scores = [0, 0];
+                });
+            });
+    
+            // Assign shuffled teams to the first round
+            const firstRound = draft[0];
+            let participantIndex = 0;
+            for (const match of firstRound.matches) {
+                for (let i = 0; i < match.teams.length; i++) {
+                    if (participantIndex < shuffledParticipants.length) {
+                        match.teams[i] = shuffledParticipants[participantIndex];
+                        participantIndex++;
+                    } else {
+                        match.teams[i] = null; // Fill remaining slots with null (for byes)
+                    }
+                }
+            }
+        });
+    
+        setBracket(newBracket);
+        onUpdate(newBracket); // This will save to Firestore
+        toast({
+            title: "Lottery Complete!",
+            description: "Teams have been randomly assigned to the bracket.",
+        });
     };
 
 
@@ -287,25 +345,31 @@ export function BracketEditor({ bracket: initialBracket, participants, onUpdate,
                 </Card>
             )}
 
-            <div className="flex justify-center mb-4 overflow-x-auto no-scrollbar">
-                <div className="inline-flex items-center justify-center rounded-full bg-card p-1 text-card-foreground border">
-                    {roundNames.map(name => (
-                        <Button
-                            key={name}
-                            variant="ghost"
-                            size="sm"
-                            className={cn(
-                                "rounded-full h-8 px-4 font-semibold",
-                                activeRoundName === name 
-                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                                    : 'text-muted-foreground hover:bg-accent/50'
-                            )}
-                            onClick={() => setActiveRoundName(name)}
-                        >
-                            {roundAbbreviationMap[name] || name}
-                        </Button>
-                    ))}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <div className="flex-grow flex justify-center overflow-x-auto no-scrollbar">
+                    <div className="inline-flex items-center justify-center rounded-full bg-card p-1 text-card-foreground border">
+                        {roundNames.map(name => (
+                            <Button
+                                key={name}
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                    "rounded-full h-8 px-4 font-semibold",
+                                    activeRoundName === name 
+                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                                        : 'text-muted-foreground hover:bg-accent/50'
+                                )}
+                                onClick={() => setActiveRoundName(name)}
+                            >
+                                {roundAbbreviationMap[name] || name}
+                            </Button>
+                        ))}
+                    </div>
                 </div>
+                 <Button onClick={handleLottery} variant="outline" disabled={participants.length < 2}>
+                    <Dices className="mr-2 h-4 w-4" />
+                    Run Lottery
+                </Button>
             </div>
 
             <div className="flex flex-col items-center space-y-4">

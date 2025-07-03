@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, notFound, useRouter } from 'next/navigation';
 import { getTournament, updateTournament } from '@/lib/tournaments-service';
 import type { Tournament } from '@/types';
@@ -47,27 +47,30 @@ export default function EditTournamentPage() {
     const [tournament, setTournament] = useState<Tournament | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+    const fetchTournament = useCallback(async () => {
         if (params.id) {
-            const fetchTournament = async () => {
-                setLoading(true);
-                const data = await getTournament(params.id as string);
-                if (data) {
-                    setTournament(data);
-                } else {
-                    notFound();
-                }
-                setLoading(false);
-            };
-            fetchTournament();
+            setLoading(true);
+            const data = await getTournament(params.id as string);
+            if (data) {
+                setTournament(data);
+            } else {
+                notFound();
+            }
+            setLoading(false);
         }
     }, [params.id]);
+
+
+    useEffect(() => {
+        fetchTournament();
+    }, [fetchTournament]);
 
 
     const handleSave = async (updatedData: Partial<Tournament>) => {
         if (!tournament) return;
         const result = await updateTournament(tournament.id, updatedData);
         if(result.success) {
+            // Optimistic update
             setTournament(prev => prev ? { ...prev, ...updatedData } : null);
             toast({
                 title: "Changes Saved!",
@@ -75,20 +78,6 @@ export default function EditTournamentPage() {
             });
         } else {
             toast({ title: "Error", description: result.error, variant: "destructive" });
-        }
-    };
-    
-    const handleBracketUpdate = async (updatedBracket: Tournament['bracket']) => {
-        if (!tournament) return;
-        const result = await updateTournament(tournament.id, { bracket: updatedBracket });
-        if(result.success) {
-             setTournament(prev => prev ? { ...prev, bracket: updatedBracket } : null);
-            toast({
-                title: "Bracket Updated!",
-                description: "The bracket has been saved.",
-            });
-        } else {
-             toast({ title: "Error", description: result.error, variant: "destructive" });
         }
     };
 
@@ -146,14 +135,20 @@ export default function EditTournamentPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle>Edit Bracket</CardTitle>
-                            <CardDescription>Request results from teams. Approvals are handled in the Results Approval panel.</CardDescription>
+                             <CardDescription>
+                                {tournament.pointSystemEnabled 
+                                    ? "Request results from teams. Approvals are handled in the Results Approval panel."
+                                    : "Set winners for each match manually. Changes are saved automatically."
+                                }
+                            </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <BracketEditor 
                                 tournamentId={tournament.id}
                                 bracket={tournament.bracket} 
                                 participants={tournament.participants}
-                                onUpdate={handleBracketUpdate}
+                                pointSystemEnabled={tournament.pointSystemEnabled ?? false}
+                                onUpdate={fetchTournament}
                             />
                         </CardContent>
                     </Card>

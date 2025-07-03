@@ -308,3 +308,105 @@ export const requestMatchResults = async (tournamentId: string, roundName: strin
         return { success: false, error: (error as Error).message };
     }
 }
+
+export const setMatchWinner = async (
+  tournamentId: string,
+  roundName: string,
+  matchId: string,
+  winnerTeamId: string
+) => {
+  const tournamentRef = doc(firestore, 'tournaments', tournamentId);
+  try {
+    const tournamentSnap = await getDoc(tournamentRef);
+    if (!tournamentSnap.exists()) throw new Error('Tournament not found');
+
+    const tournament = fromFirestore(tournamentSnap);
+    const newBracket = JSON.parse(JSON.stringify(tournament.bracket));
+
+    const roundIndex = newBracket.findIndex((r: Round) => r.name === roundName);
+    if (roundIndex === -1) throw new Error('Round not found');
+
+    const matchIndex = newBracket[roundIndex].matches.findIndex((m: Match) => m.id === matchId);
+    if (matchIndex === -1) throw new Error('Match not found');
+
+    const match = newBracket[roundIndex].matches[matchIndex];
+    if (!match.teams[0] || !match.teams[1]) {
+      throw new Error("Both teams must be present to set a winner.");
+    }
+    
+    const winnerIndex = match.teams.findIndex((t: Team | null) => t?.id === winnerTeamId);
+    if (winnerIndex === -1) throw new Error('Winner team not found in the match');
+
+    match.status = 'completed';
+    match.scores = [0, 0];
+    match.scores[winnerIndex] = 1;
+
+    // Advance winner
+    const winner = match.teams[winnerIndex];
+    if (winner && roundIndex < newBracket.length - 1) {
+      const nextRoundIndex = roundIndex + 1;
+      const nextMatchIndex = Math.floor(matchIndex / 2);
+      const teamSlotInNextMatch = matchIndex % 2;
+
+      if (newBracket[nextRoundIndex]?.matches[nextMatchIndex]) {
+        newBracket[nextRoundIndex].matches[nextMatchIndex].teams[teamSlotInNextMatch] = winner;
+      }
+    }
+    
+    await updateDoc(tournamentRef, { bracket: newBracket });
+    return { success: true };
+  } catch (error) {
+    console.error('Error setting match winner:', error);
+    return { success: false, error: (error as Error).message };
+  }
+};
+
+export const undoMatchResult = async (
+  tournamentId: string,
+  roundName: string,
+  matchId: string
+) => {
+    const tournamentRef = doc(firestore, 'tournaments', tournamentId);
+    try {
+        const tournamentSnap = await getDoc(tournamentRef);
+        if (!tournamentSnap.exists()) throw new Error('Tournament not found');
+
+        const tournament = fromFirestore(tournamentSnap);
+        const newBracket = JSON.parse(JSON.stringify(tournament.bracket));
+
+        const roundIndex = newBracket.findIndex((r: Round) => r.name === roundName);
+        if (roundIndex === -1) throw new Error('Round not found');
+
+        const matchIndex = newBracket[roundIndex].matches.findIndex((m: Match) => m.id === matchId);
+        if (matchIndex === -1) throw new Error('Match not found');
+        
+        const match = newBracket[roundIndex].matches[matchIndex];
+        const oldWinnerIndex = match.scores[0] > match.scores[1] ? 0 : 1;
+        const oldWinner = match.teams[oldWinnerIndex];
+
+        // Revert match
+        match.status = 'pending';
+        match.scores = [0, 0];
+        
+        // Revert next round
+        if (oldWinner && roundIndex < newBracket.length - 1) {
+            const nextRoundIndex = roundIndex + 1;
+            const nextMatchIndex = Math.floor(matchIndex / 2);
+            const teamSlotInNextMatch = matchIndex % 2;
+
+            if (newBracket[nextRoundIndex]?.matches[nextMatchIndex]) {
+                const teamInNextMatch = newBracket[nextRoundIndex].matches[nextMatchIndex].teams[teamSlotInNextMatch];
+                // Only remove if it's the same team, to prevent race conditions or weird states
+                if (teamInNextMatch && teamInNextMatch.id === oldWinner.id) {
+                    newBracket[nextRoundIndex].matches[nextMatchIndex].teams[teamSlotInNextMatch] = null;
+                }
+            }
+        }
+
+        await updateDoc(tournamentRef, { bracket: newBracket });
+        return { success: true };
+    } catch (error) {
+        console.error('Error undoing match result:', error);
+        return { success: false, error: (error as Error).message };
+    }
+};

@@ -149,6 +149,49 @@ export const updateTournament = async (id: string, data: Partial<Tournament>) =>
         updateData.startDate = Timestamp.fromDate(new Date(data.startDate));
     }
 
+    // If the tournament is being set to 'live', process byes in the first round.
+    if (data.status === 'live') {
+        const tournamentSnap = await getDoc(docRef);
+        if (tournamentSnap.exists()) {
+            const tournament = fromFirestore(tournamentSnap);
+            const currentBracket = tournament.bracket;
+
+            if (currentBracket && currentBracket.length > 0 && currentBracket[0].matches) {
+                const firstRound = currentBracket[0];
+                const nextRound = currentBracket.length > 1 ? currentBracket[1] : null;
+
+                const bracketWithByesProcessed = JSON.parse(JSON.stringify(currentBracket));
+
+                firstRound.matches.forEach((match, matchIndex) => {
+                    const team1 = match.teams[0];
+                    const team2 = match.teams[1];
+
+                    // Check for a bye (one team present, one is null)
+                    if ((team1 && !team2) || (!team1 && team2)) {
+                        const winner = team1 || team2;
+                        
+                        // Update the current match as completed
+                        const matchInDraft = bracketWithByesProcessed[0].matches[matchIndex];
+                        matchInDraft.status = 'completed';
+                        matchInDraft.scores = team1 ? [1, 0] : [0, 1];
+
+                        // Advance the winner to the next round, if a next round exists
+                        if (nextRound && winner) {
+                            const nextRoundMatchIndex = Math.floor(matchIndex / 2);
+                            const teamSlotInNextMatch = matchIndex % 2;
+                            
+                            if (bracketWithByesProcessed[1].matches[nextRoundMatchIndex]) {
+                                bracketWithByesProcessed[1].matches[nextRoundMatchIndex].teams[teamSlotInNextMatch] = winner;
+                            }
+                        }
+                    }
+                });
+                
+                updateData.bracket = bracketWithByesProcessed;
+            }
+        }
+    }
+
     await updateDoc(docRef, updateData);
     return { success: true };
   } catch (error) {

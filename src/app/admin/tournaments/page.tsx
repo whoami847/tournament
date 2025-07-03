@@ -182,57 +182,46 @@ export default function AdminTournamentsPage() {
                         {filteredTournaments.length > 0 ? filteredTournaments.map((tournament) => {
                             const config = statusConfig[tournament.status] ?? { variant: 'secondary' };
                             return (
-                            <div key={tournament.id} className="bg-muted/20 p-4 rounded-lg border">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <p className="font-semibold">{tournament.name}</p>
-                                        <p className="text-sm text-muted-foreground">{tournament.game}</p>
-                                    </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                                <span className="sr-only">Toggle menu</span>
+                                <Card key={tournament.id}>
+                                    <CardContent className="p-4 pb-2">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <p className="font-semibold">{tournament.name}</p>
+                                                <p className="text-sm text-muted-foreground">{tournament.game}</p>
+                                            </div>
+                                            <Badge variant={config.variant} className={`capitalize ${config.className ?? ''}`}>
+                                                {tournament.status}
+                                            </Badge>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm text-muted-foreground">
+                                            <div>
+                                                <p className="font-medium text-foreground">{tournament.teamsCount} / {tournament.maxTeams}</p>
+                                                <p className="text-xs">Participants</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-medium text-foreground">{tournament.prizePool} TK</p>
+                                                <p className="text-xs">Prize Pool</p>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="p-2 border-t flex flex-wrap gap-2">
+                                        <Button asChild size="sm" variant="outline"><Link href={`/admin/tournaments/${tournament.id}/edit`}>Edit</Link></Button>
+                                        <Button asChild size="sm" variant="outline"><Link href={`/tournaments/${tournament.id}`}>View</Link></Button>
+                                        
+                                        {tournament.status === 'upcoming' && (
+                                            <Button size="sm" onClick={() => handleStatusChange(tournament.id, tournament.name, 'live')}>
+                                                Go Live
                                             </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem asChild>
-                                                <Link href={`/admin/tournaments/${tournament.id}/edit`}>Edit</Link>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem asChild>
-                                                <Link href={`/tournaments/${tournament.id}`}>View Details</Link>
-                                            </DropdownMenuItem>
-
-                                            {tournament.status === 'upcoming' && (
-                                                <DropdownMenuItem onSelect={() => handleStatusChange(tournament.id, tournament.name, 'live')}>
-                                                    Go Live
-                                                </DropdownMenuItem>
-                                            )}
-                                            {tournament.status === 'live' && (
-                                                <DropdownMenuItem onSelect={() => handleStatusChange(tournament.id, tournament.name, 'completed')}>
-                                                    Mark as Completed
-                                                </DropdownMenuItem>
-                                            )}
-
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => handleDelete(tournament.id, tournament.name)}>Delete</DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                                <div className="mt-4 flex justify-between items-center text-sm text-muted-foreground pt-4 border-t border-muted-foreground/20">
-                                    <Badge variant={config.variant} className={`capitalize ${config.className ?? ''}`}>
-                                        {tournament.status}
-                                    </Badge>
-                                    <div className="text-right">
-                                        <p className="font-medium text-foreground">{tournament.teamsCount} / {tournament.maxTeams}</p>
-                                        <p className="text-xs">Participants</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="font-medium text-foreground">{tournament.prizePool} TK</p>
-                                        <p className="text-xs">Prize Pool</p>
-                                    </div>
-                                </div>
-                            </div>
+                                        )}
+                                        {tournament.status === 'live' && (
+                                            <Button size="sm" onClick={() => handleStatusChange(tournament.id, tournament.name, 'completed')}>
+                                                Mark Completed
+                                            </Button>
+                                        )}
+                                        
+                                        <Button size="sm" variant="destructive" className="ml-auto" onClick={() => handleDelete(tournament.id, tournament.name)}>Delete</Button>
+                                    </CardFooter>
+                                </Card>
                         )}) : (
                             <div className="text-center py-16 border border-dashed rounded-lg">
                                 <h3 className="text-xl font-medium">No Tournaments Found</h3>

@@ -14,8 +14,8 @@ import { getTournamentsStream } from '@/lib/tournaments-service';
 import { getBannersStream } from '@/lib/banners-service';
 import { getGamesStream } from '@/lib/games-service';
 import { getTopPlayersStream } from '@/lib/users-service';
-import type { Tournament, Game, FeaturedBanner, GameCategory, PlayerProfile } from '@/types';
-import { format } from 'date-fns';
+import type { Tournament, Game, FeaturedBanner, GameCategory, PlayerProfile, AppNotification } from '@/types';
+import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import {
     DropdownMenu,
@@ -27,7 +27,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
-
+import { getNotificationsStream, markNotificationAsRead } from '@/lib/notifications-service';
+import { useRouter } from 'next/navigation';
 
 // --- MOCK DATA ---
 
@@ -35,16 +36,29 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 
 // --- SUB-COMPONENTS ---
-const notifications = [
-    { title: "New Tournament Alert", description: "Free Fire World Series starts tomorrow!", time: "5m ago" },
-    { title: "Team Invite", description: "Cosmic Knights has invited you to join their team.", time: "1h ago" },
-    { title: "Match Reminder", description: "Your match vs Vortex Vipers starts in 30 minutes.", time: "2h ago" },
-];
 
 const HomeHeader = () => {
     const { user } = useAuth();
+    const router = useRouter();
     const displayName = user?.displayName || user?.email?.split('@')[0] || 'Player';
     const fallback = displayName.charAt(0).toUpperCase();
+    const [notifications, setNotifications] = useState<AppNotification[]>([]);
+
+    useEffect(() => {
+        if (user?.uid) {
+            const unsubscribe = getNotificationsStream(user.uid, setNotifications);
+            return () => unsubscribe();
+        }
+    }, [user]);
+
+    const hasUnread = notifications.some(n => !n.read);
+
+    const handleNotificationClick = async (notification: AppNotification) => {
+        if (!notification.read) {
+            await markNotificationAsRead(notification.id);
+        }
+        router.push(notification.link);
+    }
 
     return (
         <header className="flex items-center justify-between p-4">
@@ -59,25 +73,31 @@ const HomeHeader = () => {
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="relative rounded-full bg-card h-10 w-10">
                         <Bell className="h-5 w-5" />
-                        <span className="absolute top-2 right-2 flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                        </span>
+                         {hasUnread && (
+                            <span className="absolute top-2 right-2 flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                            </span>
+                        )}
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80">
                     <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {notifications.map((n, i) => (
-                        <DropdownMenuItem key={i} className="flex flex-col items-start gap-1 p-3 cursor-pointer">
-                            <p className="font-semibold">{n.title}</p>
+                    {notifications.length > 0 ? notifications.map((n) => (
+                        <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1 p-3 cursor-pointer" onClick={() => handleNotificationClick(n)}>
+                            <p className={cn("font-semibold", !n.read && "text-foreground")}>{n.title}</p>
                             <p className="text-xs text-muted-foreground">{n.description}</p>
-                            <p className="text-xs text-muted-foreground self-end">{n.time}</p>
+                            <p className="text-xs text-muted-foreground self-end">{formatDistanceToNow(n.createdAt.toDate(), { addSuffix: true })}</p>
                         </DropdownMenuItem>
-                    ))}
+                    )) : (
+                         <DropdownMenuItem disabled>
+                            <p className="text-sm text-muted-foreground text-center w-full py-4">No notifications yet.</p>
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="justify-center">
-                        <Link href="#" className="text-sm font-medium text-primary">View all notifications</Link>
+                    <DropdownMenuItem className="justify-center" disabled>
+                        <Link href="#" className="text-sm font-medium text-primary pointer-events-none opacity-50">View all notifications</Link>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

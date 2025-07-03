@@ -67,6 +67,7 @@ export default function TournamentPage() {
   const [isSubmissionDialogOpen, setSubmissionDialogOpen] = useState(false);
   const [matchForSubmission, setMatchForSubmission] = useState<Match | null>(null);
   const [teamForSubmission, setTeamForSubmission] = useState<Team | null>(null);
+  const [submissionDialogShown, setSubmissionDialogShown] = useState(false);
 
   useEffect(() => {
     if (user?.uid) {
@@ -105,6 +106,13 @@ export default function TournamentPage() {
       setTeamForSubmission(userTeam);
       setSubmissionDialogOpen(true);
   }
+
+  useEffect(() => {
+    if (matchesToSubmit.length > 0 && !submissionDialogShown) {
+      handleOpenSubmissionDialog(matchesToSubmit[0]);
+      setSubmissionDialogShown(true);
+    }
+  }, [matchesToSubmit, submissionDialogShown]);
 
   if (loading || (user && !profile)) {
     return <TournamentPageSkeleton />;

@@ -1,4 +1,5 @@
 
+import type { Timestamp } from 'firebase/firestore';
 
 export type Game = string;
 
@@ -119,4 +120,14 @@ export interface MatchResult {
   screenshotUrl: string;
   status: 'pending' | 'approved' | 'rejected';
   submittedAt: string; // ISO String
+}
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  title: string;
+  description: string;
+  link: string;
+  read: boolean;
+  createdAt: Timestamp;
 }

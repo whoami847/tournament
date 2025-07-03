@@ -13,9 +13,12 @@ import {
   increment,
   writeBatch,
   setDoc,
+  getDocs,
+  where,
 } from 'firebase/firestore';
 import { firestore } from './firebase';
 import type { Tournament, Team, Match, Round } from '@/types';
+import { createNotification } from './notifications-service';
 
 // Helper to convert Firestore doc to Tournament type
 const fromFirestore = (doc: any): Tournament => {
@@ -296,6 +299,27 @@ export const requestMatchResults = async (tournamentId: string, roundName: strin
                 [match.teams[0].id]: 'pending',
                 [match.teams[1].id]: 'pending',
             };
+
+            // Create notifications for all players in the match
+            const allMemberGamerIds = [
+                ...(match.teams[0].members?.map(m => m.gamerId) || []),
+                ...(match.teams[1].members?.map(m => m.gamerId) || [])
+            ].filter(id => id); // Filter out any potential undefined IDs
+
+            if (allMemberGamerIds.length > 0) {
+                const usersQuery = query(collection(firestore, 'users'), where('gamerId', 'in', allMemberGamerIds));
+                const usersSnapshot = await getDocs(usersQuery);
+
+                for (const userDoc of usersSnapshot.docs) {
+                    await createNotification({
+                        userId: userDoc.id,
+                        title: 'Match Result Submission',
+                        description: `Please submit your results for match "${match.name}" in the "${tournament.name}" tournament.`,
+                        link: `/tournaments/${tournamentId}`
+                    });
+                }
+            }
+
         } else {
             throw new Error("Both teams must be present to request results.");
         }

@@ -14,7 +14,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { firestore } from './firebase';
-import type { Tournament, Team } from '@/types';
+import type { Tournament, Team, Match, Round } from '@/types';
 
 // Helper to convert Firestore doc to Tournament type
 const fromFirestore = (doc: any): Tournament => {
@@ -45,6 +45,44 @@ const fromFirestore = (doc: any): Tournament => {
   return a
 };
 
+// Helper to generate an empty bracket structure based on the maximum number of teams
+const generateBracketStructure = (maxTeams: number): Round[] => {
+    // Round up maxTeams to the next power of 2 for a standard bracket (e.g., 12 -> 16)
+    let bracketSize = 2;
+    while (bracketSize < maxTeams) {
+        bracketSize *= 2;
+    }
+
+    const roundNamesMap: Record<number, string> = {
+        2: 'Finals',
+        4: 'Semi-finals',
+        8: 'Quarter-finals',
+        16: 'Round of 16',
+        32: 'Round of 32',
+        64: 'Round of 64',
+    };
+
+    const rounds: Round[] = [];
+    let currentTeams = bracketSize;
+
+    while (currentTeams >= 2) {
+        const roundName = roundNamesMap[currentTeams] || `Round of ${currentTeams}`;
+        const numMatches = currentTeams / 2;
+        const matches: Match[] = Array.from({ length: numMatches }, (_, i) => ({
+            id: `${roundName.replace(/\s+/g, '-')}-m${i + 1}`,
+            name: `${roundName} #${i + 1}`,
+            teams: [null, null],
+            scores: [0, 0],
+            status: 'pending',
+        }));
+        rounds.push({ name: roundName, matches });
+        currentTeams /= 2;
+    }
+
+    return rounds;
+};
+
+
 export const addTournament = async (tournament: Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket' | 'pointSystem'>) => {
   try {
     const newTournament = {
@@ -55,7 +93,7 @@ export const addTournament = async (tournament: Omit<Tournament, 'id' | 'created
       teamsCount: 0,
       status: 'upcoming', 
       participants: [],
-      bracket: [],
+      bracket: generateBracketStructure(tournament.maxTeams), // Auto-generate bracket
       image: tournament.image || 'https://placehold.co/600x400.png',
       dataAiHint: tournament.dataAiHint || 'esports tournament',
       pointSystem: { perKillPoints: 1, placementPoints: [
@@ -140,17 +178,42 @@ export const joinTournament = async (
     if (!docSnap.exists()) {
       return { success: false, error: 'Tournament not found.' };
     }
-    const tournamentData = docSnap.data() as Tournament;
+    const tournamentData = fromFirestore(docSnap);
+
     if (tournamentData.teamsCount >= tournamentData.maxTeams) {
         return { success: false, error: 'Tournament is already full.' };
     }
 
+    // Deep copy the bracket to avoid mutation issues.
+    const updatedBracket = JSON.parse(JSON.stringify(tournamentData.bracket)); 
+    let teamPlaced = false;
+
+    // Find the first empty slot in the first round and place the new team
+    if (updatedBracket.length > 0 && updatedBracket[0].matches) {
+      for (const match of updatedBracket[0].matches) {
+        for (let i = 0; i < match.teams.length; i++) {
+            if (match.teams[i] === null) {
+                match.teams[i] = newParticipant;
+                teamPlaced = true;
+                break;
+            }
+        }
+        if (teamPlaced) break;
+      }
+    }
+
     const batch = writeBatch(firestore);
     
-    batch.update(tournamentRef, {
+    const updateData: any = {
       participants: arrayUnion(newParticipant),
       teamsCount: increment(1),
-    });
+    };
+
+    if (teamPlaced) {
+        updateData.bracket = updatedBracket;
+    }
+
+    batch.update(tournamentRef, updateData);
 
     await batch.commit();
     return { success: true };

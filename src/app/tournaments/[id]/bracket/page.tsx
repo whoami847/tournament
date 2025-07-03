@@ -30,88 +30,6 @@ const roundAbbreviationMap: Record<string, string> = {
     'Round of 64': 'R64',
 };
 
-const generateUpcomingBracket = (tournament: Tournament): Round[] => {
-    const { maxTeams, participants } = tournament;
-    
-    // This function can be improved to generate more varied placeholder names
-    const placeholderTeamNames = [
-        'Thunderbolts', 'Arctic Wolves', 'Desert Scorpions', 'Ironclad Legion', 
-        'Venomous Vipers', 'Rising Phoenix', 'Goliath Titans', 'Emerald Spectres',
-        'Steel Sentinels', 'Nightmare Knights', 'Inferno Squad', 'Cyclone Crew',
-        'Rogue Warriors', 'Phantom Phantoms', 'Savage Spartans', 'Digital Dynamos'
-    ];
-    
-    let teamNameCounter = 0;
-    const generatePlaceholderTeam = (): Team => {
-        const name = placeholderTeamNames[teamNameCounter % placeholderTeamNames.length];
-        const team: Team = {
-            id: `p-${teamNameCounter}`,
-            name: name,
-            avatar: 'https://placehold.co/40x40.png'
-        };
-        teamNameCounter++;
-        return team;
-    }
-
-    if (maxTeams <= 1 || (maxTeams & (maxTeams - 1)) !== 0) {
-        return [];
-    }
-
-    const roundNamesMap: Record<number, { name: string, prefix: string }> = {
-        2: { name: 'Finals', prefix: 'F' },
-        4: { name: 'Semi-finals', prefix: 'SF' },
-        8: { name: 'Quarter-finals', prefix: 'QF' },
-        16: { name: 'Round of 16', prefix: 'R16' },
-        32: { name: 'Round of 32', prefix: 'R32' },
-        64: { name: 'Round of 64', prefix: 'R64' },
-    };
-
-    let rounds: Round[] = [];
-    let numberOfTeamsInRound = maxTeams;
-
-    while (numberOfTeamsInRound >= 2) {
-        const roundInfo = roundNamesMap[numberOfTeamsInRound] || { name: `Round of ${numberOfTeamsInRound}`, prefix: `R${numberOfTeamsInRound}` };
-        const roundName = roundInfo.name;
-        const matchPrefix = roundInfo.prefix;
-        const matchCount = numberOfTeamsInRound / 2;
-        const matches: Match[] = [];
-        
-        for (let i = 0; i < matchCount; i++) {
-            matches.push({
-                id: `${roundName}-m${i + 1}`,
-                name: `${matchPrefix}-${i + 1}`,
-                teams: [null, null],
-                scores: [0, 0],
-                status: 'pending',
-            });
-        }
-        
-        rounds.push({ name: roundName, matches });
-        numberOfTeamsInRound /= 2;
-    }
-
-    const generatedRounds = rounds;
-
-    if (generatedRounds.length > 0) {
-        const firstRoundMatches = generatedRounds[0].matches;
-        for (let i = 0; i < firstRoundMatches.length; i++) {
-            const team1Index = i * 2;
-            const team2Index = i * 2 + 1;
-            const team1 = participants[team1Index] || generatePlaceholderTeam();
-            const team2 = participants[team2Index] || generatePlaceholderTeam();
-            firstRoundMatches[i].teams = [team1, team2];
-        }
-    }
-    
-    for(let r = 1; r < generatedRounds.length; r++) {
-        for(let m = 0; m < generatedRounds[r].matches.length; m++) {
-            generatedRounds[r].matches[m].teams = [generatePlaceholderTeam(), generatePlaceholderTeam()];
-        }
-    }
-
-    return generatedRounds;
-};
-
 const BracketPageSkeleton = () => (
     <div className="container mx-auto px-4 py-4 animate-pulse">
         <header className="flex items-center justify-between mb-6">
@@ -158,11 +76,8 @@ export default function BracketPage() {
 
   const bracketData = useMemo(() => {
     if (!tournament) return [];
-    if (tournament.status === 'upcoming' && !isSoloTournament && tournament.bracket.length === 0) {
-        return generateUpcomingBracket(tournament);
-    }
     return tournament.bracket;
-  }, [tournament, isSoloTournament]);
+  }, [tournament]);
 
   const winner = useMemo(() => {
     if (!tournament || tournament.status !== 'completed' || !bracketData || bracketData.length === 0) {

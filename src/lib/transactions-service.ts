@@ -3,7 +3,6 @@ import {
     onSnapshot,
     query,
     where,
-    orderBy,
 } from 'firebase/firestore';
 import { firestore } from './firebase';
 import type { Transaction } from '@/types';
@@ -25,15 +24,20 @@ export const getTransactionsStream = (
   userId: string,
   callback: (transactions: Transaction[]) => void
 ) => {
+  // The query was previously using orderBy('date', 'desc'), which requires a composite index in Firestore.
+  // To avoid this requirement, we fetch the data without server-side sorting and sort it on the client.
   const q = query(
     collection(firestore, 'transactions'),
-    where('userId', '==', userId),
-    orderBy('date', 'desc')
+    where('userId', '==', userId)
   );
 
   const unsubscribe = onSnapshot(q, (querySnapshot) => {
     const transactions = querySnapshot.docs.map(fromFirestore);
-    callback(transactions);
+    // Sort transactions by date in descending order on the client side.
+    const sortedTransactions = transactions.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    callback(sortedTransactions);
   }, (error) => {
     console.error("Error fetching transactions stream: ", error);
     callback([]);

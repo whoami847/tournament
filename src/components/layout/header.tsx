@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/icons";
-import { ClipboardList, User } from "lucide-react";
+import { User } from "lucide-react";
 
 export default function Header() {
   return (
@@ -19,12 +19,6 @@ export default function Header() {
           <nav className="hidden md:flex items-center space-x-2">
             <Button variant="ghost" asChild>
               <Link href="/tournaments">Tournaments</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/results">
-                <ClipboardList className="mr-2 h-4 w-4" />
-                Results
-              </Link>
             </Button>
              <Button variant="ghost" size="icon" asChild>
                 <Link href="/profile">

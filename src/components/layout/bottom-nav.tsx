@@ -2,13 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Swords, ClipboardList, User, Wallet } from 'lucide-react';
+import { Home, Swords, User, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/', icon: Home, label: 'Home' },
   { href: '/tournaments', icon: Swords, label: 'Tournaments' },
-  { href: '/results', icon: ClipboardList, label: 'Results' },
   { href: '/wallet', icon: Wallet, label: 'Wallet' },
   { href: '/profile', icon: User, label: 'Profile' },
 ];
@@ -35,7 +34,7 @@ export default function BottomNav() {
             const isActive = getIsActive(item.href);
             return (
               <Link key={item.label} href={item.href} className={cn(
-                "flex items-center justify-center w-1/5 h-full rounded-lg transition-colors",
+                "flex flex-1 items-center justify-center h-full rounded-lg transition-colors",
                 isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               )}>
                 <item.icon className={cn('h-6 w-6')} />

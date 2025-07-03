@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { Round, Team, Match } from '@/types';
 import { produce } from 'immer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Swords, Trophy, Crown, Video, User } from 'lucide-react';
+import { Swords, Trophy, Crown, Video, User, Undo2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 
@@ -56,8 +56,8 @@ const EditableTeamDisplay = ({
             <div className="flex items-center gap-2 overflow-hidden">
                 {teamContent}
             </div>
-            {isEditable && onSetWinner && (
-                 <Button variant="outline" size="sm" className="ml-auto h-7 text-xs" onClick={onSetWinner}>
+            {isEditable && onSetWinner && team && (
+                 <Button variant="outline" size="sm" className="ml-auto h-6 text-xs px-2" onClick={onSetWinner}>
                     <Crown className="mr-1 h-3 w-3"/> Win
                 </Button>
             )}
@@ -75,7 +75,11 @@ const EditableTeamDisplay = ({
     );
 };
 
-const EditableMatchCard = ({ match, onSetWinner }: { match: Match | null, onSetWinner: (winnerIndex: 0 | 1) => void }) => {
+const EditableMatchCard = ({ match, onSetWinner, onUndoWin }: { 
+    match: Match | null, 
+    onSetWinner: (winnerIndex: 0 | 1) => void,
+    onUndoWin: () => void 
+}) => {
     const team1 = match?.teams?.[0] ?? null;
     const team2 = match?.teams?.[1] ?? null;
     const score1 = match?.scores?.[0] ?? 0;
@@ -91,29 +95,44 @@ const EditableMatchCard = ({ match, onSetWinner }: { match: Match | null, onSetW
     const loser2 = isCompleted && score2 < score1;
     
     return (
-        <div className={cn("bg-card rounded-lg w-full flex-shrink-0 border shadow-sm h-[76px]", isCompleted && 'bg-muted/50')}>
-             <EditableTeamDisplay 
-                team={team1} 
-                score={score1} 
-                isWinner={winner1} 
-                isLoser={loser1}
-                isEditable={canUpdate}
-                onSetWinner={() => onSetWinner(0)} 
-            />
-            <div className="border-t border-border/50 mx-2"></div>
-            <EditableTeamDisplay 
-                team={team2} 
-                score={score2} 
-                isWinner={winner2} 
-                isLoser={loser2}
-                isEditable={canUpdate}
-                onSetWinner={() => onSetWinner(1)}
-            />
+        <div className={cn("bg-card rounded-lg w-full flex-shrink-0 border shadow-sm flex flex-col justify-between min-h-[96px]", isCompleted && 'bg-muted/50')}>
+             <div>
+                <EditableTeamDisplay 
+                    team={team1} 
+                    score={score1} 
+                    isWinner={winner1} 
+                    isLoser={loser1}
+                    isEditable={canUpdate}
+                    onSetWinner={() => onSetWinner(0)} 
+                />
+                <div className="border-t border-border/50 mx-2"></div>
+                <EditableTeamDisplay 
+                    team={team2} 
+                    score={score2} 
+                    isWinner={winner2} 
+                    isLoser={loser2}
+                    isEditable={canUpdate}
+                    onSetWinner={() => onSetWinner(1)}
+                />
+            </div>
+            {isCompleted && (
+                 <div className="p-1 border-t border-border/50 flex justify-end">
+                     <Button variant="ghost" size="sm" className="h-6 text-xs px-2 text-muted-foreground hover:text-destructive" onClick={onUndoWin}>
+                         <Undo2 className="mr-1 h-3 w-3"/> Undo Result
+                     </Button>
+                 </div>
+            )}
         </div>
     );
 };
 
-const EditableSingleMatchDisplay = ({ match, roundIndex, matchIndex, handleSetWinner }: { match: Match | null, roundIndex: number, matchIndex: number, handleSetWinner: (roundIndex: number, matchIndex: number, winnerIndex: 0 | 1) => void }) => {
+const EditableSingleMatchDisplay = ({ match, roundIndex, matchIndex, handleSetWinner, handleUndoWin }: { 
+    match: Match | null, 
+    roundIndex: number, 
+    matchIndex: number, 
+    handleSetWinner: (roundIndex: number, matchIndex: number, winnerIndex: 0 | 1) => void,
+    handleUndoWin: (roundIndex: number, matchIndex: number) => void
+}) => {
     return (
       <div className="w-full md:w-40">
         <div className="flex justify-between items-center mb-1 h-4">
@@ -125,7 +144,11 @@ const EditableSingleMatchDisplay = ({ match, roundIndex, matchIndex, handleSetWi
             </Badge>
           )}
         </div>
-        <EditableMatchCard match={match} onSetWinner={(winnerIndex) => handleSetWinner(roundIndex, matchIndex, winnerIndex)} />
+        <EditableMatchCard 
+            match={match} 
+            onSetWinner={(winnerIndex) => handleSetWinner(roundIndex, matchIndex, winnerIndex)} 
+            onUndoWin={() => handleUndoWin(roundIndex, matchIndex)}
+        />
       </div>
     );
 };
@@ -197,8 +220,42 @@ export function BracketEditor({ bracket: initialBracket, participants, onUpdate 
         onUpdate(nextBracket);
     };
 
+     const handleUndoWin = (roundIndex: number, matchIndex: number) => {
+        if (!window.confirm("Are you sure you want to undo this match result? The winner will be removed from the next round.")) {
+            return;
+        }
+
+        const newBracket = produce(bracket, draft => {
+            const matchToUndo = draft[roundIndex].matches[matchIndex];
+            if (matchToUndo.status !== 'completed') return;
+
+            // 1. Get the winner before resetting the match
+            const winner = matchToUndo.scores[0] > matchToUndo.scores[1] 
+                ? matchToUndo.teams[0] 
+                : matchToUndo.teams[1];
+
+            // 2. Reset the current match
+            matchToUndo.status = 'pending';
+            matchToUndo.scores = [0, 0];
+            
+            // 3. Find where the winner was propagated to in the next round and remove them
+            if (winner && roundIndex < draft.length - 1) {
+                const nextRoundIndex = roundIndex + 1;
+                const nextMatchIndex = Math.floor(matchIndex / 2);
+                const teamSlotInNextMatch = matchIndex % 2;
+
+                const nextMatch = draft[nextRoundIndex].matches[nextMatchIndex];
+                if (nextMatch && nextMatch.teams[teamSlotInNextMatch]?.id === winner.id) {
+                    nextMatch.teams[teamSlotInNextMatch] = null;
+                }
+            }
+        });
+
+        setBracket(newBracket);
+        onUpdate(newBracket);
+    };
+
     const generateBracket = () => {
-        // ...(bracket generation logic remains the same)
         const numParticipants = participants.length;
         if (numParticipants < 2) {
             alert("At least 2 participants are required to generate a bracket.");
@@ -315,7 +372,13 @@ export function BracketEditor({ bracket: initialBracket, participants, onUpdate 
 
             <div className="flex flex-col items-center space-y-4">
                 {activeRound.matches.length === 1 ? (
-                    <EditableSingleMatchDisplay match={activeRound.matches[0]} roundIndex={activeRoundIndex} matchIndex={0} handleSetWinner={handleSetWinner} />
+                    <EditableSingleMatchDisplay 
+                        match={activeRound.matches[0]} 
+                        roundIndex={activeRoundIndex} 
+                        matchIndex={0} 
+                        handleSetWinner={handleSetWinner}
+                        handleUndoWin={handleUndoWin}
+                    />
                 ) : (
                     matchPairs.map((pair, i) => {
                         const [match1, match2] = pair;
@@ -324,8 +387,22 @@ export function BracketEditor({ bracket: initialBracket, participants, onUpdate 
                         return (
                             <div key={i} className="flex items-center w-full justify-center">
                                 <div className="space-y-8">
-                                    <EditableSingleMatchDisplay match={match1} roundIndex={activeRoundIndex} matchIndex={i*2} handleSetWinner={handleSetWinner} />
-                                    {match2 && <EditableSingleMatchDisplay match={match2} roundIndex={activeRoundIndex} matchIndex={i*2+1} handleSetWinner={handleSetWinner} />}
+                                    <EditableSingleMatchDisplay 
+                                        match={match1} 
+                                        roundIndex={activeRoundIndex} 
+                                        matchIndex={i*2} 
+                                        handleSetWinner={handleSetWinner}
+                                        handleUndoWin={handleUndoWin}
+                                    />
+                                    {match2 && (
+                                        <EditableSingleMatchDisplay 
+                                            match={match2} 
+                                            roundIndex={activeRoundIndex} 
+                                            matchIndex={i*2+1} 
+                                            handleSetWinner={handleSetWinner} 
+                                            handleUndoWin={handleUndoWin}
+                                        />
+                                    )}
                                 </div>
                                 {nextRound && <Connector />}
                                 {nextRound && (

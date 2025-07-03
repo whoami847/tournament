@@ -15,8 +15,10 @@ import { Separator } from '@/components/ui/separator';
 import { User, Users, Shield, ArrowLeft } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { getTournament, joinTournament } from '@/lib/tournaments-service';
-import type { Tournament, Team } from '@/types';
+import type { Tournament, Team, PlayerProfile } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/hooks/use-auth';
+import { getUserProfileStream } from '@/lib/users-service';
 
 // Zod schema for a single player
 const playerSchema = z.object({
@@ -86,6 +88,8 @@ export default function JoinTournamentPage() {
     const params = useParams<{ id: string }>();
     const router = useRouter();
     const { toast } = useToast();
+    const { user } = useAuth();
+    const [profile, setProfile] = useState<PlayerProfile | null>(null);
     const [tournament, setTournament] = useState<Tournament | null>(null);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,7 +97,6 @@ export default function JoinTournamentPage() {
     useEffect(() => {
         if (params.id) {
             const fetchTournament = async () => {
-                setLoading(true);
                 const data = await getTournament(params.id);
                 if (data) {
                     setTournament(data);
@@ -105,6 +108,15 @@ export default function JoinTournamentPage() {
             fetchTournament();
         }
     }, [params.id]);
+
+    useEffect(() => {
+        if (user?.uid && !profile) {
+            const unsubscribe = getUserProfileStream(user.uid, (data) => {
+                setProfile(data);
+            });
+            return () => unsubscribe();
+        }
+    }, [user, profile]);
 
 
     const teamType = tournament ? getTeamType(tournament.format) : 'SQUAD';
@@ -125,6 +137,17 @@ export default function JoinTournamentPage() {
         control: form.control,
         name: "players",
     });
+    
+    useEffect(() => {
+        if (profile) {
+            const currentPlayers = form.getValues('players');
+            currentPlayers[0] = {
+                name: profile.gameName && profile.gameName !== 'Not Set' ? profile.gameName : profile.name,
+                id: profile.gamerId,
+            };
+            form.reset({ ...form.getValues(), players: currentPlayers });
+        }
+    }, [profile, form]);
 
     // Update form fields when registration size changes
     React.useEffect(() => {
@@ -133,7 +156,12 @@ export default function JoinTournamentPage() {
             currentPlayers[i] || { name: '', id: '' }
         );
         replace(newPlayers);
-    }, [registrationSize, replace, form]);
+        // Ensure player 1 is always the logged-in user
+        if (profile) {
+            form.setValue('players.0.name', profile.gameName && profile.gameName !== 'Not Set' ? profile.gameName : profile.name);
+            form.setValue('players.0.id', profile.gamerId);
+        }
+    }, [registrationSize, replace, form, profile]);
 
     React.useEffect(() => {
         // If tournament type is solo, always set player count to 1
@@ -152,7 +180,7 @@ export default function JoinTournamentPage() {
         const newParticipant: Team = {
             id: `team-${Date.now()}`,
             name: values.teamName || values.players[0].name,
-            avatar: 'https://placehold.co/40x40.png',
+            avatar: profile?.avatar || 'https://placehold.co/40x40.png',
             dataAiHint: 'team logo',
             members: values.players.map(p => ({ name: p.name, gamerId: p.id })),
         };
@@ -175,7 +203,7 @@ export default function JoinTournamentPage() {
         setIsSubmitting(false);
     }
 
-    if (loading) {
+    if (loading || !profile) {
         return <JoinPageSkeleton />;
     }
 
@@ -267,7 +295,7 @@ export default function JoinTournamentPage() {
                                 <h3 className="font-semibold text-xl text-center">Player Information</h3>
                                 {fields.map((field, index) => (
                                     <div key={field.id} className="p-4 border rounded-lg bg-background shadow-sm relative">
-                                        <span className="absolute -top-3 left-4 bg-background px-1 text-sm text-muted-foreground">{`Player ${index + 1}`}</span>
+                                        <span className="absolute -top-3 left-4 bg-background px-1 text-sm text-muted-foreground">{index === 0 ? 'You (Player 1)' : `Player ${index + 1}`}</span>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                                             <FormField
                                                 control={form.control}
@@ -276,7 +304,7 @@ export default function JoinTournamentPage() {
                                                     <FormItem>
                                                         <FormLabel>Gamer Name</FormLabel>
                                                         <FormControl>
-                                                            <Input placeholder="Enter in-game name" {...field} />
+                                                            <Input placeholder="Enter in-game name" {...field} disabled={index === 0} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -289,7 +317,7 @@ export default function JoinTournamentPage() {
                                                     <FormItem>
                                                         <FormLabel>Gamer ID</FormLabel>
                                                         <FormControl>
-                                                            <Input placeholder="Enter in-game ID" {...field} />
+                                                            <Input placeholder="Enter in-game ID" {...field} disabled={index === 0} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>

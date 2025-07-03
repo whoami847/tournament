@@ -74,6 +74,7 @@ const generateBracketStructure = (maxTeams: number): Round[] => {
             teams: [null, null],
             scores: [0, 0],
             status: 'pending',
+            resultSubmissionStatus: {},
         }));
         rounds.push({ name: roundName, matches });
         currentTeams /= 2;
@@ -266,3 +267,38 @@ export const joinTournament = async (
     return { success: false, error: (error as Error).message };
   }
 };
+
+export const requestMatchResults = async (tournamentId: string, roundName: string, matchId: string) => {
+    const tournamentRef = doc(firestore, 'tournaments', tournamentId);
+    try {
+        const docSnap = await getDoc(tournamentRef);
+        if (!docSnap.exists()) {
+            throw new Error("Tournament not found");
+        }
+        
+        const tournament = docSnap.data() as Tournament;
+        const newBracket = JSON.parse(JSON.stringify(tournament.bracket));
+
+        const round = newBracket.find((r: Round) => r.name === roundName);
+        if (!round) throw new Error("Round not found");
+        
+        const match = round.matches.find((m: Match) => m.id === matchId);
+        if (!match) throw new Error("Match not found");
+
+        if (match.teams[0] && match.teams[1]) {
+             match.resultSubmissionStatus = {
+                [match.teams[0].id]: 'pending',
+                [match.teams[1].id]: 'pending',
+            };
+        } else {
+            throw new Error("Both teams must be present to request results.");
+        }
+
+        await updateDoc(tournamentRef, { bracket: newBracket });
+        return { success: true };
+
+    } catch(error) {
+        console.error("Error requesting match results:", error);
+        return { success: false, error: (error as Error).message };
+    }
+}

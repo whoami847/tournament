@@ -1,4 +1,5 @@
 
+
 export type Game = string;
 
 export interface GameCategory {
@@ -23,6 +24,7 @@ export interface Match {
   teams: [Team | null, Team | null];
   scores: [number, number];
   status: 'pending' | 'live' | 'completed';
+  resultSubmissionStatus?: { [teamId: string]: 'pending' | 'submitted' | 'approved' | 'rejected' };
 }
 
 export interface Round {
@@ -101,4 +103,19 @@ export interface Transaction {
   type: 'deposit' | 'withdrawal' | 'prize' | 'fee';
   description: string;
   date: string; // ISO string
+}
+
+export interface MatchResult {
+  id: string;
+  tournamentId: string;
+  tournamentName: string;
+  matchId: string;
+  roundName: string;
+  teamId: string;
+  teamName: string;
+  kills: number;
+  position: number;
+  screenshotUrl: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: string; // ISO String
 }

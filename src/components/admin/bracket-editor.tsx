@@ -1,140 +1,121 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Round, Team, Match } from '@/types';
+import type { Round, Team, Match, Tournament } from '@/types';
 import { produce } from 'immer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Swords, Trophy, Crown, Video, User, Undo2 } from 'lucide-react';
+import { Swords, Trophy, Crown, Video, User, CheckCircle, Clock, Send, Hourglass } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { requestMatchResults } from '@/lib/tournaments-service';
 
 
 // --- HELPER COMPONENTS (LOCAL TO THIS FILE) ---
-
-const EditableTeamDisplay = ({ 
-    team, 
-    score, 
-    isWinner, 
-    isLoser,
-    isEditable,
-    onSetWinner,
-}: { 
-    team: Team | null, 
-    score?: number, 
-    isWinner?: boolean, 
-    isLoser?: boolean,
-    isEditable?: boolean,
-    onSetWinner?: () => void
-}) => {
-    const teamContent = team ? (
-        <>
-            <Avatar className="h-5 w-5 flex-shrink-0">
-                <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
-                <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <span className={cn(
-                "text-xs truncate",
-                isWinner ? "font-bold text-foreground" : "font-medium text-muted-foreground",
-                isLoser && "font-medium text-destructive/80 opacity-70"
-            )}>
-                {team.name}
-            </span>
-        </>
-    ) : (
-        <>
-            <div className="h-5 w-5 rounded-md bg-muted/20 flex-shrink-0 flex items-center justify-center">
-                <User className="h-3 w-3 text-muted-foreground" />
-            </div>
-            <span className="text-muted-foreground text-xs">TBD</span>
-        </>
-    );
-
+const TeamInMatchDisplay = ({ team }: { team: Team | null }) => {
     return (
         <div className="flex items-center justify-between p-2 h-9 w-full">
             <div className="flex items-center gap-2 overflow-hidden">
-                {teamContent}
+                {team ? (
+                    <>
+                        <Avatar className="h-5 w-5 flex-shrink-0">
+                            <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
+                            <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-xs truncate font-medium text-foreground">
+                            {team.name}
+                        </span>
+                    </>
+                ) : (
+                    <>
+                        <div className="h-5 w-5 rounded-md bg-muted/20 flex-shrink-0 flex items-center justify-center">
+                            <User className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                        <span className="text-muted-foreground text-xs">TBD</span>
+                    </>
+                )}
             </div>
-            {isEditable && onSetWinner && team && (
-                 <Button variant="outline" size="sm" className="ml-auto h-6 text-xs px-2" onClick={onSetWinner}>
-                    <Crown className="mr-1 h-3 w-3"/> Win
-                </Button>
-            )}
-            {typeof score !== 'undefined' && !isEditable && (
-                <span className={cn(
-                    "font-bold text-sm",
-                    isWinner ? "text-amber-400" : "text-muted-foreground/50",
-                    isLoser && "text-destructive/80 opacity-70"
-                )}>
-                    {score}
-                </span>
-            )}
-             {isWinner && !isEditable && <Crown className="h-4 w-4 text-amber-400 ml-auto" />}
         </div>
     );
 };
 
-const EditableMatchCard = ({ match, onSetWinner, onUndoWin }: { 
+const EditableMatchCard = ({ 
+    match,
+    tournamentId,
+    roundName,
+    onResultRequest
+}: { 
     match: Match | null, 
-    onSetWinner: (winnerIndex: 0 | 1) => void,
-    onUndoWin: () => void 
+    tournamentId: string,
+    roundName: string,
+    onResultRequest: () => void;
 }) => {
     const team1 = match?.teams?.[0] ?? null;
     const team2 = match?.teams?.[1] ?? null;
-    const score1 = match?.scores?.[0] ?? 0;
-    const score2 = match?.scores?.[1] ?? 0;
-    const status = match?.status ?? 'pending';
+    
+    if (!match) return null;
 
-    const isCompleted = status === 'completed';
-    const canUpdate = !!team1 && !!team2 && !isCompleted;
+    const canRequestResults = match.status === 'pending' && !!team1 && !!team2 && !match.resultSubmissionStatus;
 
-    const winner1 = isCompleted && score1 > score2;
-    const winner2 = isCompleted && score2 > score1;
-    const loser1 = isCompleted && score1 < score2;
-    const loser2 = isCompleted && score2 < score1;
+    const getStatusContent = () => {
+        if (match.status === 'completed') {
+            const winner = match.scores[0] > match.scores[1] ? team1 : team2;
+            return { icon: <CheckCircle className="h-3 w-3" />, text: `Winner: ${winner?.name}`, color: 'text-green-500' };
+        }
+        if (match.resultSubmissionStatus) {
+            return { icon: <Hourglass className="h-3 w-3" />, text: 'Awaiting Submissions', color: 'text-amber-500' };
+        }
+        if (match.status === 'pending') {
+            return { icon: <Clock className="h-3 w-3" />, text: 'Pending', color: 'text-muted-foreground' };
+        }
+        return null;
+    };
+    
+    const statusContent = getStatusContent();
     
     return (
-        <div className={cn("bg-card rounded-lg w-full flex-shrink-0 border shadow-sm flex flex-col justify-between min-h-[96px]", isCompleted && 'bg-muted/50')}>
+        <div className={cn("bg-card rounded-lg w-full flex-shrink-0 border shadow-sm flex flex-col justify-between min-h-[110px]")}>
              <div>
-                <EditableTeamDisplay 
-                    team={team1} 
-                    score={score1} 
-                    isWinner={winner1} 
-                    isLoser={loser1}
-                    isEditable={canUpdate}
-                    onSetWinner={() => onSetWinner(0)} 
-                />
+                <TeamInMatchDisplay team={team1} />
                 <div className="border-t border-border/50 mx-2"></div>
-                <EditableTeamDisplay 
-                    team={team2} 
-                    score={score2} 
-                    isWinner={winner2} 
-                    isLoser={loser2}
-                    isEditable={canUpdate}
-                    onSetWinner={() => onSetWinner(1)}
-                />
+                <TeamInMatchDisplay team={team2} />
             </div>
-            {isCompleted && (
-                 <div className="p-1 border-t border-border/50 flex justify-end">
-                     <Button variant="ghost" size="sm" className="h-6 text-xs px-2 text-muted-foreground hover:text-destructive" onClick={onUndoWin}>
-                         <Undo2 className="mr-1 h-3 w-3"/> Undo Result
-                     </Button>
-                 </div>
-            )}
+            <div className="p-2 border-t border-border/50 flex justify-between items-center">
+                {statusContent && (
+                    <div className={cn("flex items-center gap-1.5 text-xs font-medium", statusContent.color)}>
+                        {statusContent.icon}
+                        <span>{statusContent.text}</span>
+                    </div>
+                )}
+                 {canRequestResults && (
+                    <Button variant="outline" size="sm" className="ml-auto h-7 text-xs px-2" onClick={onResultRequest}>
+                        <Send className="mr-1 h-3 w-3"/> Request Results
+                    </Button>
+                )}
+            </div>
         </div>
     );
 };
 
-const EditableSingleMatchDisplay = ({ match, roundIndex, matchIndex, handleSetWinner, handleUndoWin }: { 
+const EditableSingleMatchDisplay = ({ 
+    match, 
+    tournamentId,
+    roundIndex, 
+    matchIndex, 
+    roundName,
+    handleRequestResults
+}: { 
     match: Match | null, 
+    tournamentId: string,
     roundIndex: number, 
     matchIndex: number, 
-    handleSetWinner: (roundIndex: number, matchIndex: number, winnerIndex: 0 | 1) => void,
-    handleUndoWin: (roundIndex: number, matchIndex: number) => void
+    roundName: string,
+    handleRequestResults: (roundName: string, matchId: string) => void
 }) => {
     return (
-      <div className="w-full md:w-40">
+      <div className="w-full md:w-48">
         <div className="flex justify-between items-center mb-1 h-4">
           <p className="text-[9px] text-muted-foreground">{match?.name ?? ''}</p>
           {match?.status === 'live' && (
@@ -144,20 +125,21 @@ const EditableSingleMatchDisplay = ({ match, roundIndex, matchIndex, handleSetWi
             </Badge>
           )}
         </div>
-        <EditableMatchCard 
-            match={match} 
-            onSetWinner={(winnerIndex) => handleSetWinner(roundIndex, matchIndex, winnerIndex)} 
-            onUndoWin={() => handleUndoWin(roundIndex, matchIndex)}
+        <EditableMatchCard
+            match={match}
+            tournamentId={tournamentId}
+            roundName={roundName}
+            onResultRequest={() => handleRequestResults(roundName, match!.id)}
         />
       </div>
     );
 };
 
 const Connector = () => (
-    <div className="w-8 h-full flex-shrink-0 mx-2" style={{ height: `124px` }}>
-        <svg className="w-full h-full" viewBox={`0 0 32 124`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d={`M1 18.5 C 16,18.5 16,62 32,62`} stroke="hsl(var(--border))" strokeWidth="2"/>
-            <path d={`M1 105.5 C 16,105.5 16,62 32,62`} stroke="hsl(var(--border))" strokeWidth="2"/>
+    <div className="w-8 h-full flex-shrink-0 mx-2" style={{ height: `150px` }}>
+        <svg className="w-full h-full" viewBox={`0 0 32 150`} preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d={`M1 23.5 C 16,23.5 16,75 32,75`} stroke="hsl(var(--border))" strokeWidth="2"/>
+            <path d={`M1 126.5 C 16,126.5 16,75 32,75`} stroke="hsl(var(--border))" strokeWidth="2"/>
         </svg>
     </div>
 );
@@ -168,6 +150,7 @@ interface BracketEditorProps {
     bracket: Round[];
     participants: Team[];
     onUpdate: (bracket: Round[]) => void;
+    tournamentId: Tournament['id'];
 }
 
 const getWinner = (match: Match): Team | null => {
@@ -179,7 +162,8 @@ const roundAbbreviationMap: Record<string, string> = {
     'Finals': 'Finals', 'Semi-finals': 'Semis', 'Quarter-finals': 'Quarters', 'Round of 16': 'R16', 'Round of 32': 'R32', 'Round of 64': 'R64',
 };
 
-export function BracketEditor({ bracket: initialBracket, participants, onUpdate }: BracketEditorProps) {
+export function BracketEditor({ bracket: initialBracket, participants, onUpdate, tournamentId }: BracketEditorProps) {
+    const { toast } = useToast();
     const [bracket, setBracket] = useState(initialBracket);
     const [activeRoundName, setActiveRoundName] = useState(initialBracket?.[0]?.name || '');
 
@@ -190,70 +174,24 @@ export function BracketEditor({ bracket: initialBracket, participants, onUpdate 
         }
     }, [initialBracket, activeRoundName]);
 
-    const handleSetWinner = (roundIndex: number, matchIndex: number, winnerIndex: 0 | 1) => {
-        if (!window.confirm("Are you sure you want to set this team as the winner? This action cannot be undone.")) {
-            return;
+    const handleRequestResults = async (roundName: string, matchId: string) => {
+        const result = await requestMatchResults(tournamentId, roundName, matchId);
+        if (result.success) {
+            toast({
+                title: "Request Sent",
+                description: "Players have been notified to submit their results."
+            });
+            // The bracket will update via the stream from the parent component,
+            // so we don't need to manually update state here.
+        } else {
+            toast({
+                title: "Error",
+                description: result.error || "Could not send result request.",
+                variant: "destructive"
+            });
         }
-
-        const nextBracket = produce(bracket, draft => {
-            const match = draft[roundIndex].matches[matchIndex];
-            const team1 = match.teams[0];
-            const team2 = match.teams[1];
-
-            if (!team1 || !team2) return;
-
-            match.status = 'completed';
-            match.scores = winnerIndex === 0 ? [1, 0] : [0, 1];
-            
-            const winner = match.teams[winnerIndex];
-
-            if (winner && roundIndex < draft.length - 1) {
-                const nextRoundMatchIndex = Math.floor(matchIndex / 2);
-                const teamSlotInNextMatch = matchIndex % 2;
-                
-                if (draft[roundIndex + 1].matches[nextRoundMatchIndex]) {
-                    draft[roundIndex + 1].matches[nextRoundMatchIndex].teams[teamSlotInNextMatch] = winner;
-                }
-            }
-        });
-        setBracket(nextBracket);
-        onUpdate(nextBracket);
     };
 
-     const handleUndoWin = (roundIndex: number, matchIndex: number) => {
-        if (!window.confirm("Are you sure you want to undo this match result? The winner will be removed from the next round.")) {
-            return;
-        }
-
-        const newBracket = produce(bracket, draft => {
-            const matchToUndo = draft[roundIndex].matches[matchIndex];
-            if (matchToUndo.status !== 'completed') return;
-
-            // 1. Get the winner before resetting the match
-            const winner = matchToUndo.scores[0] > matchToUndo.scores[1] 
-                ? matchToUndo.teams[0] 
-                : matchToUndo.teams[1];
-
-            // 2. Reset the current match
-            matchToUndo.status = 'pending';
-            matchToUndo.scores = [0, 0];
-            
-            // 3. Find where the winner was propagated to in the next round and remove them
-            if (winner && roundIndex < draft.length - 1) {
-                const nextRoundIndex = roundIndex + 1;
-                const nextMatchIndex = Math.floor(matchIndex / 2);
-                const teamSlotInNextMatch = matchIndex % 2;
-
-                const nextMatch = draft[nextRoundIndex].matches[nextMatchIndex];
-                if (nextMatch && nextMatch.teams[teamSlotInNextMatch]?.id === winner.id) {
-                    nextMatch.teams[teamSlotInNextMatch] = null;
-                }
-            }
-        });
-
-        setBracket(newBracket);
-        onUpdate(newBracket);
-    };
 
     const generateBracket = () => {
         const numParticipants = participants.length;
@@ -277,7 +215,7 @@ export function BracketEditor({ bracket: initialBracket, participants, onUpdate 
             const roundName = roundNamesMap[numTeamsInRound] || `Round of ${numTeamsInRound}`;
             const numMatches = numTeamsInRound / 2;
             const matches: Match[] = Array.from({ length: numMatches }, (_, i) => ({
-                id: `${roundName}-m${i}`, name: `${roundName} #${i + 1}`, teams: [null, null], scores: [0, 0], status: 'pending'
+                id: `${roundName}-m${i}`, name: `${roundName} #${i + 1}`, teams: [null, null], scores: [0, 0], status: 'pending', resultSubmissionStatus: {}
             }));
             rounds.push({ name: roundName, matches });
             numTeamsInRound /= 2;
@@ -374,10 +312,11 @@ export function BracketEditor({ bracket: initialBracket, participants, onUpdate 
                 {activeRound.matches.length === 1 ? (
                     <EditableSingleMatchDisplay 
                         match={activeRound.matches[0]} 
+                        tournamentId={tournamentId}
                         roundIndex={activeRoundIndex} 
                         matchIndex={0} 
-                        handleSetWinner={handleSetWinner}
-                        handleUndoWin={handleUndoWin}
+                        roundName={activeRound.name}
+                        handleRequestResults={handleRequestResults}
                     />
                 ) : (
                     matchPairs.map((pair, i) => {
@@ -389,24 +328,26 @@ export function BracketEditor({ bracket: initialBracket, participants, onUpdate 
                                 <div className="space-y-8">
                                     <EditableSingleMatchDisplay 
                                         match={match1} 
+                                        tournamentId={tournamentId}
                                         roundIndex={activeRoundIndex} 
                                         matchIndex={i*2} 
-                                        handleSetWinner={handleSetWinner}
-                                        handleUndoWin={handleUndoWin}
+                                        roundName={activeRound.name}
+                                        handleRequestResults={handleRequestResults}
                                     />
                                     {match2 && (
                                         <EditableSingleMatchDisplay 
                                             match={match2} 
+                                            tournamentId={tournamentId}
                                             roundIndex={activeRoundIndex} 
                                             matchIndex={i*2+1} 
-                                            handleSetWinner={handleSetWinner} 
-                                            handleUndoWin={handleUndoWin}
+                                            roundName={activeRound.name}
+                                            handleRequestResults={handleRequestResults}
                                         />
                                     )}
                                 </div>
                                 {nextRound && <Connector />}
                                 {nextRound && (
-                                     <div className="w-full md:w-40">
+                                     <div className="w-full md:w-48">
                                         <div className="h-5 mb-1" />
                                         <div className={cn("bg-card rounded-lg w-full flex-shrink-0 border shadow-sm h-[76px] p-0")}>
                                             <div className="flex items-center justify-between p-2 h-9 w-full">

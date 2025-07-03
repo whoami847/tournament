@@ -85,7 +85,7 @@ export default function EditTournamentPage() {
              setTournament(prev => prev ? { ...prev, bracket: updatedBracket } : null);
             toast({
                 title: "Bracket Updated!",
-                description: "The match results have been saved.",
+                description: "The bracket has been saved.",
             });
         } else {
              toast({ title: "Error", description: result.error, variant: "destructive" });
@@ -146,10 +146,11 @@ export default function EditTournamentPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle>Edit Bracket</CardTitle>
-                            <CardDescription>Update match scores and advance winners. Changes are saved automatically.</CardDescription>
+                            <CardDescription>Request results from teams. Approvals are handled in the Results Approval panel.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <BracketEditor 
+                                tournamentId={tournament.id}
                                 bracket={tournament.bracket} 
                                 participants={tournament.participants}
                                 onUpdate={handleBracketUpdate}

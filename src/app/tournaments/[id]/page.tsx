@@ -8,14 +8,17 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Award, KeyRound, Trophy, Users, Ticket, Map as MapIcon, Smartphone } from 'lucide-react';
+import { Award, KeyRound, Trophy, Users, Ticket, Map as MapIcon, Smartphone, ClipboardCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
 import { getTournament } from '@/lib/tournaments-service';
-import type { Tournament } from '@/types';
+import type { Tournament, Match, Team } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
+import { getUserProfileStream } from '@/lib/users-service';
+import { ResultSubmissionDialog } from '@/components/result-submission-dialog';
 
 const InfoRow = ({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: React.ReactNode }) => (
     <div className="flex items-center justify-between py-3 border-b border-border/50 last:border-b-0">
@@ -57,8 +60,19 @@ const TournamentPageSkeleton = () => (
 
 export default function TournamentPage() {
   const params = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const [profile, setProfile] = useState(null);
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSubmissionDialogOpen, setSubmissionDialogOpen] = useState(false);
+  const [matchForSubmission, setMatchForSubmission] = useState<Match | null>(null);
+  const [teamForSubmission, setTeamForSubmission] = useState<Team | null>(null);
+
+  useEffect(() => {
+    if (user?.uid) {
+        getUserProfileStream(user.uid, setProfile);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (params.id) {
@@ -68,7 +82,6 @@ export default function TournamentPage() {
         if (data) {
           setTournament(data);
         } else {
-          // Handle tournament not found
           notFound();
         }
         setLoading(false);
@@ -77,7 +90,23 @@ export default function TournamentPage() {
     }
   }, [params.id]);
 
-  if (loading) {
+  const userTeam = tournament?.participants.find(p => p.members?.some(m => m.gamerId === (profile as any)?.gamerId));
+
+  const matchesToSubmit = tournament?.bracket.flatMap(round => 
+      round.matches.filter(match => {
+          const status = match.resultSubmissionStatus?.[userTeam?.id || ''];
+          return status === 'pending' && (match.teams[0]?.id === userTeam?.id || match.teams[1]?.id === userTeam?.id);
+      })
+  ) || [];
+
+  const handleOpenSubmissionDialog = (match: Match) => {
+      if (!userTeam) return;
+      setMatchForSubmission(match);
+      setTeamForSubmission(userTeam);
+      setSubmissionDialogOpen(true);
+  }
+
+  if (loading || (user && !profile)) {
     return <TournamentPageSkeleton />;
   }
 
@@ -88,6 +117,16 @@ export default function TournamentPage() {
   const isFull = tournament.teamsCount >= tournament.maxTeams;
 
   return (
+    <>
+    {matchForSubmission && teamForSubmission && (
+        <ResultSubmissionDialog
+            isOpen={isSubmissionDialogOpen}
+            onClose={() => setSubmissionDialogOpen(false)}
+            tournament={tournament}
+            match={matchForSubmission}
+            team={teamForSubmission}
+        />
+    )}
     <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
       <div className="space-y-8">
         <header className="relative h-64 md:h-80 rounded-lg overflow-hidden">
@@ -106,6 +145,25 @@ export default function TournamentPage() {
         </header>
 
         <div>
+            {matchesToSubmit.length > 0 && (
+                <Card className="mb-6 bg-primary/10 border-primary/20">
+                    <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
+                        <ClipboardCheck className="h-8 w-8 text-primary" />
+                        <div>
+                            <h3 className="font-bold text-foreground">Action Required</h3>
+                            <p className="text-sm text-muted-foreground">You have pending match results to submit.</p>
+                        </div>
+                        <Button 
+                            size="sm" 
+                            className="ml-auto w-full sm:w-auto"
+                            onClick={() => handleOpenSubmissionDialog(matchesToSubmit[0])}
+                        >
+                            Submit Results
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
+
             <Tabs defaultValue="info">
                 <TabsList className="grid w-full grid-cols-3 bg-card rounded-full p-1 h-auto">
                   <TabsTrigger value="info" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Info</TabsTrigger>
@@ -130,7 +188,6 @@ export default function TournamentPage() {
                               <div className="w-full">
                                   <Progress 
                                     value={(tournament.teamsCount / tournament.maxTeams) * 100} 
-                                    className="h-3"
                                     indicatorClassName={cn(isFull && "bg-destructive")} 
                                   />
                                   <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
@@ -216,5 +273,6 @@ export default function TournamentPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

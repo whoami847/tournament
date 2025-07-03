@@ -15,6 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { getTournament } from '@/lib/tournaments-service';
 import type { Tournament } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 const InfoRow = ({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: React.ReactNode }) => (
     <div className="flex items-center justify-between py-3 border-b border-border/50 last:border-b-0">
@@ -127,22 +128,34 @@ export default function TournamentPage() {
                       <div className="mt-8">
                           <div className="flex items-center gap-4">
                               <div className="w-full">
-                                  <Progress value={(tournament.teamsCount / tournament.maxTeams) * 100} className="h-3 bg-primary/20" />
+                                  <Progress 
+                                    value={(tournament.teamsCount / tournament.maxTeams) * 100} 
+                                    className="h-3"
+                                    indicatorClassName={cn(isFull && "bg-destructive")} 
+                                  />
                                   <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
-                                      <span>Only {tournament.maxTeams - tournament.teamsCount} spots are left</span>
+                                      <span>{isFull ? 'Registration is closed' : `Only ${tournament.maxTeams - tournament.teamsCount} spots are left`}</span>
                                       <span>{tournament.teamsCount}/{tournament.maxTeams}</span>
                                   </div>
                               </div>
                               {tournament.status === 'upcoming' && (
-                                  <Button 
-                                    asChild
-                                    className="shrink-0 rounded-full font-bold"
-                                    disabled={isFull}
-                                  >
-                                    <Link href={`/tournaments/${tournament.id}/join`}>
-                                      {isFull ? 'Full' : 'Join Now'}
-                                    </Link>
-                                  </Button>
+                                isFull ? (
+                                    <Button
+                                      className="shrink-0 rounded-full font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      disabled
+                                    >
+                                      Full
+                                    </Button>
+                                ) : (
+                                    <Button 
+                                        asChild
+                                        className="shrink-0 rounded-full font-bold"
+                                    >
+                                        <Link href={`/tournaments/${tournament.id}/join`}>
+                                            Join Now
+                                        </Link>
+                                    </Button>
+                                )
                               )}
                           </div>
                       </div>

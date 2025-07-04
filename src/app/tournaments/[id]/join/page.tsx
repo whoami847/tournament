@@ -12,13 +12,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
-import { User, Users, Shield, ArrowLeft } from 'lucide-react';
+import { User, Users, Shield, ArrowLeft, CheckCircle } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { getTournament, joinTournament } from '@/lib/tournaments-service';
 import type { Tournament, Team, PlayerProfile } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
 import { getUserProfileStream } from '@/lib/users-service';
+import Link from 'next/link';
 
 // Zod schema for a single player
 const playerSchema = z.object({
@@ -93,6 +94,7 @@ export default function JoinTournamentPage() {
     const [tournament, setTournament] = useState<Tournament | null>(null);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isAlreadyJoined, setIsAlreadyJoined] = useState(false);
 
     useEffect(() => {
         if (params.id) {
@@ -117,6 +119,15 @@ export default function JoinTournamentPage() {
             return () => unsubscribe();
         }
     }, [user, profile]);
+
+    useEffect(() => {
+        if (tournament && profile) {
+            const joined = tournament.participants.some(p => 
+                p.members?.some(m => m.gamerId === profile.gamerId)
+            );
+            setIsAlreadyJoined(joined);
+        }
+    }, [tournament, profile]);
 
 
     const teamType = tournament ? getTeamType(tournament.format) : 'SQUAD';
@@ -205,6 +216,27 @@ export default function JoinTournamentPage() {
 
     if (loading || !profile) {
         return <JoinPageSkeleton />;
+    }
+
+    if (isAlreadyJoined) {
+        return (
+            <div className="container mx-auto px-4 py-8 md:pb-8 pb-24 flex items-center justify-center min-h-[60vh]">
+                <Card className="w-full max-w-md text-center">
+                    <CardHeader>
+                        <div className="mx-auto w-fit mb-4">
+                            <CheckCircle className="h-12 w-12 text-green-500" />
+                        </div>
+                        <CardTitle>Already Registered</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <CardDescription className="mb-6">You have already joined this tournament. You can view your team's status on the tournament page.</CardDescription>
+                        <Button asChild>
+                            <Link href={`/tournaments/${tournament?.id}`}>Back to Tournament</Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
     }
 
     if (!tournament) {

@@ -20,78 +20,19 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { createPaymentUrl, withdrawAmount } from "@/lib/payment-actions";
+import { createPaymentUrl } from "@/lib/payment-actions";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { getUserProfileStream } from "@/lib/users-service";
-import type { PlayerProfile, Transaction } from "@/types";
+import type { PlayerProfile, Transaction, WithdrawMethod } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTransactionsStream } from "@/lib/transactions-service";
 import { format } from "date-fns";
-
-
-// --- SWIPE BUTTON ---
-const SwipeButton = ({ onSwipeSuccess }: { onSwipeSuccess: () => void }) => {
-    const [isSwiping, setIsSwiping] = useState(false);
-    const [sliderPosition, setSliderPosition] = useState(0);
-    const sliderRef = useRef<HTMLDivElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    const handlePointerMove = (clientX: number) => {
-        if (!isSwiping || !sliderRef.current || !containerRef.current) return;
-        const containerRect = containerRef.current.getBoundingClientRect();
-        let newX = clientX - containerRect.left - (sliderRef.current.offsetWidth / 2);
-
-        const maxPosition = containerRect.width - sliderRef.current.offsetWidth;
-
-        newX = Math.max(0, Math.min(newX, maxPosition));
-        setSliderPosition(newX);
-
-        if (newX >= maxPosition - 5) { // Threshold for success
-            onSwipeSuccess();
-            setIsSwiping(false);
-        }
-    };
-
-    const handlePointerUp = () => {
-        if (!isSwiping) return;
-        setIsSwiping(false);
-        if (sliderRef.current) {
-            sliderRef.current.style.transition = 'left 0.3s ease-out';
-            setSliderPosition(0);
-            setTimeout(() => {
-                if (sliderRef.current) sliderRef.current.style.transition = '';
-            }, 300);
-        }
-    };
-
-    return (
-        <div
-            ref={containerRef}
-            className="w-full h-14 bg-black dark:bg-black rounded-full relative flex items-center justify-center overflow-hidden select-none"
-            onPointerMove={(e) => isSwiping && handlePointerMove(e.clientX)}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-            onTouchMove={(e) => isSwiping && handlePointerMove(e.touches[0].clientX)}
-            onTouchEnd={handlePointerUp}
-        >
-            <div
-                ref={sliderRef}
-                className="h-12 w-12 bg-white/10 rounded-full absolute top-1/2 -translate-y-1/2 flex items-center justify-center z-10 cursor-grab active:cursor-grabbing"
-                style={{ left: `${sliderPosition}px` }}
-                onPointerDown={() => setIsSwiping(true)}
-                onTouchStart={() => setIsSwiping(true)}
-            >
-                <ArrowRight className="h-5 w-5 text-white" />
-            </div>
-            <span className="font-semibold text-white/50 animate-pulse">Swipe to withdraw</span>
-            <ChevronsRight className="h-5 w-5 absolute right-4 text-white/50" />
-        </div>
-    );
-};
+import { createWithdrawalRequest } from '@/lib/withdraw-requests-service';
+import { getActiveWithdrawMethods } from '@/lib/withdraw-methods-service';
 
 
 // --- FORM COMPONENTS ---
@@ -165,238 +106,80 @@ function AddMoneyForm({ profile }: { profile: PlayerProfile | null }) {
     );
 }
 
-function WithdrawDialogContent({ closeDialog, profile }: { closeDialog: () => void, profile: PlayerProfile | null }) {
+function WithdrawDialogContent({ closeDialog, profile, methods }: { closeDialog: () => void, profile: PlayerProfile | null, methods: WithdrawMethod[] }) {
     const { toast } = useToast();
-    const [step, setStep] = useState<'selectMethod' | 'enterAmount' | 'confirm'>('selectMethod');
-    const [selectedMethod, setSelectedMethod] = useState('bank');
+    const [selectedMethod, setSelectedMethod] = useState<WithdrawMethod | null>(null);
     const [amount, setAmount] = useState('');
     const [isWithdrawing, setIsWithdrawing] = useState(false);
 
-    const handleNextFromMethod = () => setStep('enterAmount');
-    const handleNextFromAmount = () => {
-        if (amount && parseFloat(amount) > 0) {
-            setStep('confirm');
-        } else {
-            toast({
-                variant: "destructive",
-                title: "Invalid Amount",
-                description: "Please enter a valid amount to withdraw.",
-            })
-        }
-    };
-    const handleBack = () => {
-        if (step === 'confirm') setStep('enterAmount');
-        else if (step === 'enterAmount') setStep('selectMethod');
-    };
-
-    const handleWithdrawalSuccess = async () => {
-        if (!profile || !amount || isWithdrawing) return;
-        
-        setIsWithdrawing(true);
-        const withdrawalAmount = parseFloat(amount);
-
-        if (profile.balance < withdrawalAmount) {
-            toast({
-                variant: "destructive",
-                title: "Insufficient Balance",
-                description: "You do not have enough funds to withdraw this amount.",
-            });
-            setIsWithdrawing(false);
+    const handleWithdraw = async () => {
+        if (!profile || !selectedMethod || !amount) {
+            toast({ title: "Missing Information", description: "Please select a method and enter an amount.", variant: "destructive" });
             return;
         }
-        
-        const withdrawActionWithUser = withdrawAmount.bind(null, profile.id);
-        const result = await withdrawActionWithUser(withdrawalAmount, selectedMethod);
+
+        const withdrawalAmount = parseFloat(amount);
+        if (isNaN(withdrawalAmount) || withdrawalAmount <= 0) {
+            toast({ title: "Invalid Amount", variant: "destructive" });
+            return;
+        }
+
+        if (withdrawalAmount < selectedMethod.minAmount || withdrawalAmount > selectedMethod.maxAmount) {
+             toast({ title: "Amount Out of Range", description: `Please enter an amount between ${selectedMethod.minAmount} and ${selectedMethod.maxAmount}.`, variant: "destructive" });
+             return;
+        }
+
+        setIsWithdrawing(true);
+        const result = await createWithdrawalRequest(profile, withdrawalAmount, selectedMethod.name);
 
         if (result.success) {
             toast({
-                title: "Withdrawal Initiated",
-                description: `Your withdrawal of TK ${withdrawalAmount.toFixed(2)} is being processed.`,
+                title: "Withdrawal Request Submitted",
+                description: `Your request for ${withdrawalAmount.toFixed(2)} TK is pending approval.`,
             });
             closeDialog();
         } else {
-            toast({
-                title: "Withdrawal Failed",
-                description: result.error || "An unexpected error occurred.",
-                variant: "destructive",
-            });
+            toast({ title: "Request Failed", description: result.error, variant: "destructive" });
         }
         setIsWithdrawing(false);
-    };
-
-    const quickAmounts = [100, 200, 500, 1000];
-    const handleQuickAmountClick = (value: number) => {
-        setAmount(value.toString());
-    };
-
-    switch (step) {
-        case 'enterAmount':
-            return (
-                <DialogContent className="sm:max-w-md p-0 rounded-2xl overflow-hidden">
-                    <DialogHeader className="p-6 pb-4">
-                        <Button variant="ghost" size="icon" className="absolute left-4 top-4" onClick={handleBack}>
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                        <DialogTitle className="text-xl text-center">Withdraw Amount</DialogTitle>
-                        <DialogDescription className="text-center">Select or enter an amount to withdraw.</DialogDescription>
-                    </DialogHeader>
-                    <div className="px-6 pb-6 space-y-6">
-                        <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-3xl font-semibold text-muted-foreground">TK</span>
-                            <Input
-                                id="withdraw-amount"
-                                name="withdraw-amount"
-                                type="number"
-                                placeholder="0.00"
-                                required
-                                min="10"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
-                                className="h-24 w-full rounded-xl border-2 border-border bg-muted/50 pl-16 pr-6 text-center text-6xl font-bold tracking-tighter focus:bg-background"
-                            />
-                        </div>
-                        <div>
-                            <p className="mb-3 text-center text-sm font-medium text-muted-foreground">Or choose a quick amount</p>
-                            <div className="grid grid-cols-4 gap-3">
-                                {quickAmounts.map((value) => (
-                                    <Button key={value} type="button" variant={amount === value.toString() ? "default" : "outline"} onClick={() => handleQuickAmountClick(value)} className="h-12 rounded-full text-base font-semibold">
-                                        {value}
-                                    </Button>
-                                ))}
-                            </div>
-                        </div>
-                        <Button size="lg" className="w-full !mt-8" onClick={handleNextFromAmount}>
-                            Confirm Amount
-                        </Button>
-                    </div>
-                </DialogContent>
-            );
-
-        case 'confirm':
-            const transactionId = `#${Math.floor(1000 + Math.random() * 9000)} ${Math.floor(10 + Math.random() * 90)}`;
-            const fromAccountNumber = profile ? `${profile.name} (${profile.gamerId})` : 'Your Account';
-            const toAccountDetails = {
-                bank: 'Bank Account ending in **6789',
-                card: 'Card ending in **1234',
-                'g-wallet': 'G-Wallet (mapple_gaming_123)',
-            }[selectedMethod] || 'Selected Account';
-            const now = new Date();
-            const formattedDate = now.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
-            const formattedTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-            return (
-                <DialogContent className="sm:max-w-md p-0 bg-stone-100 dark:bg-stone-900 border-none rounded-2xl overflow-hidden">
-                    <DialogHeader className="sr-only">
-                        <DialogTitle>Confirm Withdrawal</DialogTitle>
-                        <DialogDescription>
-                            Review the details and swipe to confirm your withdrawal of {parseFloat(amount).toFixed(2)} TK.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="p-6">
-                        <header className="flex justify-between items-center mb-8">
-                             <Button variant="ghost" size="icon" onClick={handleBack} className="text-black dark:text-white">
-                                <ArrowLeft className="h-5 w-5" />
-                            </Button>
-                            <div className="flex-grow flex flex-col items-start ml-4">
-                                <h1 className="text-3xl font-bold text-black dark:text-white">Withdrawing Money</h1>
-                                <p className="text-sm text-stone-500 dark:text-stone-400">{formattedDate} &nbsp; {formattedTime}</p>
-                            </div>
-                            <Button variant="ghost" size="icon" className="text-black dark:text-white">
-                                <Globe className="h-6 w-6" />
-                            </Button>
-                        </header>
-                        <main className="space-y-6">
-                            <div className="text-center space-y-1">
-                                <p className="text-sm text-stone-500 dark:text-stone-400">Amount</p>
-                                <p className="text-5xl font-bold text-black dark:text-white">TK {parseFloat(amount).toFixed(2)}</p>
-                            </div>
-                            <div className="bg-white dark:bg-stone-800 p-4 rounded-xl space-y-4 text-black dark:text-white">
-                                <div className="flex justify-between">
-                                    <div>
-                                        <p className="text-xs text-stone-500 dark:text-stone-400">Transaction ID</p>
-                                        <p className="font-semibold">{transactionId}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-xs text-stone-500 dark:text-stone-400">Transaction Type</p>
-                                        <p className="font-semibold">Withdrawal</p>
-                                    </div>
-                                </div>
-                                <Separator className="bg-stone-200 dark:bg-stone-700" />
-                                <div>
-                                    <p className="text-xs text-stone-500 dark:text-stone-400">From Account</p>
-                                    <p className="font-semibold">{fromAccountNumber}</p>
-                                </div>
-                                <Separator className="bg-stone-200 dark:bg-stone-700" />
-                                <div>
-                                    <p className="text-xs text-stone-500 dark:text-stone-400">Withdrawing to</p>
-                                    <p className="font-semibold">{toAccountDetails}</p>
-                                </div>
-                            </div>
-                        </main>
-                    </div>
-                    <footer className="px-6 pb-6 mt-4">
-                        <SwipeButton onSwipeSuccess={handleWithdrawalSuccess} />
-                    </footer>
-                </DialogContent>
-            );
-        
-        default: // 'selectMethod'
-            return (
-                <DialogContent className="sm:max-w-md p-0 rounded-2xl overflow-hidden">
-                    <DialogHeader className="p-6 pb-4">
-                        <DialogTitle className="text-xl text-center font-semibold">From Account</DialogTitle>
-                    </DialogHeader>
-                    <div className="px-6 pb-6 space-y-6">
-                        {/* User Info */}
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
-                             <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-full bg-background flex items-center justify-center border">
-                                   <Globe className="h-5 w-5 text-muted-foreground" />
-                                </div>
-                                <div>
-                                    <p className="font-semibold">{profile?.name || 'Player'}</p>
-                                    <p className="text-sm text-muted-foreground">{profile?.gamerId || 'N/A'}</p>
-                                </div>
-                            </div>
-                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                        </div>
+    }
     
-                        {/* Withdrawal Methods */}
-                        <RadioGroup value={selectedMethod} onValueChange={setSelectedMethod} className="space-y-3">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <RadioGroupItem value="g-wallet" id="g-wallet" className="sr-only peer" />
-                                    <Label htmlFor="g-wallet" className="flex h-full items-center justify-center gap-2 rounded-lg border-2 border-muted bg-muted/60 p-4 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 text-foreground font-semibold">
-                                        <Wallet className="h-5 w-5" />
-                                        G-wallet
-                                    </Label>
-                                </div>
-                                <div>
-                                    <RadioGroupItem value="card" id="card" className="sr-only peer" />
-                                    <Label htmlFor="card" className="flex h-full items-center justify-center gap-2 rounded-lg border-2 border-muted bg-muted/60 p-4 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 text-foreground font-semibold">
-                                        <CreditCard className="h-5 w-5" />
-                                        Card
-                                    </Label>
-                                </div>
-                            </div>
-                            <div>
-                                <RadioGroupItem value="bank" id="bank" className="sr-only peer" />
-                                <Label htmlFor="bank" className="flex items-center justify-center gap-2 rounded-lg border-2 border-transparent bg-muted/60 p-4 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground text-foreground font-semibold">
-                                    <Landmark className="h-5 w-5" />
-                                    Bank Account
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Request Withdrawal</DialogTitle>
+                <DialogDescription>Select a method and enter the amount you wish to withdraw.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                 <div className="space-y-2">
+                    <Label>Withdrawal Method</Label>
+                    <RadioGroup onValueChange={(value) => setSelectedMethod(methods.find(m => m.id === value) || null)}>
+                        {methods.map(method => (
+                            <div key={method.id}>
+                                <RadioGroupItem value={method.id} id={method.id} className="sr-only peer" />
+                                <Label htmlFor={method.id} className="flex flex-col rounded-lg border-2 border-muted bg-transparent p-4 cursor-pointer peer-data-[state=checked]:border-primary">
+                                    <span className="font-semibold">{method.name}</span>
+                                    <span className="text-sm text-muted-foreground">{method.receiverInfo}</span>
                                 </Label>
                             </div>
-                        </RadioGroup>
-    
-                        <Button size="lg" className="w-full !mt-8" onClick={handleNextFromMethod}>
-                            Next
-                        </Button>
-                    </div>
-                </DialogContent>
-            );
-    }
+                        ))}
+                    </RadioGroup>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="amount">Amount (TK)</Label>
+                    <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
+                    {selectedMethod && <p className="text-xs text-muted-foreground">Min: {selectedMethod.minAmount}, Max: {selectedMethod.maxAmount}, Fee: {selectedMethod.feePercentage}%</p>}
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={closeDialog}>Cancel</Button>
+                <Button onClick={handleWithdraw} disabled={isWithdrawing || !selectedMethod || !amount}>
+                    {isWithdrawing ? "Submitting..." : "Submit Request"}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    );
 }
-
 
 // --- SUB-COMPONENTS ---
 
@@ -418,6 +201,8 @@ const WalletHeader = ({ profile }: { profile: PlayerProfile | null }) => (
 const CardStack = ({ balance, profile }: { balance: number, profile: PlayerProfile | null }) => {
     const [isFanned, setIsFanned] = useState(false);
     const [isWithdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
+    const [withdrawMethods, setWithdrawMethods] = useState<WithdrawMethod[]>([]);
+
 
     const handleAddMoneyOpenChange = (open: boolean) => {
         if (!open) {
@@ -431,6 +216,13 @@ const CardStack = ({ balance, profile }: { balance: number, profile: PlayerProfi
         }
         setWithdrawDialogOpen(open);
     };
+
+    const openWithdrawDialog = async () => {
+        const methods = await getActiveWithdrawMethods();
+        setWithdrawMethods(methods);
+        setIsFanned(true);
+        setWithdrawDialogOpen(true);
+    }
 
     return (
         <div className={cn("relative h-60 flex items-center justify-center", !isFanned && "group")}>
@@ -510,11 +302,11 @@ const CardStack = ({ balance, profile }: { balance: number, profile: PlayerProfi
                     </Dialog>
                      <Dialog open={isWithdrawDialogOpen} onOpenChange={handleWithdrawOpenChange}>
                         <DialogTrigger asChild>
-                            <Button onClick={() => { setIsFanned(true); setWithdrawDialogOpen(true); }} variant="secondary" className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
+                            <Button onClick={openWithdrawDialog} variant="secondary" className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
                                 <ArrowDown className="mr-2 h-4 w-4" /> Withdraw
                             </Button>
                         </DialogTrigger>
-                        <WithdrawDialogContent profile={profile} closeDialog={() => handleWithdrawOpenChange(false)} />
+                        <WithdrawDialogContent profile={profile} closeDialog={() => handleWithdrawOpenChange(false)} methods={withdrawMethods} />
                     </Dialog>
                 </div>
             </div>

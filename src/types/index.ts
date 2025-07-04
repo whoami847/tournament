@@ -179,3 +179,24 @@ export interface PaymentGatewaySettings {
   checkoutUrl: string;
   verifyUrl: string;
 }
+
+export interface WithdrawMethod {
+  id: string;
+  name: string;
+  receiverInfo: string;
+  feePercentage: number;
+  minAmount: number;
+  maxAmount: number;
+  status: 'active' | 'inactive';
+}
+
+export interface WithdrawRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  userGamerId: string;
+  amount: number;
+  method: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: Timestamp;
+}

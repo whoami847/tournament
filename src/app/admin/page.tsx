@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Card, CardContent } from "@/components/ui/card";
-import { LayoutDashboard, Users, Swords, GitPullRequest, Settings, LucideIcon, Gamepad2, Image as ImageIcon, ClipboardCheck, CloudCog } from "lucide-react";
+import { LayoutDashboard, Users, Swords, GitPullRequest, Settings, LucideIcon, Gamepad2, Image as ImageIcon, ClipboardCheck, CloudCog, Banknote, ListChecks } from "lucide-react";
 
 const adminControls: { href: string; icon: LucideIcon; label: string }[] = [
   { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -11,6 +11,8 @@ const adminControls: { href: string; icon: LucideIcon; label: string }[] = [
   { href: '/admin/results-approval', icon: ClipboardCheck, label: 'Results Approval' },
   { href: '/admin/requests', icon: GitPullRequest, label: 'Requests' },
   { href: '/admin/gateway', icon: CloudCog, label: 'Gateway' },
+  { href: '/admin/withdraw-methods', icon: Banknote, label: 'Withdraw Methods' },
+  { href: '/admin/withdraw-requests', icon: ListChecks, label: 'Withdraw Requests' },
   { href: '/admin/settings', icon: Settings, label: 'Settings' },
 ];
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -26,10 +27,11 @@ interface ResultSubmissionDialogProps {
     onClose: () => void;
     tournament: Tournament;
     match: Match;
+    roundName: string;
     team: Team;
 }
 
-export function ResultSubmissionDialog({ isOpen, onClose, tournament, match, team }: ResultSubmissionDialogProps) {
+export function ResultSubmissionDialog({ isOpen, onClose, tournament, match, roundName, team }: ResultSubmissionDialogProps) {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     
@@ -48,7 +50,7 @@ export function ResultSubmissionDialog({ isOpen, onClose, tournament, match, tea
             tournamentId: tournament.id,
             tournamentName: tournament.name,
             matchId: match.id,
-            roundName: "N/A", // You may need to find the round name
+            roundName: roundName,
             teamId: team.id,
             teamName: team.name,
             ...values,

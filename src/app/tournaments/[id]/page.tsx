@@ -100,7 +100,7 @@ export default function TournamentPage() {
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmissionDialogOpen, setSubmissionDialogOpen] = useState(false);
-  const [matchForSubmission, setMatchForSubmission] = useState<Match | null>(null);
+  const [matchForSubmission, setMatchForSubmission] = useState<{match: Match, roundName: string} | null>(null);
   const [teamForSubmission, setTeamForSubmission] = useState<Team | null>(null);
   const [submissionDialogShown, setSubmissionDialogShown] = useState(false);
 
@@ -129,15 +129,17 @@ export default function TournamentPage() {
   const userTeam = tournament?.participants.find(p => p.members?.some(m => m.gamerId === (profile as any)?.gamerId));
 
   const matchesToSubmit = tournament?.bracket.flatMap(round => 
-      round.matches.filter(match => {
-          const status = match.resultSubmissionStatus?.[userTeam?.id || ''];
-          return status === 'pending' && (match.teams[0]?.id === userTeam?.id || match.teams[1]?.id === userTeam?.id);
-      })
+      round.matches
+          .map(match => ({ match, roundName: round.name }))
+          .filter(({ match }) => {
+              const status = match.resultSubmissionStatus?.[userTeam?.id || ''];
+              return status === 'pending' && (match.teams[0]?.id === userTeam?.id || match.teams[1]?.id === userTeam?.id);
+          })
   ) || [];
 
-  const handleOpenSubmissionDialog = (match: Match) => {
+  const handleOpenSubmissionDialog = (data: { match: Match; roundName: string }) => {
       if (!userTeam) return;
-      setMatchForSubmission(match);
+      setMatchForSubmission(data);
       setTeamForSubmission(userTeam);
       setSubmissionDialogOpen(true);
   }
@@ -184,7 +186,8 @@ export default function TournamentPage() {
             isOpen={isSubmissionDialogOpen}
             onClose={() => setSubmissionDialogOpen(false)}
             tournament={tournament}
-            match={matchForSubmission}
+            match={matchForSubmission.match}
+            roundName={matchForSubmission.roundName}
             team={teamForSubmission}
         />
     )}

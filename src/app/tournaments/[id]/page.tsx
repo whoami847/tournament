@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,7 +14,7 @@ import type { LucideIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
 import { getTournamentStream } from '@/lib/tournaments-service';
-import type { Tournament, Match, Team } from '@/types';
+import type { Tournament, Match, Team, PlayerProfile } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -96,7 +96,9 @@ const CopyToClipboard = ({ text, label }: { text: string; label: string }) => {
 export default function TournamentPage() {
   const params = useParams<{ id: string }>();
   const { user } = useAuth();
-  const [profile, setProfile] = useState(null);
+  const router = useRouter();
+  const { toast } = useToast();
+  const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmissionDialogOpen, setSubmissionDialogOpen] = useState(false);
@@ -107,6 +109,8 @@ export default function TournamentPage() {
   useEffect(() => {
     if (user?.uid) {
         getUserProfileStream(user.uid, setProfile);
+    } else {
+        setProfile(null);
     }
   }, [user]);
 
@@ -169,6 +173,39 @@ export default function TournamentPage() {
     return relevantMatch || null;
   }, [tournament, userTeam]);
 
+  const isAlreadyJoined = useMemo(() => {
+    if (!tournament || !profile) return false;
+    return tournament.participants.some(p => p.members?.some(m => m.gamerId === profile.gamerId));
+  }, [tournament, profile]);
+
+  const handleJoinClick = () => {
+    if (!user || !profile) {
+        toast({
+            title: "Authentication Required",
+            description: "Please log in to join a tournament.",
+            variant: "destructive",
+        });
+        router.push('/login');
+        return;
+    }
+
+    if (tournament!.entryFee > 0) {
+        if (profile.balance < tournament!.entryFee) {
+            toast({
+                title: "Insufficient Balance",
+                description: "Please add funds to your wallet to join this tournament.",
+                variant: "destructive",
+            });
+            router.push('/wallet');
+        } else {
+            router.push(`/tournaments/${tournament!.id}/join`);
+        }
+    } else {
+        // Free entry
+        router.push(`/tournaments/${tournament!.id}/join`);
+    }
+  };
+
   if (loading || (user && !profile)) {
     return <TournamentPageSkeleton />;
   }
@@ -181,6 +218,8 @@ export default function TournamentPage() {
   const totalPlayerSlots = tournament.maxTeams * teamSize;
   const currentPlayerCount = tournament.participants.reduce((sum, team) => sum + (team.members?.length || 0), 0);
   const isFull = currentPlayerCount >= totalPlayerSlots;
+  const joinButtonText = isAlreadyJoined ? 'Already Joined' : (isFull ? 'Full' : 'Join Now');
+  const isButtonDisabled = isFull || isAlreadyJoined;
 
   return (
     <>
@@ -263,23 +302,13 @@ export default function TournamentPage() {
                                   </div>
                               </div>
                               {tournament.status === 'upcoming' && (
-                                isFull ? (
-                                    <Button
-                                      className="shrink-0 rounded-full font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      disabled
-                                    >
-                                      Full
-                                    </Button>
-                                ) : (
-                                    <Button 
-                                        asChild
-                                        className="shrink-0 rounded-full font-bold"
-                                    >
-                                        <Link href={`/tournaments/${tournament.id}/join`}>
-                                            Join Now
-                                        </Link>
-                                    </Button>
-                                )
+                                  <Button
+                                      onClick={handleJoinClick}
+                                      disabled={isButtonDisabled}
+                                      className={cn("shrink-0 rounded-full font-bold", isFull && !isAlreadyJoined && "bg-destructive text-destructive-foreground hover:bg-destructive/90")}
+                                  >
+                                      {joinButtonText}
+                                  </Button>
                               )}
                           </div>
                       </div>

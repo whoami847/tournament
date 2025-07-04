@@ -18,7 +18,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { firestore } from './firebase';
-import type { Tournament, Team, Match, Round, TeamType } from '@/types';
+import type { Tournament, Team, Match, Round, TeamType, PlayerProfile } from '@/types';
 import { createNotification } from './notifications-service';
 import { createRegistrationLog } from './registrations-service';
 
@@ -252,19 +252,58 @@ export const deleteTournament = async (id: string) => {
 
 export const joinTournament = async (
   tournamentId: string,
-  newParticipant: Team
+  newParticipant: Team,
+  userId: string
 ) => {
   const tournamentRef = doc(firestore, 'tournaments', tournamentId);
+  const userRef = doc(firestore, 'users', userId);
   
   try {
-    const docSnap = await getDoc(tournamentRef);
-    if (!docSnap.exists()) {
+    const tournamentSnap = await getDoc(tournamentRef);
+    const userSnap = await getDoc(userRef);
+
+    if (!tournamentSnap.exists()) {
       return { success: false, error: 'Tournament not found.' };
     }
-    const tournamentData = fromFirestore(docSnap);
+    if (!userSnap.exists()) {
+      return { success: false, error: 'User profile not found.' };
+    }
+
+    const tournamentData = fromFirestore(tournamentSnap);
+    const userData = userSnap.data() as PlayerProfile;
 
     if (tournamentData.teamsCount >= tournamentData.maxTeams) {
         return { success: false, error: 'Tournament is already full.' };
+    }
+
+    const allJoinedGamerIds = new Set(tournamentData.participants.flatMap(p => p.members?.map(m => m.gamerId) || []));
+    const newTeamGamerIds = newParticipant.members?.map(m => m.gamerId) || [];
+    const alreadyJoinedMemberId = newTeamGamerIds.find(id => allJoinedGamerIds.has(id));
+    if (alreadyJoinedMemberId) {
+        return { success: false, error: `A player with Gamer ID ${alreadyJoinedMemberId} is already part of this tournament.` };
+    }
+
+    const batch = writeBatch(firestore);
+
+    // Handle entry fee
+    const entryFee = tournamentData.entryFee;
+    if (entryFee > 0) {
+        if (userData.balance < entryFee) {
+            return { success: false, error: 'Insufficient balance.' }; // Server-side check
+        }
+        
+        // Deduct fee and create transaction log for the team leader
+        batch.update(userRef, { balance: increment(-entryFee) });
+        
+        const transactionRef = doc(collection(firestore, 'transactions'));
+        batch.set(transactionRef, {
+            userId: userId,
+            amount: -entryFee,
+            type: 'fee',
+            description: `Entry fee for ${tournamentData.name}`,
+            date: Timestamp.now(),
+            status: 'completed',
+        });
     }
 
     // Deep copy the bracket to avoid mutation issues.
@@ -285,8 +324,6 @@ export const joinTournament = async (
       }
     }
 
-    const batch = writeBatch(firestore);
-    
     const updateData: any = {
       participants: arrayUnion(newParticipant),
       teamsCount: increment(1),
@@ -303,7 +340,6 @@ export const joinTournament = async (
         tournamentId: tournamentId,
         tournamentName: tournamentData.name,
         game: tournamentData.game,
-        teamName: newParticipant.name,
         teamType: getTeamType(tournamentData.format),
         players: newParticipant.members || [],
     });

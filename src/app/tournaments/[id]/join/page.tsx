@@ -184,7 +184,7 @@ export default function JoinTournamentPage() {
 
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
-        if (!tournament || !profile) return;
+        if (!tournament || !profile || !user) return;
         setIsSubmitting(true);
 
         const newParticipant: Team = {
@@ -195,7 +195,7 @@ export default function JoinTournamentPage() {
             members: values.players.map(p => ({ name: p.name, gamerId: p.id })),
         };
 
-        const result = await joinTournament(tournament.id, newParticipant);
+        const result = await joinTournament(tournament.id, newParticipant, user.uid);
 
         if (result.success) {
             toast({

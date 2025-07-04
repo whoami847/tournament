@@ -125,7 +125,7 @@ export default function TournamentPage() {
       
       return () => unsubscribe();
     }
-  }, [params.id, notFound]);
+  }, [params.id]);
 
   const userTeam = tournament?.participants.find(p => p.members?.some(m => m.gamerId === (profile as any)?.gamerId));
 

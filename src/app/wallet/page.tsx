@@ -30,7 +30,6 @@ import { getUserProfileStream } from "@/lib/users-service";
 import type { PlayerProfile, Transaction, WithdrawMethod } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTransactionsStream } from "@/lib/transactions-service";
-import { format } from "date-fns";
 import { createWithdrawalRequest } from '@/lib/withdraw-requests-service';
 import { getActiveWithdrawMethods } from '@/lib/withdraw-methods-service';
 
@@ -158,8 +157,16 @@ function WithdrawDialogContent({ closeDialog, profile }: { closeDialog: () => vo
     
     if (loading) {
         return (
-            <DialogContent className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Loading Withdrawal Methods</DialogTitle>
+                    <DialogDescription>
+                        Please wait while we fetch the available options.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex items-center justify-center h-48">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
             </DialogContent>
         )
     }

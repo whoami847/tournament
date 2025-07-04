@@ -51,10 +51,15 @@ export const getWithdrawMethodsStream = (callback: (methods: WithdrawMethod[]) =
 };
 
 export const getActiveWithdrawMethods = async (): Promise<WithdrawMethod[]> => {
-    const q = query(collection(firestore, 'withdrawMethods'), where('status', '==', 'active'), orderBy('name', 'asc'));
+    // The query was previously using orderBy('name'), which requires a composite index.
+    // To avoid this requirement for the user, we sort the results in code.
+    const q = query(collection(firestore, 'withdrawMethods'), where('status', '==', 'active'));
     try {
         const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(fromFirestore);
+        const methods = querySnapshot.docs.map(fromFirestore);
+        // Sort alphabetically by name
+        methods.sort((a, b) => a.name.localeCompare(b.name));
+        return methods;
     } catch (error) {
         console.error("Error fetching active withdraw methods:", error);
         return [];

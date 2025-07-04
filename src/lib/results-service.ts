@@ -75,12 +75,13 @@ export const addMatchResult = async (result: Omit<MatchResult, 'id' | 'submitted
 export const getPendingResultsStream = (callback: (results: MatchResult[]) => void) => {
   const q = query(
     collection(firestore, 'matchResults'), 
-    where('status', '==', 'pending'),
-    orderBy('submittedAt', 'asc')
+    where('status', '==', 'pending')
   );
   
   const unsubscribe = onSnapshot(q, (querySnapshot) => {
     const results = querySnapshot.docs.map(fromFirestore);
+    // Sort client-side to avoid needing a composite index
+    results.sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime());
     callback(results);
   }, (error) => {
     console.error("Error fetching pending results stream: ", error);

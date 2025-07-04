@@ -1,22 +1,33 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getUsersStream, updateUserBalance } from '@/lib/users-service';
+import { getUsersStream, updateUserBalance, updateUserStatus } from '@/lib/users-service';
 import type { PlayerProfile } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MoreHorizontal, Wallet } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Wallet, UserX, UserCheck, ShieldCheck } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 
-const ManageWalletDialog = ({ user, onClose }: { user: PlayerProfile; onClose: () => void }) => {
+const ManageWalletDialog = ({ user, onUpdate }: { user: PlayerProfile; onUpdate: () => void }) => {
     const [amount, setAmount] = useState<number>(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
@@ -30,7 +41,8 @@ const ManageWalletDialog = ({ user, onClose }: { user: PlayerProfile; onClose: (
         const result = await updateUserBalance(user.id, adjustment);
         if (result.success) {
             toast({ title: 'Balance Updated', description: `${user.name}'s balance has been adjusted.` });
-            onClose();
+            onUpdate();
+            setAmount(0);
         } else {
             toast({ title: 'Error', description: result.error, variant: 'destructive' });
         }
@@ -38,49 +50,125 @@ const ManageWalletDialog = ({ user, onClose }: { user: PlayerProfile; onClose: (
     };
 
     return (
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Manage Wallet for {user.name}</DialogTitle>
-                <DialogDescription>
-                    Current Balance: <span className="font-bold">{user.balance.toFixed(2)} TK</span>
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4 space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="amount">Adjustment Amount (TK)</Label>
-                    <Input
-                        id="amount"
-                        type="number"
-                        placeholder="e.g., 100"
-                        value={amount || ''}
-                        onChange={(e) => setAmount(Number(e.target.value))}
-                    />
-                </div>
+        <div className="rounded-lg border p-4">
+            <h4 className="font-semibold mb-2">Manage Wallet</h4>
+            <p className="text-sm text-muted-foreground mb-4">Current Balance: <span className="font-bold text-foreground">{user.balance.toFixed(2)} TK</span></p>
+            <div className="space-y-2">
+                <Label htmlFor="amount">Adjustment Amount (TK)</Label>
+                <Input
+                    id="amount"
+                    type="number"
+                    placeholder="e.g., 100"
+                    value={amount || ''}
+                    onChange={(e) => setAmount(Number(e.target.value))}
+                />
             </div>
-            <DialogFooter>
+            <div className="flex gap-2 mt-2">
                  <Button
                     variant="destructive"
                     onClick={() => handleUpdateBalance(-amount)}
                     disabled={isSubmitting || amount <= 0}
+                    className="flex-1"
                 >
-                    Remove Balance
+                    Remove
                 </Button>
                 <Button
                     onClick={() => handleUpdateBalance(amount)}
                     disabled={isSubmitting || amount <= 0}
+                    className="flex-1"
                 >
-                    Add Balance
+                    Add
                 </Button>
-            </DialogFooter>
-        </DialogContent>
+            </div>
+        </div>
     );
 };
+
+const UserDetailsDialog = ({ user, onClose }: { user: PlayerProfile, onClose: () => void }) => {
+    const { toast } = useToast();
+
+    const handleStatusChange = async (status: 'active' | 'banned') => {
+        const result = await updateUserStatus(user.id, status);
+        if (result.success) {
+            toast({
+                title: status === 'banned' ? 'User Banned' : 'User Unbanned',
+                description: `${user.name}'s status has been updated.`,
+            });
+            onClose(); // Close the dialog to see the change in the list
+        } else {
+            toast({
+                title: 'Error',
+                description: result.error,
+                variant: 'destructive',
+            });
+        }
+    };
+
+    return (
+        <DialogContent className="max-w-2xl">
+            <DialogHeader>
+                <div className="flex items-center gap-4">
+                     <Avatar className="h-16 w-16 border-2 border-primary">
+                        <AvatarImage src={user.avatar} alt={user.name} />
+                        <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <DialogTitle className="text-2xl">{user.name}</DialogTitle>
+                        <DialogDescription>{user.email}</DialogDescription>
+                        <Badge variant={user.status === 'banned' ? 'destructive' : 'default'} className="mt-2 capitalize">
+                           {user.status}
+                        </Badge>
+                    </div>
+                </div>
+            </DialogHeader>
+            <div className="py-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                    <h4 className="font-semibold text-lg">User Information</h4>
+                    <div className="text-sm space-y-2">
+                        <p><strong className="text-muted-foreground w-24 inline-block">Gamer ID:</strong> {user.gamerId}</p>
+                        <p><strong className="text-muted-foreground w-24 inline-block">UID:</strong> <span className="font-mono text-xs">{user.id}</span></p>
+                        <p><strong className="text-muted-foreground w-24 inline-block">Joined:</strong> {format(new Date(user.joined), 'PPP')}</p>
+                        <p><strong className="text-muted-foreground w-24 inline-block">Team ID:</strong> {user.teamId || 'N/A'}</p>
+                    </div>
+                    <div className="space-y-4">
+                        <h4 className="font-semibold text-lg mt-6">Actions</h4>
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" className="w-full">
+                                    {user.status === 'banned' ? <UserCheck className="mr-2 h-4 w-4" /> : <UserX className="mr-2 h-4 w-4" />}
+                                    {user.status === 'banned' ? 'Unban User' : 'Ban User'}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    {user.status === 'banned' ? `This will unban ${user.name} and allow them to access the app again.` : `This will ban ${user.name} and immediately revoke their access to the app.`}
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleStatusChange(user.status === 'banned' ? 'active' : 'banned')}>
+                                    Confirm
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </div>
+                <div className="space-y-4">
+                     <ManageWalletDialog user={user} onUpdate={onClose} />
+                </div>
+            </div>
+        </DialogContent>
+    )
+}
 
 
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<PlayerProfile[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [selectedUser, setSelectedUser] = useState<PlayerProfile | null>(null);
 
     useEffect(() => {
         const unsubscribe = getUsersStream((data) => {
@@ -90,11 +178,13 @@ export default function AdminUsersPage() {
         return () => unsubscribe();
     }, []);
 
-    const closeWalletDialog = () => {
-        setSelectedUserId(null);
+    const openDialog = (user: PlayerProfile) => {
+        setSelectedUser(user);
     };
 
-    const userForDialog = users.find(u => u.id === selectedUserId);
+    const closeDialog = () => {
+        setSelectedUser(null);
+    };
 
     const UserTableSkeleton = () => (
         <div className="space-y-2">
@@ -128,16 +218,15 @@ export default function AdminUsersPage() {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>User</TableHead>
-                                            <TableHead>User ID</TableHead>
                                             <TableHead>Gamer ID</TableHead>
                                             <TableHead>Balance</TableHead>
                                             <TableHead>Joined Date</TableHead>
-                                            <TableHead><span className="sr-only">Actions</span></TableHead>
+                                            <TableHead>Status</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {users.length > 0 ? users.map((user) => (
-                                            <TableRow key={user.id}>
+                                            <TableRow key={user.id} onClick={() => openDialog(user)} className="cursor-pointer">
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
                                                         <Avatar className="h-8 w-8">
@@ -147,30 +236,16 @@ export default function AdminUsersPage() {
                                                         <span className="font-medium">{user.name}</span>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell><span className="font-mono text-xs">{user.id}</span></TableCell>
                                                 <TableCell>{user.gamerId}</TableCell>
                                                 <TableCell>{user.balance.toFixed(2)} TK</TableCell>
                                                 <TableCell>{format(new Date(user.joined), 'PPP')}</TableCell>
                                                 <TableCell>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                                <MoreHorizontal className="h-4 w-4" />
-                                                                <span className="sr-only">Toggle menu</span>
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onSelect={() => setSelectedUserId(user.id)}>
-                                                                <Wallet className="mr-2 h-4 w-4" />
-                                                                Manage Wallet
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
+                                                    <Badge variant={user.status === 'banned' ? 'destructive' : 'default'} className="capitalize">{user.status}</Badge>
                                                 </TableCell>
                                             </TableRow>
                                         )) : (
                                             <TableRow>
-                                                <TableCell colSpan={6} className="h-24 text-center">No users found.</TableCell>
+                                                <TableCell colSpan={5} className="h-24 text-center">No users found.</TableCell>
                                             </TableRow>
                                         )}
                                     </TableBody>
@@ -181,7 +256,7 @@ export default function AdminUsersPage() {
                             <div className="md:hidden">
                                 <div className="space-y-4">
                                     {users.length > 0 ? users.map((user) => (
-                                        <div key={user.id} className="bg-muted/20 p-4 rounded-lg border">
+                                        <div key={user.id} className="bg-muted/20 p-4 rounded-lg border" onClick={() => openDialog(user)}>
                                             <div className="flex justify-between items-start">
                                                 <div className="flex items-center gap-3">
                                                     <Avatar className="h-10 w-10">
@@ -191,23 +266,9 @@ export default function AdminUsersPage() {
                                                     <div>
                                                         <p className="font-semibold">{user.name}</p>
                                                         <p className="text-sm text-muted-foreground">{user.gamerId}</p>
-                                                        <p className="text-xs text-muted-foreground font-mono pt-1">{user.id}</p>
                                                     </div>
                                                 </div>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                            <span className="sr-only">Toggle menu</span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onSelect={() => setSelectedUserId(user.id)}>
-                                                            <Wallet className="mr-2 h-4 w-4" />
-                                                            Manage Wallet
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                                 <Badge variant={user.status === 'banned' ? 'destructive' : 'default'} className="capitalize">{user.status}</Badge>
                                             </div>
                                             <div className="mt-4 flex justify-between text-sm text-muted-foreground pt-4 border-t border-muted-foreground/20">
                                                 <span>Joined: <span className="font-medium text-foreground">{format(new Date(user.joined), 'PPP')}</span></span>
@@ -227,8 +288,8 @@ export default function AdminUsersPage() {
                 </CardContent>
             </Card>
 
-            <Dialog open={!!userForDialog} onOpenChange={(open) => !open && closeWalletDialog()}>
-                {userForDialog && <ManageWalletDialog user={userForDialog} onClose={closeWalletDialog} />}
+            <Dialog open={!!selectedUser} onOpenChange={(open) => !open && closeDialog()}>
+                {selectedUser && <UserDetailsDialog user={selectedUser} onClose={closeDialog} />}
             </Dialog>
         </>
     );

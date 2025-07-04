@@ -37,6 +37,7 @@ const fromFirestore = (doc: any): PlayerProfile => {
     games: data.games,
     balance: data.balance || 0,
     teamId: data.teamId || undefined,
+    status: data.status || 'active',
   };
 };
 
@@ -59,6 +60,7 @@ export const createUserProfile = async (user: User) => {
       games: 0,
       balance: 0,
       teamId: '',
+      status: 'active',
     };
     await setDoc(userRef, newUserProfile);
   }
@@ -178,3 +180,17 @@ export const updateUserBalance = async (
     return { success: false, error: (error as Error).message };
   }
 };
+
+export const updateUserStatus = async (
+    userId: string,
+    status: 'active' | 'banned'
+): Promise<{ success: boolean; error?: string }> => {
+    try {
+        const userRef = doc(firestore, 'users', userId);
+        await updateDoc(userRef, { status });
+        return { success: true };
+    } catch (error) {
+        console.error('Error updating user status:', error);
+        return { success: false, error: (error as Error).message };
+    }
+}

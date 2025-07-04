@@ -3,16 +3,36 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import FullPageLoader from './loader';
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
+import { signOutUser } from '@/lib/auth-service';
+import { useToast } from '@/hooks/use-toast';
 
 const PUBLIC_ROUTES = ['/login', '/register'];
 
 export default function AuthGuard({ children }: { children: ReactNode }) {
-    const { user, loading } = useAuth();
+    const { user, profile, loading } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
+    const { toast } = useToast();
 
+    useEffect(() => {
+        if (!loading && profile?.status === 'banned') {
+            signOutUser();
+            toast({
+                title: 'Access Denied',
+                description: 'Your account has been banned by an administrator.',
+                variant: 'destructive'
+            });
+            // The onAuthStateChanged listener will handle the redirect to /login
+        }
+    }, [profile, loading, toast]);
+    
     if (loading) {
+        return <FullPageLoader />;
+    }
+    
+    // Don't render anything if the user is banned and we're waiting for sign out/redirect
+    if (profile?.status === 'banned') {
         return <FullPageLoader />;
     }
 

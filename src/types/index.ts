@@ -100,6 +100,7 @@ export interface PlayerProfile {
   games: number;
   balance: number;
   teamId?: string;
+  status: 'active' | 'banned';
 }
 
 export interface Transaction {

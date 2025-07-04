@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getTournamentsStream, deleteTournament, updateTournament } from '@/lib/tournaments-service';
@@ -8,11 +9,102 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, PlusCircle, GitBranch } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, GitBranch, KeyRound } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { Tournament } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { updateMatchDetails } from '@/lib/tournaments-service';
+
+// Helper component for managing rooms within a tournament card
+const RoomManager = ({ tournament }: { tournament: Tournament }) => {
+    const { toast } = useToast();
+    // Use a ref to store input values to avoid re-renders on every keystroke.
+    const roomDetailsRef = useRef<Record<string, { roomId: string, roomPass: string }>>({});
+
+    // Pre-fill the ref with existing data when the component mounts or tournament data changes.
+    useEffect(() => {
+        const initialDetails: Record<string, { roomId: string, roomPass: string }> = {};
+        tournament.bracket.forEach(round => {
+            round.matches.forEach(match => {
+                roomDetailsRef.current[match.id] = {
+                    roomId: match.roomId || '',
+                    roomPass: match.roomPass || ''
+                };
+            });
+        });
+    }, [tournament]);
+
+    const handlePublish = async (matchId: string) => {
+        const details = roomDetailsRef.current[matchId];
+        if (!details || !details.roomId || !details.roomPass) {
+             toast({ title: "Missing Info", description: "Please provide both Room ID and Password.", variant: "destructive" });
+             return;
+        }
+        const result = await updateMatchDetails(tournament.id, matchId, details);
+        if (result.success) {
+            toast({ title: "Room Details Published", description: `Details for match ${matchId} updated.` });
+        } else {
+            toast({ title: "Error", description: result.error, variant: "destructive" });
+        }
+    };
+
+    if (tournament.bracket.length === 0) {
+        return <p className="text-center text-sm text-muted-foreground py-4">No bracket generated for this tournament.</p>;
+    }
+
+    return (
+        <div className="space-y-3 pt-2">
+            {tournament.bracket.map(round => (
+                <div key={round.name}>
+                    <h4 className="font-semibold text-xs mb-2 text-muted-foreground">{round.name}</h4>
+                    <div className="space-y-2">
+                        {round.matches.map(match => (
+                             <div key={match.id} className="p-3 border rounded-lg bg-background">
+                                <p className="text-sm font-medium truncate mb-2">{match.name}</p>
+                                <div className="space-y-2">
+                                     <div>
+                                        <Label htmlFor={`roomId-${match.id}`} className="text-xs">Room ID</Label>
+                                        <Input 
+                                            id={`roomId-${match.id}`}
+                                            placeholder="ID..." 
+                                            defaultValue={match.roomId || ''} 
+                                            onChange={(e) => {
+                                                if(!roomDetailsRef.current[match.id]) roomDetailsRef.current[match.id] = {roomId: '', roomPass: ''};
+                                                roomDetailsRef.current[match.id].roomId = e.target.value
+                                            }}
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                     <div>
+                                        <Label htmlFor={`roomPass-${match.id}`} className="text-xs">Password</Label>
+                                        <Input 
+                                            id={`roomPass-${match.id}`}
+                                            placeholder="Pass..." 
+                                            defaultValue={match.roomPass || ''}
+                                            onChange={(e) => {
+                                                if(!roomDetailsRef.current[match.id]) roomDetailsRef.current[match.id] = {roomId: '', roomPass: ''};
+                                                roomDetailsRef.current[match.id].roomPass = e.target.value
+                                            }}
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                <Button size="sm" className="w-full h-8 text-xs mt-2" onClick={() => handlePublish(match.id)}>
+                                    Publish
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
 
 export default function AdminTournamentsPage() {
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -206,6 +298,25 @@ export default function AdminTournamentsPage() {
                                                 <p className="text-xs">Prize Pool</p>
                                             </div>
                                         </div>
+                                        <Accordion type="single" collapsible className="w-full mt-4">
+                                            <AccordionItem value="item-1" className="border-b-0">
+                                                <AccordionTrigger 
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="bg-muted hover:no-underline rounded-md px-4 py-2.5 text-sm font-semibold border hover:border-primary/50"
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <KeyRound className="h-4 w-4 text-primary" />
+                                                        Manage Rooms
+                                                    </div>
+                                                </AccordionTrigger>
+                                                <AccordionContent 
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="p-2 bg-muted/50 rounded-b-md text-sm text-muted-foreground"
+                                                >
+                                                    <RoomManager tournament={tournament} />
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                        </Accordion>
                                     </CardContent>
                                     <CardFooter className="p-2 border-t flex flex-wrap gap-2">
                                         <Button asChild size="sm" variant="outline" onClick={(e) => e.stopPropagation()}><Link href={`/tournaments/${tournament.id}`}>View</Link></Button>

@@ -55,6 +55,7 @@ export default function AdminUsersPage() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>User</TableHead>
+                                        <TableHead>User ID</TableHead>
                                         <TableHead>Gamer ID</TableHead>
                                         <TableHead>Joined Date</TableHead>
                                         <TableHead><span className="sr-only">Actions</span></TableHead>
@@ -72,6 +73,7 @@ export default function AdminUsersPage() {
                                                     <span className="font-medium">{user.name}</span>
                                                 </div>
                                             </TableCell>
+                                            <TableCell><span className="font-mono text-xs">{user.id}</span></TableCell>
                                             <TableCell>{user.gamerId}</TableCell>
                                             <TableCell>{format(new Date(user.joined), 'PPP')}</TableCell>
                                             <TableCell>
@@ -92,7 +94,7 @@ export default function AdminUsersPage() {
                                         </TableRow>
                                     )) : (
                                         <TableRow>
-                                            <TableCell colSpan={4} className="h-24 text-center">No users found.</TableCell>
+                                            <TableCell colSpan={5} className="h-24 text-center">No users found.</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
@@ -113,6 +115,7 @@ export default function AdminUsersPage() {
                                                 <div>
                                                     <p className="font-semibold">{user.name}</p>
                                                     <p className="text-sm text-muted-foreground">{user.gamerId}</p>
+                                                    <p className="text-xs text-muted-foreground font-mono pt-1">{user.id}</p>
                                                 </div>
                                             </div>
                                             <DropdownMenu>

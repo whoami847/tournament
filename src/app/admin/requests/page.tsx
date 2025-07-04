@@ -1,42 +1,76 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { mockJoinRequests, type JoinRequest } from '@/lib/admin-data';
+import { useState, useMemo, useEffect } from 'react';
+import { getRegistrationsStream } from '@/lib/registrations-service';
+import type { RegistrationLog } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import type { Game } from '@/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
-type TeamTypeFilter = JoinRequest['teamType'] | 'all';
+type TeamTypeFilter = RegistrationLog['teamType'] | 'all';
+
+const RegistrationHistorySkeleton = () => (
+    <Card>
+        <CardHeader>
+            <CardTitle>Registration History</CardTitle>
+            <CardDescription>View a log of all team/player registrations for tournaments. Joining is automatic.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="space-y-4">
+                <div className="flex gap-4">
+                    <Skeleton className="h-10 w-1/4" />
+                    <Skeleton className="h-10 w-1/4" />
+                </div>
+                <Skeleton className="h-48 w-full" />
+            </div>
+        </CardContent>
+    </Card>
+);
 
 export default function AdminRequestsPage() {
+    const [registrations, setRegistrations] = useState<RegistrationLog[]>([]);
+    const [loading, setLoading] = useState(true);
     const [selectedGame, setSelectedGame] = useState<Game | 'all'>('all');
     const [selectedTeamType, setSelectedTeamType] = useState<TeamTypeFilter>('all');
 
+    useEffect(() => {
+        const unsubscribe = getRegistrationsStream((data) => {
+            setRegistrations(data);
+            setLoading(false);
+        });
+        return () => unsubscribe();
+    }, []);
+
     const filteredRequests = useMemo(() => {
-        return mockJoinRequests.filter(req => {
+        return registrations.filter(req => {
             const gameMatch = selectedGame === 'all' || req.game === selectedGame;
             const teamTypeMatch = selectedTeamType === 'all' || req.teamType === selectedTeamType;
             return gameMatch && teamTypeMatch;
         });
-    }, [selectedGame, selectedTeamType]);
+    }, [registrations, selectedGame, selectedTeamType]);
 
     const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', className?: string, text: string }> = {
         approved: { variant: 'default', className: 'bg-green-500/80 border-transparent text-green-50', text: 'Joined' },
     };
 
-    const games = useMemo(() => Array.from(new Set(mockJoinRequests.map((req) => req.game))), []);
-    const teamTypes = useMemo(() => Array.from(new Set(mockJoinRequests.map((req) => req.teamType))), []);
+    const games = useMemo(() => Array.from(new Set(registrations.map((req) => req.game))), [registrations]);
+    const teamTypes = useMemo(() => Array.from(new Set(registrations.map((req) => req.teamType))), [registrations]);
 
     const handleGameSelect = (game: Game) => {
         setSelectedGame((prev) => (prev === game ? 'all' : game));
     };
 
-    const handleTeamTypeSelect = (type: JoinRequest['teamType']) => {
+    const handleTeamTypeSelect = (type: RegistrationLog['teamType']) => {
         setSelectedTeamType((prev) => (prev === type ? 'all' : type));
     };
+
+    if (loading) {
+        return <RegistrationHistorySkeleton />;
+    }
 
     return (
         <Card>
@@ -72,7 +106,7 @@ export default function AdminRequestsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredRequests.map((req) => (
+                            {filteredRequests.length > 0 ? filteredRequests.map((req) => (
                                 <TableRow key={req.id}>
                                     <TableCell>
                                         <div className="font-medium">{req.tournamentName}</div>
@@ -90,7 +124,7 @@ export default function AdminRequestsPage() {
                                         </ul>
                                     </TableCell>
                                     <TableCell>
-                                        {formatDistanceToNow(new Date(req.requestedAt), { addSuffix: true })}
+                                        {formatDistanceToNow(req.registeredAt.toDate(), { addSuffix: true })}
                                     </TableCell>
                                     <TableCell>
                                         <Badge 
@@ -101,14 +135,18 @@ export default function AdminRequestsPage() {
                                         </Badge>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )) : (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="text-center h-24">No registrations found.</TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
                     </Table>
                 </div>
 
                 {/* Mobile Card List */}
                 <div className="md:hidden space-y-4">
-                    {filteredRequests.map((req) => (
+                    {filteredRequests.length > 0 ? filteredRequests.map((req) => (
                         <div key={req.id} className="bg-muted/20 p-4 rounded-lg border">
                             <div className="flex justify-between items-start mb-4">
                                 <div>
@@ -138,14 +176,19 @@ export default function AdminRequestsPage() {
                             
                             <div className="flex justify-between items-center text-xs text-muted-foreground pt-4 border-t border-muted-foreground/20">
                                 <span>
-                                    {formatDistanceToNow(new Date(req.requestedAt), { addSuffix: true })}
+                                    {formatDistanceToNow(req.registeredAt.toDate(), { addSuffix: true })}
                                 </span>
                             </div>
                         </div>
-                    ))}
+                    )) : (
+                        <div className="text-center py-16 border border-dashed rounded-lg">
+                            <h3 className="text-xl font-medium">No Registrations Found</h3>
+                            <p className="text-muted-foreground mt-2">Try adjusting your filters or wait for new registrations.</p>
+                        </div>
+                    )}
                 </div>
 
-                {filteredRequests.length === 0 && (
+                {registrations.length > 0 && filteredRequests.length === 0 && (
                      <div className="text-center py-16 border border-dashed rounded-lg">
                         <h3 className="text-xl font-medium">No Registrations Found</h3>
                         <p className="text-muted-foreground mt-2">Try adjusting your filters.</p>

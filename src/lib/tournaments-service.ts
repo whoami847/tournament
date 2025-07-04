@@ -18,8 +18,18 @@ import {
   where,
 } from 'firebase/firestore';
 import { firestore } from './firebase';
-import type { Tournament, Team, Match, Round } from '@/types';
+import type { Tournament, Team, Match, Round, TeamType } from '@/types';
 import { createNotification } from './notifications-service';
+import { createRegistrationLog } from './registrations-service';
+
+// Helper to get team type (SOLO, DUO, SQUAD)
+const getTeamType = (format: string = ''): TeamType => {
+  const type = format.split('_')[1]?.toUpperCase() || 'SQUAD';
+  if (type === 'SOLO' || type === 'DUO' || type === 'SQUAD') {
+    return type;
+  }
+  return 'SQUAD';
+};
 
 // Helper to convert Firestore doc to Tournament type
 const fromFirestore = (doc: any): Tournament => {
@@ -272,6 +282,16 @@ export const joinTournament = async (
     }
 
     batch.update(tournamentRef, updateData);
+
+    // Add a registration log
+    createRegistrationLog(batch, {
+        tournamentId: tournamentId,
+        tournamentName: tournamentData.name,
+        game: tournamentData.game,
+        teamName: newParticipant.name,
+        teamType: getTeamType(tournamentData.format),
+        players: newParticipant.members || [],
+    });
 
     await batch.commit();
     return { success: true };

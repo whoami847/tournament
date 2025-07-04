@@ -133,3 +133,17 @@ export interface AppNotification {
   read: boolean;
   createdAt: Timestamp;
 }
+
+export type TeamType = 'SOLO' | 'DUO' | 'SQUAD';
+
+export interface RegistrationLog {
+  id: string;
+  tournamentId: string;
+  tournamentName: string;
+  game: Game;
+  teamName: string;
+  teamType: TeamType;
+  players: { name: string; gamerId: string }[];
+  status: 'approved';
+  registeredAt: Timestamp;
+}

@@ -1,3 +1,4 @@
+
 import {
   collection,
   doc,
@@ -7,6 +8,10 @@ import {
   updateDoc,
   writeBatch,
   arrayUnion,
+  arrayRemove,
+  query,
+  where,
+  getDocs,
 } from 'firebase/firestore';
 import { firestore } from './firebase';
 import type { UserTeam, PlayerProfile, TeamMember, AppNotification } from '@/types';
@@ -23,6 +28,7 @@ const teamFromFirestore = (doc: any): UserTeam => {
     dataAiHint: data.dataAiHint,
     leaderId: data.leaderId,
     members: data.members || [],
+    memberGamerIds: data.memberGamerIds || [],
   }
 }
 
@@ -62,7 +68,8 @@ export const createTeam = async (leaderProfile: PlayerProfile, teamName: string)
             gamerId: leaderProfile.gamerId,
             avatar: leaderProfile.avatar,
             role: 'Leader'
-        }]
+        }],
+        memberGamerIds: [leaderProfile.gamerId],
     };
     batch.set(teamRef, newTeam);
 
@@ -81,6 +88,9 @@ export const createTeam = async (leaderProfile: PlayerProfile, teamName: string)
 export const sendTeamInvite = async (inviterProfile: PlayerProfile, inviteeProfile: PlayerProfile, team: UserTeam) => {
     if (!inviterProfile || !inviteeProfile || !team) {
         return { success: false, error: "Missing required information." };
+    }
+    if (team.members.length >= 5) {
+        return { success: false, error: "The team is already full (max 5 members)." };
     }
     if (team.members.some(m => m.uid === inviteeProfile.id)) {
         return { success: false, error: `${inviteeProfile.name} is already in the team.` };
@@ -114,6 +124,15 @@ export const respondToInvite = async (notificationId: string, acceptingUserProfi
     const userRef = doc(firestore, 'users', acceptingUserProfile.id);
 
     if (response === 'accepted') {
+        const teamSnap = await getDoc(teamRef);
+        if (!teamSnap.exists()) {
+             return { success: false, error: "Team no longer exists." };
+        }
+        const teamData = teamSnap.data() as UserTeam;
+        if (teamData.members.length >= 5) {
+            return { success: false, error: "The team is now full." };
+        }
+        
         const newMember: TeamMember = {
             uid: acceptingUserProfile.id,
             name: acceptingUserProfile.name,
@@ -121,7 +140,10 @@ export const respondToInvite = async (notificationId: string, acceptingUserProfi
             avatar: acceptingUserProfile.avatar,
             role: 'Member'
         };
-        batch.update(teamRef, { members: arrayUnion(newMember) });
+        batch.update(teamRef, { 
+            members: arrayUnion(newMember),
+            memberGamerIds: arrayUnion(acceptingUserProfile.gamerId)
+        });
         batch.update(userRef, { teamId: teamId });
     }
 
@@ -151,32 +173,102 @@ export const respondToInvite = async (notificationId: string, acceptingUserProfi
 
 // addMemberManually
 export const addMemberManually = async (teamId: string, memberGamerId: string, memberName: string) => {
-    const inviteeProfile = await findUserByGamerId(memberGamerId);
-    if (!inviteeProfile) {
-        return { success: false, error: `User with Gamer ID "${memberGamerId}" not found.` };
-    }
-    if (inviteeProfile.teamId) {
-        return { success: false, error: `User "${inviteeProfile.name}" is already in another team.` };
-    }
-
-    const batch = writeBatch(firestore);
     const teamRef = doc(firestore, 'teams', teamId);
-    const userRef = doc(firestore, 'users', inviteeProfile.id);
-
-    const newMember: TeamMember = {
-        uid: inviteeProfile.id,
-        name: memberName, // Use the manually entered name
-        gamerId: memberGamerId,
-        avatar: inviteeProfile.avatar,
-        role: 'Member'
-    };
-    batch.update(teamRef, { members: arrayUnion(newMember) });
-    batch.update(userRef, { teamId: teamId });
+    const batch = writeBatch(firestore);
 
     try {
+        const teamSnap = await getDoc(teamRef);
+        if (!teamSnap.exists()) return { success: false, error: "Team not found." };
+        
+        const team = teamSnap.data() as UserTeam;
+        if (team.members.length >= 5) {
+            return { success: false, error: "Team is already full (max 5 members)." };
+        }
+        if (team.memberGamerIds.includes(memberGamerId)) {
+            return { success: false, error: "A player with this Gamer ID is already in the team." };
+        }
+        
+        const newMember: TeamMember = {
+            name: memberName,
+            gamerId: memberGamerId,
+            role: 'Member'
+            // uid and avatar are intentionally omitted for placeholders
+        };
+        batch.update(teamRef, { 
+            members: arrayUnion(newMember),
+            memberGamerIds: arrayUnion(memberGamerId)
+        });
+
         await batch.commit();
         return { success: true };
     } catch (error) {
         return { success: false, error: (error as Error).message };
     }
+}
+
+export const leaveTeam = async (userId: string, teamId: string) => {
+    const batch = writeBatch(firestore);
+    const teamRef = doc(firestore, 'teams', teamId);
+    const userRef = doc(firestore, 'users', userId);
+
+    try {
+        const teamSnap = await getDoc(teamRef);
+        const userSnap = await getDoc(userRef);
+
+        if (!teamSnap.exists() || !userSnap.exists()) {
+            return { success: false, error: "Could not find team or user." };
+        }
+
+        const team = teamSnap.data() as UserTeam;
+        const user = userSnap.data() as PlayerProfile;
+        
+        const memberToRemove = team.members.find(m => m.uid === userId);
+        if (!memberToRemove) {
+            return { success: false, error: "You are not a member of this team." };
+        }
+
+        if (team.leaderId === userId) {
+            if (team.members.length > 1) {
+                return { success: false, error: "Leader cannot leave. Please transfer leadership first." };
+            } else {
+                // Last member is the leader, so delete the team
+                batch.delete(teamRef);
+            }
+        } else {
+            // Member is leaving
+            batch.update(teamRef, { 
+                members: arrayRemove(memberToRemove),
+                memberGamerIds: arrayRemove(user.gamerId)
+            });
+        }
+        
+        // Remove teamId from user profile
+        batch.update(userRef, { teamId: '' });
+        
+        await batch.commit();
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export const findTeamByGamerIdPlaceholder = async (gamerId: string): Promise<{teamId: string, teamDoc: UserTeam} | null> => {
+    const teamsRef = collection(firestore, 'teams');
+    const q = query(teamsRef, where('memberGamerIds', 'array-contains', gamerId));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+        return null;
+    }
+
+    const teamDoc = querySnapshot.docs[0];
+    const teamData = teamFromFirestore(teamDoc);
+
+    // Ensure it's a placeholder (no UID)
+    const placeholderMember = teamData.members.find(m => m.gamerId === gamerId && !m.uid);
+    if (placeholderMember) {
+        return { teamId: teamDoc.id, teamDoc: teamData };
+    }
+    
+    return null;
 }

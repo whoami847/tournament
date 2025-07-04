@@ -1,7 +1,7 @@
 
 "use client"
 
-import Image from 'next/image';
+import Image from 'next/link';
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
@@ -16,13 +16,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, User, Gamepad2, Mail, Calendar, Users, Shield, Trophy, Star, Flame, LogOut, Pencil, Check, X, Loader2 } from 'lucide-react';
+import { MoreHorizontal, User, Gamepad2, Mail, Calendar, Users, Shield, Trophy, Star, Flame, LogOut, Pencil, Check, X, Loader2, UserPlus, LogOut as LeaveIcon, Search } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { signOutUser } from '@/lib/auth-service';
 import { useRouter } from 'next/navigation';
 import { getUserProfileStream, findUserByGamerId } from '@/lib/users-service';
-import type { PlayerProfile, UserTeam, AppNotification } from '@/types';
+import type { PlayerProfile, UserTeam, AppNotification, TeamMember } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -41,7 +41,8 @@ import {
     getTeamStream, 
     sendTeamInvite,
     addMemberManually,
-    respondToInvite
+    respondToInvite,
+    leaveTeam
 } from '@/lib/teams-service';
 import { getNotificationsStream } from '@/lib/notifications-service';
 
@@ -85,16 +86,14 @@ const TeamInfo = ({ profile }: { profile: PlayerProfile }) => {
 
     // Dialog states
     const [isCreateTeamOpen, setCreateTeamOpen] = useState(false);
-    const [isAddInviteOpen, setAddInviteOpen] = useState(false);
-    const [isAddManualOpen, setAddManualOpen] = useState(false);
+    const [isAddMemberOpen, setAddMemberOpen] = useState(false);
     
     // Form states
     const [newTeamName, setNewTeamName] = useState('');
-    const [inviteGamerId, setInviteGamerId] = useState('');
+    const [searchGamerId, setSearchGamerId] = useState('');
+    const [manualAddName, setManualAddName] = useState('');
     const [foundUser, setFoundUser] = useState<PlayerProfile | null>(null);
-    const [manualGamerId, setManualGamerId] = useState('');
-    const [manualGamerName, setManualGamerName] = useState('');
-    
+    const [searchStatus, setSearchStatus] = useState<'idle' | 'searching' | 'found' | 'not_found'>('idle');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -117,6 +116,13 @@ const TeamInfo = ({ profile }: { profile: PlayerProfile }) => {
             return () => unsubInvites();
         }
     }, [profile]);
+
+    const resetAddMemberDialog = () => {
+        setSearchGamerId('');
+        setManualAddName('');
+        setFoundUser(null);
+        setSearchStatus('idle');
+    }
     
     const handleCreateTeam = async () => {
         if (!newTeamName.trim()) {
@@ -136,15 +142,16 @@ const TeamInfo = ({ profile }: { profile: PlayerProfile }) => {
     }
     
     const handleFindUser = async () => {
-        if (!inviteGamerId.trim()) return;
-        setIsSubmitting(true);
+        if (!searchGamerId.trim()) return;
+        setSearchStatus('searching');
         setFoundUser(null);
-        const userFound = await findUserByGamerId(inviteGamerId.trim());
-        setFoundUser(userFound);
-        if (!userFound) {
-            toast({ title: "Not Found", description: "No user found with that Gamer ID.", variant: "destructive" });
+        const userFound = await findUserByGamerId(searchGamerId.trim());
+        if (userFound) {
+            setFoundUser(userFound);
+            setSearchStatus('found');
+        } else {
+            setSearchStatus('not_found');
         }
-        setIsSubmitting(false);
     }
 
     const handleSendInvite = async () => {
@@ -153,9 +160,7 @@ const TeamInfo = ({ profile }: { profile: PlayerProfile }) => {
         const result = await sendTeamInvite(profile, foundUser, team);
         if (result.success) {
             toast({ title: "Invite Sent!", description: `Invitation sent to ${foundUser.name}.` });
-            setAddInviteOpen(false);
-            setInviteGamerId('');
-            setFoundUser(null);
+            setAddMemberOpen(false);
         } else {
             toast({ title: "Error", description: result.error, variant: "destructive" });
         }
@@ -163,14 +168,12 @@ const TeamInfo = ({ profile }: { profile: PlayerProfile }) => {
     }
 
     const handleAddManually = async () => {
-        if (!manualGamerId.trim() || !manualGamerName.trim() || !team) return;
+        if (!searchGamerId.trim() || !manualAddName.trim() || !team) return;
         setIsSubmitting(true);
-        const result = await addMemberManually(team.id, manualGamerId.trim(), manualGamerName.trim());
+        const result = await addMemberManually(team.id, searchGamerId.trim(), manualAddName.trim());
         if (result.success) {
-            toast({ title: "Member Added!", description: `${manualGamerName.trim()} has been added to the team.` });
-            setAddManualOpen(false);
-            setManualGamerId('');
-            setManualGamerName('');
+            toast({ title: "Member Added!", description: `${manualAddName.trim()} has been added to the team.` });
+            setAddMemberOpen(false);
         } else {
             toast({ title: "Error", description: result.error, variant: "destructive" });
         }
@@ -185,6 +188,20 @@ const TeamInfo = ({ profile }: { profile: PlayerProfile }) => {
             toast({ title: "Error", description: result.error, variant: "destructive" });
         } else {
             toast({ title: `Invite ${response}!`, description: `You have ${response} the invitation to join ${notification.team.name}.` });
+        }
+        setIsSubmitting(false);
+    }
+    
+    const handleLeaveTeam = async () => {
+        if (!team) return;
+        if (!window.confirm(`Are you sure you want to leave ${team.name}?`)) return;
+        
+        setIsSubmitting(true);
+        const result = await leaveTeam(profile.id, team.id);
+        if (result.success) {
+            toast({ title: "You have left the team." });
+        } else {
+            toast({ title: "Error", description: result.error, variant: "destructive" });
         }
         setIsSubmitting(false);
     }
@@ -229,68 +246,78 @@ const TeamInfo = ({ profile }: { profile: PlayerProfile }) => {
         );
     }
     
+    const isLeader = team.leaderId === profile.id;
+
     return (
     <Card>
         <CardHeader className="flex-row items-center justify-between">
             <CardTitle>My Team</CardTitle>
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <Pencil className="h-4 w-4" />
-                    </Button>
-                </DialogTrigger>
+             <Dialog open={isAddMemberOpen} onOpenChange={(open) => { setAddMemberOpen(open); if (!open) resetAddMemberDialog(); }}>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-5 w-5" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                         {isLeader && (
+                            <DialogTrigger asChild>
+                                <DropdownMenuItem>
+                                    <UserPlus className="mr-2 h-4 w-4" />
+                                    <span>Add Member</span>
+                                </DropdownMenuItem>
+                            </DialogTrigger>
+                        )}
+                        {!isLeader && (
+                            <DropdownMenuItem onSelect={handleLeaveTeam} disabled={isSubmitting} className="text-destructive focus:text-destructive">
+                                <LeaveIcon className="mr-2 h-4 w-4" />
+                                <span>Leave Team</span>
+                            </DropdownMenuItem>
+                        )}
+                         {isLeader && team.members.length === 1 && (
+                            <DropdownMenuItem onSelect={handleLeaveTeam} disabled={isSubmitting} className="text-destructive focus:text-destructive">
+                                <LeaveIcon className="mr-2 h-4 w-4" />
+                                <span>Disband Team</span>
+                            </DropdownMenuItem>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Manage Team</DialogTitle>
-                        <DialogDescription>Add new members to your team.</DialogDescription>
+                        <DialogTitle>Add New Member</DialogTitle>
+                        <DialogDescription>Enter a player's Gamer ID to invite or add them to your team.</DialogDescription>
                     </DialogHeader>
-                    <div className="flex gap-2 py-4">
-                        {/* Add via Invite Dialog */}
-                        <Dialog open={isAddInviteOpen} onOpenChange={setAddInviteOpen}>
-                            <DialogTrigger asChild><Button className="flex-1">Add Member using UID</Button></DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Invite Member</DialogTitle>
-                                    <DialogDescription>Enter a player's Gamer ID to send them a team invite.</DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                    <div className="flex gap-2">
-                                        <Input value={inviteGamerId} onChange={(e) => setInviteGamerId(e.target.value)} placeholder="Enter Gamer ID" />
-                                        <Button onClick={handleFindUser} disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin"/> : "Find"}</Button>
+                    <div className="space-y-4 py-4">
+                        <div className="flex items-center gap-2">
+                            <Input value={searchGamerId} onChange={e => setSearchGamerId(e.target.value)} placeholder="Enter player's Gamer ID" disabled={searchStatus === 'searching'} />
+                            <Button onClick={handleFindUser} disabled={searchStatus === 'searching'}>
+                                {searchStatus === 'searching' ? <Loader2 className="animate-spin" /> : <Search />}
+                            </Button>
+                        </div>
+
+                        {searchStatus === 'found' && foundUser && (
+                            <div className="p-3 rounded-md bg-muted flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Avatar className="h-8 w-8"><AvatarImage src={foundUser.avatar} /><AvatarFallback>{foundUser.name.charAt(0)}</AvatarFallback></Avatar>
+                                    <div>
+                                        <p className="font-semibold">{foundUser.name}</p>
+                                        <p className="text-xs text-muted-foreground">{foundUser.gamerId}</p>
                                     </div>
-                                    {foundUser && (
-                                        <div className="p-3 rounded-md bg-muted flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-8 w-8"><AvatarImage src={foundUser.avatar} /><AvatarFallback>{foundUser.name.charAt(0)}</AvatarFallback></Avatar>
-                                                <div>
-                                                    <p className="font-semibold">{foundUser.name}</p>
-                                                    <p className="text-xs text-muted-foreground">{foundUser.gamerId}</p>
-                                                </div>
-                                            </div>
-                                            <Button size="sm" onClick={handleSendInvite} disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin" /> : "Send Invite"}</Button>
-                                        </div>
-                                    )}
                                 </div>
-                            </DialogContent>
-                        </Dialog>
-                        {/* Add Manually Dialog */}
-                        <Dialog open={isAddManualOpen} onOpenChange={setAddManualOpen}>
-                             <DialogTrigger asChild><Button variant="secondary" className="flex-1">Add Member manually</Button></DialogTrigger>
-                             <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Add Member Manually</DialogTitle>
-                                    <DialogDescription>Directly add a member to your team. No invitation needed.</DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                    <Input value={manualGamerName} onChange={(e) => setManualGamerName(e.target.value)} placeholder="Gamer Name" />
-                                    <Input value={manualGamerId} onChange={(e) => setManualGamerId(e.target.value)} placeholder="Gamer ID" />
-                                </div>
-                                <DialogFooter>
-                                    <Button variant="outline" onClick={() => setAddManualOpen(false)}>Cancel</Button>
-                                    <Button onClick={handleAddManually} disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin" /> : "Add Member"}</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
+                                <Button size="sm" onClick={handleSendInvite} disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin" /> : "Send Invite"}</Button>
+                            </div>
+                        )}
+
+                        {searchStatus === 'not_found' && (
+                             <div className="p-3 rounded-md bg-muted/50 border border-dashed text-center space-y-4">
+                               <p className="text-sm text-muted-foreground">User not found. You can add them manually with their name. They can link their account later if they sign up with this Gamer ID.</p>
+                               <div className="space-y-2 text-left">
+                                   <Label htmlFor="manual-name">Gamer Name</Label>
+                                   <Input id="manual-name" value={manualAddName} onChange={e => setManualAddName(e.target.value)} placeholder="Enter their in-game name" />
+                               </div>
+                               <Button onClick={handleAddManually} disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin" /> : "Add Manually"}</Button>
+                            </div>
+                        )}
                     </div>
                 </DialogContent>
             </Dialog>
@@ -326,16 +353,19 @@ const TeamInfo = ({ profile }: { profile: PlayerProfile }) => {
             <div className="mt-6">
                 <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase text-muted-foreground">
                     <Users className="h-4 w-4" />
-                    Team Members
+                    Team Members ({team.members.length}/5)
                 </h4>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {team.members.map(member => (
-                        <div key={member.uid} className="flex items-center gap-3 rounded-md bg-muted p-2">
+                        <div key={member.uid || member.gamerId} className="flex items-center gap-3 rounded-md bg-muted p-2">
                             <Avatar className="h-8 w-8">
                                 <AvatarImage src={member.avatar} alt={member.name} />
                                 <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                             </Avatar>
-                            <span className="font-medium">{member.name}</span>
+                            <div>
+                                <p className="font-medium">{member.name}</p>
+                                {!member.uid && <p className="text-xs text-muted-foreground">(Manual Add)</p>}
+                            </div>
                         </div>
                     ))}
                 </div>

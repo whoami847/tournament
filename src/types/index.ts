@@ -155,10 +155,10 @@ export interface RegistrationLog {
 }
 
 export interface TeamMember {
-  uid: string;
+  uid?: string;
   name: string;
   gamerId: string;
-  avatar: string;
+  avatar?: string;
   role: 'Leader' | 'Member';
 }
 
@@ -169,4 +169,5 @@ export interface UserTeam {
   dataAiHint?: string;
   leaderId: string;
   members: TeamMember[];
+  memberGamerIds: string[];
 }

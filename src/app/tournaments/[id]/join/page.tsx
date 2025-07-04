@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -8,38 +9,39 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
 import { User, Users, Shield, ArrowLeft, CheckCircle } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { getTournament, joinTournament } from '@/lib/tournaments-service';
-import type { Tournament, Team, PlayerProfile } from '@/types';
+import type { Tournament, Team, PlayerProfile, UserTeam, TeamMember } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
 import { getUserProfileStream } from '@/lib/users-service';
 import Link from 'next/link';
+import { getTeamStream } from '@/lib/teams-service';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-// Zod schema for a single player
+
 const playerSchema = z.object({
-  name: z.string().min(3, { message: "Gamer name must be at least 3 characters." }),
-  id: z.string().min(3, { message: "Gamer ID must be at least 3 characters." }),
+  name: z.string().min(1, { message: "Player name is required." }),
+  id: z.string().min(1, { message: "Player ID is required." }),
+  uid: z.string().optional(),
 });
 
-// Main form schema, adding an optional teamName
 const formSchema = z.object({
   teamName: z.string().optional(),
   players: z.array(playerSchema).min(1, "At least one player is required."),
 });
 
-// Function to get team type (SOLO, DUO, SQUAD)
-const getTeamType = (format: string): 'SOLO' | 'DUO' | 'SQUAD' => {
+const getTeamSize = (format: string): number => {
   const type = format.split('_')[1]?.toUpperCase() || 'SQUAD';
-  if (type === 'SOLO' || type === 'DUO' || type === 'SQUAD') {
-    return type;
-  }
-  return 'SQUAD'; // Default to SQUAD if format is unexpected
+  if (type === 'SOLO') return 1;
+  if (type === 'DUO') return 2;
+  if (type === 'SQUAD') return 4;
+  return 4; // Default to SQUAD if format is unexpected
 };
 
 const JoinPageSkeleton = () => (
@@ -90,36 +92,50 @@ export default function JoinTournamentPage() {
     const router = useRouter();
     const { toast } = useToast();
     const { user } = useAuth();
+    
     const [profile, setProfile] = useState<PlayerProfile | null>(null);
+    const [team, setTeam] = useState<UserTeam | null>(null);
     const [tournament, setTournament] = useState<Tournament | null>(null);
+    
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAlreadyJoined, setIsAlreadyJoined] = useState(false);
 
+    // Fetch tournament data
     useEffect(() => {
         if (params.id) {
             const fetchTournament = async () => {
                 const data = await getTournament(params.id);
-                if (data) {
-                    setTournament(data);
-                } else {
-                    notFound();
-                }
-                setLoading(false);
+                if (data) setTournament(data); else notFound();
             };
             fetchTournament();
         }
     }, [params.id]);
 
+    // Fetch user profile
     useEffect(() => {
-        if (user?.uid && !profile) {
-            const unsubscribe = getUserProfileStream(user.uid, (data) => {
-                setProfile(data);
-            });
+        if (user?.uid) {
+            const unsubscribe = getUserProfileStream(user.uid, setProfile);
             return () => unsubscribe();
         }
-    }, [user, profile]);
+    }, [user]);
 
+    // Fetch user's team data
+    useEffect(() => {
+        if (profile?.teamId) {
+            const unsubscribe = getTeamStream(profile.teamId, setTeam);
+            return () => unsubscribe();
+        }
+    }, [profile?.teamId]);
+
+    // Set loading state
+    useEffect(() => {
+        if (tournament && profile) {
+            setLoading(false);
+        }
+    }, [tournament, profile]);
+    
+    // Check if user has already joined
     useEffect(() => {
         if (tournament && profile) {
             const joined = tournament.participants.some(p => 
@@ -129,18 +145,13 @@ export default function JoinTournamentPage() {
         }
     }, [tournament, profile]);
 
-
-    const teamType = tournament ? getTeamType(tournament.format) : 'SQUAD';
-    const initialRegistrationSize = 1;
-
-    // State to manage how many players are being registered
-    const [registrationSize, setRegistrationSize] = React.useState(initialRegistrationSize);
-
+    const requiredTeamSize = tournament ? getTeamSize(tournament.format) : 1;
+    
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             teamName: '',
-            players: Array.from({ length: initialRegistrationSize }, () => ({ name: '', id: '' })),
+            players: [],
         },
     });
 
@@ -148,45 +159,38 @@ export default function JoinTournamentPage() {
         control: form.control,
         name: "players",
     });
-    
-    useEffect(() => {
-        if (profile) {
-            const currentPlayers = form.getValues('players');
-            currentPlayers[0] = {
-                name: profile.gameName && profile.gameName !== 'Not Set' ? profile.gameName : profile.name,
-                id: profile.gamerId,
-            };
-            form.reset({ ...form.getValues(), players: currentPlayers });
-        }
-    }, [profile, form]);
 
-    // Update form fields when registration size changes
-    React.useEffect(() => {
+    // Effect to set the number of player fields based on tournament type
+    useEffect(() => {
         const currentPlayers = form.getValues('players');
-        const newPlayers = Array.from({ length: registrationSize }, (_, i) => 
+        const newPlayers = Array.from({ length: requiredTeamSize }, (_, i) => 
             currentPlayers[i] || { name: '', id: '' }
         );
         replace(newPlayers);
-        // Ensure player 1 is always the logged-in user
+        
+        // Always pre-fill player 1 with the logged-in user's info
         if (profile) {
             form.setValue('players.0.name', profile.gameName && profile.gameName !== 'Not Set' ? profile.gameName : profile.name);
             form.setValue('players.0.id', profile.gamerId);
+            form.setValue('players.0.uid', profile.id);
         }
-    }, [registrationSize, replace, form, profile]);
+    }, [requiredTeamSize, profile, replace, form]);
 
-    React.useEffect(() => {
-        // When tournament data loads, reset to 1
-        setRegistrationSize(1);
-    }, [teamType]);
+    const availableTeamMembers = useMemo(() => {
+        if (!team) return [];
+        const selectedPlayerUids = form.watch('players').map(p => p.uid).filter(Boolean);
+        return team.members.filter(m => !selectedPlayerUids.includes(m.uid));
+    }, [team, form.watch('players')]);
+
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
-        if (!tournament) return;
+        if (!tournament || !profile) return;
         setIsSubmitting(true);
 
         const newParticipant: Team = {
             id: `team-${Date.now()}`,
-            name: values.teamName || `Team ${tournament.teamsCount + 1}`,
-            avatar: profile?.avatar || 'https://placehold.co/40x40.png',
+            name: values.teamName || team?.name || `Team ${profile.name}`,
+            avatar: team?.avatar || profile.avatar,
             dataAiHint: 'team logo',
             members: values.players.map(p => ({ name: p.name, gamerId: p.id })),
         };
@@ -209,7 +213,83 @@ export default function JoinTournamentPage() {
         setIsSubmitting(false);
     }
 
-    if (loading || !profile) {
+    const renderPlayerSlot = (index: number) => {
+        const isLeaderSlot = index === 0;
+        const canSelectPlayer = !isLeaderSlot && team && team.leaderId === profile?.id;
+        const playerValue = form.watch(`players.${index}`);
+
+        if (isLeaderSlot) {
+            return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <FormField control={form.control} name={`players.${index}.name`} render={({ field }) => (
+                        <FormItem><FormLabel>Gamer Name</FormLabel><FormControl><Input {...field} disabled /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name={`players.${index}.id`} render={({ field }) => (
+                        <FormItem><FormLabel>Gamer ID</FormLabel><FormControl><Input {...field} disabled /></FormControl><FormMessage /></FormItem>
+                    )} />
+                </div>
+            )
+        }
+
+        if (canSelectPlayer) {
+            return (
+                <div className="pt-4 flex items-end gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow">
+                        <FormField control={form.control} name={`players.${index}.name`} render={({ field }) => (
+                            <FormItem><FormLabel>Gamer Name</FormLabel><FormControl><Input {...field} readOnly placeholder="Select a player" /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name={`players.${index}.id`} render={({ field }) => (
+                            <FormItem><FormLabel>Gamer ID</FormLabel><FormControl><Input {...field} readOnly placeholder="Select a player" /></FormControl><FormMessage /></FormItem>
+                        )} />
+                    </div>
+                     <Popover>
+                        <PopoverTrigger asChild>
+                           <Button variant="outline">{playerValue?.name ? 'Change' : 'Select'} Player</Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[250px] p-0">
+                           <Command>
+                                <CommandInput placeholder="Search members..." />
+                                <CommandEmpty>No members available.</CommandEmpty>
+                                <CommandGroup>
+                                    {availableTeamMembers.map(member => (
+                                        <CommandItem
+                                            key={member.uid}
+                                            value={member.name}
+                                            onSelect={() => {
+                                                form.setValue(`players.${index}.name`, member.name);
+                                                form.setValue(`players.${index}.id`, member.gamerId);
+                                                form.setValue(`players.${index}.uid`, member.uid);
+                                                // Close popover
+                                                document.body.click(); 
+                                            }}
+                                            className="flex items-center gap-2"
+                                        >
+                                            <Avatar className="h-6 w-6"><AvatarImage src={member.avatar} /><AvatarFallback>{member.name.charAt(0)}</AvatarFallback></Avatar>
+                                            <span>{member.name}</span>
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                           </Command>
+                        </PopoverContent>
+                    </Popover>
+                </div>
+            )
+        }
+
+        // Default inputs for non-team leaders or solo players
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                <FormField control={form.control} name={`players.${index}.name`} render={({ field }) => (
+                    <FormItem><FormLabel>Gamer Name</FormLabel><FormControl><Input placeholder="Enter in-game name" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name={`players.${index}.id`} render={({ field }) => (
+                    <FormItem><FormLabel>Gamer ID</FormLabel><FormControl><Input placeholder="Enter in-game ID" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+            </div>
+        )
+    }
+
+    if (loading) {
         return <JoinPageSkeleton />;
     }
 
@@ -238,50 +318,7 @@ export default function JoinTournamentPage() {
         notFound();
     }
 
-    const registrationOptions = () => {
-        if (teamType === 'SOLO') return null;
-
-        const options = [];
-        
-        options.push({ label: 'Register Solo', value: 1, icon: User });
-        
-        if (teamType === 'DUO') {
-            options.push({ label: 'Register as Duo', value: 2, icon: Users });
-        }
-        
-        if (teamType === 'SQUAD') {
-             options.push({ label: 'Register as Duo', value: 2, icon: Users });
-             options.push({ label: 'Register as Squad', value: 4, icon: Shield });
-        }
-
-        return (
-            <div className="space-y-4 text-center">
-                <Label className="text-base font-semibold">How are you registering?</Label>
-                <p className="text-sm text-muted-foreground mb-4">You can register individually or as a partial/full team.</p>
-                <RadioGroup
-                    defaultValue={registrationSize.toString()}
-                    onValueChange={(value) => setRegistrationSize(parseInt(value))}
-                    className={`grid grid-cols-1 ${options.length > 1 ? `sm:grid-cols-${options.length}` : ''} gap-4`}
-                >
-                    {options.map(opt => (
-                        <div key={opt.value}>
-                            <RadioGroupItem value={opt.value.toString()} id={`r-${opt.value}`} className="peer sr-only" />
-                            <Label
-                                htmlFor={`r-${opt.value}`}
-                                className="flex flex-col items-center justify-center rounded-lg border-2 p-4 cursor-pointer transition-all peer-data-[state=checked]:border-primary peer-data-[state=checked]:shadow-md peer-data-[state=checked]:bg-primary/5"
-                            >
-                                <opt.icon className="h-8 w-8 mb-2 text-primary" />
-                                <span className="font-bold">{opt.label}</span>
-                                <span className="text-sm text-muted-foreground">{opt.value} Player{opt.value > 1 ? 's' : ''}</span>
-                            </Label>
-                        </div>
-                    ))}
-                </RadioGroup>
-            </div>
-        );
-    };
-
-    const showTeamNameInput = teamType !== 'SOLO' && registrationSize > 1;
+    const showTeamNameInput = requiredTeamSize > 1;
 
     return (
         <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
@@ -301,8 +338,6 @@ export default function JoinTournamentPage() {
                 <CardContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                            {registrationOptions()}
-
                             {showTeamNameInput && (
                                 <FormField
                                     control={form.control}
@@ -311,7 +346,7 @@ export default function JoinTournamentPage() {
                                         <FormItem>
                                             <FormLabel>Team Name</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Enter your team name" {...field} />
+                                                <Input placeholder="Enter your team name (optional)" {...field} defaultValue={team?.name || ''} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -322,38 +357,11 @@ export default function JoinTournamentPage() {
                             <Separator />
                             
                             <div className="space-y-6">
-                                <h3 className="font-semibold text-xl text-center">Player Information</h3>
+                                <h3 className="font-semibold text-xl text-center">Player Information ({requiredTeamSize} Player{requiredTeamSize > 1 ? 's' : ''})</h3>
                                 {fields.map((field, index) => (
                                     <div key={field.id} className="p-4 border rounded-lg bg-background shadow-sm relative">
                                         <span className="absolute -top-3 left-4 bg-background px-1 text-sm text-muted-foreground">{index === 0 ? 'You (Player 1)' : `Player ${index + 1}`}</span>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                                            <FormField
-                                                control={form.control}
-                                                name={`players.${index}.name`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Gamer Name</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Enter in-game name" {...field} disabled={index === 0} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control}
-                                                name={`players.${index}.id`}
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Gamer ID</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Enter in-game ID" {...field} disabled={index === 0} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
+                                        {renderPlayerSlot(index)}
                                     </div>
                                 ))}
                             </div>

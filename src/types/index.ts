@@ -171,3 +171,11 @@ export interface UserTeam {
   members: TeamMember[];
   memberGamerIds: string[];
 }
+
+export interface PaymentGatewaySettings {
+  id: string;
+  name: string;
+  accessToken: string;
+  checkoutUrl: string;
+  verifyUrl: string;
+}

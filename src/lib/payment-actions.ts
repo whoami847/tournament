@@ -14,8 +14,7 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import { firestore } from './firebase';
-
-const RUPANTORPAY_API_URL = 'https://payment.rupantorpay.com/api/payment';
+import { getGatewaySettings } from './gateway-service';
 
 type CreatePaymentResponse = {
   status: 'success' | 'fail' | 'error';
@@ -41,9 +40,11 @@ export async function createPaymentUrl(
     return { error: 'User is not authenticated. Please log in again.' };
   }
 
-  const accessToken = process.env.RUPANTORPAY_ACCESS_TOKEN;
-  if (!accessToken || accessToken === 'YOUR_SECRET_ACCESS_TOKEN') {
-    return { error: 'RupantorPay access token is not configured on the server. Please check your .env file.' };
+  const gatewaySettings = await getGatewaySettings();
+  const accessToken = gatewaySettings.accessToken;
+
+  if (!accessToken) {
+    return { error: 'Payment gateway access token is not configured. Please set it in the admin panel.' };
   }
 
   const rawFormData = {
@@ -75,11 +76,11 @@ export async function createPaymentUrl(
         createdAt: Timestamp.now(),
         transaction_id,
         type: 'deposit',
-        description: `Deposit via RupantorPay`
+        description: `Deposit via ${gatewaySettings.name}`
     };
     await addDoc(collection(firestore, 'transactions'), transactionData);
 
-    const response = await fetch(`${RUPANTORPAY_API_URL}/checkout`, {
+    const response = await fetch(gatewaySettings.checkoutUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -110,9 +111,11 @@ export async function createPaymentUrl(
 
 
 export async function verifyPayment(transaction_id: string | null): Promise<VerifyPaymentResponse> {
-  const accessToken = process.env.RUPANTORPAY_ACCESS_TOKEN;
-  if (!accessToken || accessToken === 'YOUR_SECRET_ACCESS_TOKEN') {
-      return { status: 'error', message: 'RupantorPay access token is not configured on the server.' };
+  const gatewaySettings = await getGatewaySettings();
+  const accessToken = gatewaySettings.accessToken;
+
+  if (!accessToken) {
+      return { status: 'error', message: 'Payment gateway access token is not configured on the server.' };
   }
   if (!transaction_id) {
       return { status: 'error', message: 'Transaction ID is missing.' };
@@ -132,7 +135,7 @@ export async function verifyPayment(transaction_id: string | null): Promise<Veri
           return { status: 'success', message: `Transaction was already processed with status: ${transactionData.status}.` };
       }
 
-      const response = await fetch(`${RUPANTORPAY_API_URL}/verify-payment`, {
+      const response = await fetch(gatewaySettings.verifyUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ access_token: accessToken, transaction_id: transaction_id }),

@@ -209,7 +209,6 @@ export default function AdminTournamentsPage() {
                                     </CardContent>
                                     <CardFooter className="p-2 border-t flex flex-wrap gap-2">
                                         <Button asChild size="sm" variant="outline" onClick={(e) => e.stopPropagation()}><Link href={`/tournaments/${tournament.id}`}>View</Link></Button>
-                                        <Button asChild size="sm" variant="outline" onClick={(e) => e.stopPropagation()}><Link href={`/admin/tournaments/${tournament.id}/edit?tab=bracket`}><GitBranch className="mr-2 h-4 w-4"/>Bracket</Link></Button>
                                         
                                         {tournament.status === 'upcoming' && (
                                             <Button size="sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(tournament.id, tournament.name, 'live')}}>

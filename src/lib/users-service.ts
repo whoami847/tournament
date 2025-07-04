@@ -12,6 +12,9 @@ import {
   updateDoc,
   where,
   getDocs,
+  writeBatch,
+  increment,
+  Timestamp,
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { firestore } from './firebase';
@@ -129,3 +132,49 @@ export const findUserByGamerId = async (gamerId: string): Promise<PlayerProfile 
     // Assuming gamerId is unique, return the first one found.
     return fromFirestore(querySnapshot.docs[0]);
 }
+
+export const updateUserBalance = async (
+  userId: string,
+  amount: number
+): Promise<{ success: boolean; error?: string }> => {
+  if (!userId || !amount) {
+    return { success: false, error: 'User ID and amount are required.' };
+  }
+
+  const userRef = doc(firestore, 'users', userId);
+
+  try {
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+      return { success: false, error: 'User not found.' };
+    }
+    
+    // Prevent balance from going negative on removal
+    const currentBalance = userSnap.data().balance || 0;
+    if (amount < 0 && (currentBalance + amount < 0)) {
+        return { success: false, error: 'User balance cannot go below zero.' };
+    }
+    
+    const batch = writeBatch(firestore);
+    const transactionRef = doc(collection(firestore, 'transactions'));
+
+    // Update user balance
+    batch.update(userRef, { balance: increment(amount) });
+
+    // Create a transaction log
+    batch.set(transactionRef, {
+      userId,
+      amount,
+      type: 'admin_adjustment',
+      description: `Admin balance adjustment`,
+      date: Timestamp.now(),
+      status: 'completed',
+    });
+
+    await batch.commit();
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating user balance:', error);
+    return { success: false, error: (error as Error).message };
+  }
+};

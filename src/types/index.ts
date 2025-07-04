@@ -106,7 +106,7 @@ export interface Transaction {
   id: string;
   userId: string;
   amount: number;
-  type: 'deposit' | 'withdrawal' | 'prize' | 'fee';
+  type: 'deposit' | 'withdrawal' | 'prize' | 'fee' | 'admin_adjustment';
   description: string;
   date: string; // ISO string
 }

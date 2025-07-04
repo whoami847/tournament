@@ -435,7 +435,7 @@ const MatchHistoryCard = ({ tournament, profile }: { tournament: Tournament, pro
             <CardHeader className="flex flex-row items-center gap-4 p-4">
                 <Image src={tournament.image} alt={tournament.name} width={80} height={80} className="rounded-lg aspect-square object-cover" data-ai-hint={tournament.dataAiHint} />
                 <div className="flex-1">
-                    <CardTitle className="text-base">{tournament.tournamentName}</CardTitle>
+                    <CardTitle className="text-base">{tournament.name}</CardTitle>
                     <CardDescription>{tournament.game}</CardDescription>
                     <Badge variant="outline" className="mt-2">{finalRank}</Badge>
                 </div>

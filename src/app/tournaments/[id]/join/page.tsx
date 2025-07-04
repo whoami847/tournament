@@ -190,7 +190,7 @@ export default function JoinTournamentPage() {
 
         const newParticipant: Team = {
             id: `team-${Date.now()}`,
-            name: values.teamName || values.players[0].name,
+            name: values.teamName || `Team ${tournament.teamsCount + 1}`,
             avatar: profile?.avatar || 'https://placehold.co/40x40.png',
             dataAiHint: 'team logo',
             members: values.players.map(p => ({ name: p.name, gamerId: p.id })),

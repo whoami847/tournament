@@ -129,7 +129,7 @@ export const ChampionCard = ({ team }: { team: Team }) => {
                     <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
                     <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <h3 className="text-xl font-bold">{team.name}</h3>
+                <h3 className="text-xl font-bold">{team.name.startsWith('Team ') ? (team.members || []).map(m => m.name).join(' & ') : team.name}</h3>
                 <p className="text-xs font-semibold uppercase tracking-wider text-amber-400">Tournament Champion</p>
             </CardContent>
         </Card>
@@ -161,7 +161,7 @@ const TeamDisplay = ({ team, score, isWinner, isLoser }: { team: Team | null, sc
             isWinner ? "font-bold text-foreground" : "font-medium text-muted-foreground",
             isLoser && "font-medium text-destructive/80 opacity-70"
         )}>
-          {team.name}
+          {team.name.startsWith('Team ') ? (team.members || []).map(m => m.name).join(' & ') : team.name}
         </span>
     </>
   ) : (

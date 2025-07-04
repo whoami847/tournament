@@ -23,7 +23,7 @@ const TeamDisplayWithWinButton = ({ team, onSetWinner }: { team: Team, onSetWinn
                     <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <span className="text-sm truncate font-medium text-foreground">
-                    {team.name}
+                    {team.name.startsWith('Team ') ? (team.members || []).map(m => m.name).join(' & ') : team.name}
                 </span>
             </div>
             <Button
@@ -49,7 +49,7 @@ const TeamInMatchDisplay = ({ team }: { team: Team | null }) => {
                             <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <span className="text-sm truncate font-medium text-foreground">
-                            {team.name}
+                            {team.name.startsWith('Team ') ? (team.members || []).map(m => m.name).join(' & ') : team.name}
                         </span>
                     </>
                 ) : (
@@ -120,7 +120,8 @@ const EditableMatchCard = ({
     const getStatusContent = () => {
         if (isCompleted) {
             const winner = match.scores[0] > match.scores[1] ? team1 : team2;
-            return { icon: <CheckCircle className="h-3 w-3" />, text: `Winner: ${winner?.name}`, color: 'text-green-500' };
+            const winnerName = winner?.name.startsWith('Team ') ? (winner?.members || []).map(m => m.name).join(' & ') : winner?.name;
+            return { icon: <CheckCircle className="h-3 w-3" />, text: `Winner: ${winnerName}`, color: 'text-green-500' };
         }
         if (isAwaitingSubmissions) {
             return { icon: <Hourglass className="h-3 w-3" />, text: 'Awaiting Submissions', color: 'text-amber-500' };
@@ -162,7 +163,7 @@ const EditableMatchCard = ({
                     <div className="w-full flex items-center justify-between">
                         <div className={cn("flex items-center gap-1.5 text-xs font-medium", statusContent?.color)}>
                             {statusContent?.icon}
-                            <span>{statusContent?.text}</span>
+                            <span className="truncate">{statusContent?.text}</span>
                         </div>
                         <Button variant="destructive" size="sm" className="h-7 text-xs px-2" onClick={handleUndo}>
                             Undo

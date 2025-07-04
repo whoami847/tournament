@@ -2,8 +2,9 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import type { Tournament, Game } from '@/types';
+import type { Tournament, Game, GameCategory } from '@/types';
 import { getTournamentsStream } from '@/lib/tournaments-service';
+import { getGamesStream } from '@/lib/games-service';
 import TournamentCard from '@/components/tournament-card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -41,6 +42,7 @@ export default function TournamentsPage() {
   const gameFromQuery = searchParams.get('game') as Game | null;
 
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [games, setGames] = useState<GameCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGame, setSelectedGame] = useState<Game | 'all'>(gameFromQuery || 'all');
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'live' | 'upcoming' | 'completed'>('upcoming');
@@ -50,11 +52,15 @@ export default function TournamentsPage() {
   const [showBookmarkedOnly, setShowBookmarkedOnly] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = getTournamentsStream((data) => {
+    const unsubscribeTournaments = getTournamentsStream((data) => {
       setTournaments(data);
       setLoading(false);
     });
-    return () => unsubscribe();
+    const unsubscribeGames = getGamesStream(setGames);
+    return () => {
+        unsubscribeTournaments();
+        unsubscribeGames();
+    };
   }, []);
 
   useEffect(() => {
@@ -95,7 +101,6 @@ export default function TournamentsPage() {
     });
   }, [tournaments, selectedGame, selectedStatus, selectedFormat, selectedSubMode, showBookmarkedOnly, bookmarked]);
   
-  const games: Game[] = ['Free Fire', 'PUBG', 'Mobile Legends', 'COD: Mobile'];
   const formats: Exclude<Format, 'all'>[] = ['BR', 'CS', 'LONE WOLF'];
   
   const subModeOptions: { [key: string]: SubMode[] } = {
@@ -116,7 +121,7 @@ export default function TournamentsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Games</SelectItem>
-                {games.map(game => <SelectItem key={game} value={game}>{game}</SelectItem>)}
+                {games.map(game => <SelectItem key={game.id} value={game.name}>{game.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

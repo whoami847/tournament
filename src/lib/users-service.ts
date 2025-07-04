@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   doc,
@@ -9,6 +10,8 @@ import {
   orderBy,
   limit,
   updateDoc,
+  where,
+  getDocs,
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { firestore } from './firebase';
@@ -30,6 +33,7 @@ const fromFirestore = (doc: any): PlayerProfile => {
     winrate: data.winrate,
     games: data.games,
     balance: data.balance || 0,
+    teamId: data.teamId || undefined,
   };
 };
 
@@ -51,6 +55,7 @@ export const createUserProfile = async (user: User) => {
       winrate: 0,
       games: 0,
       balance: 0,
+      teamId: '',
     };
     await setDoc(userRef, newUserProfile);
   }
@@ -111,3 +116,16 @@ export const updateUserProfile = async (userId: string, data: Partial<Pick<Playe
     return { success: false, error: (error as Error).message };
   }
 };
+
+export const findUserByGamerId = async (gamerId: string): Promise<PlayerProfile | null> => {
+    const usersRef = collection(firestore, 'users');
+    const q = query(usersRef, where('gamerId', '==', gamerId));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+        return null;
+    }
+
+    // Assuming gamerId is unique, return the first one found.
+    return fromFirestore(querySnapshot.docs[0]);
+}

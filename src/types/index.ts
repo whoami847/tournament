@@ -98,6 +98,7 @@ export interface PlayerProfile {
   winrate: number;
   games: number;
   balance: number;
+  teamId?: string;
 }
 
 export interface Transaction {
@@ -132,6 +133,11 @@ export interface AppNotification {
   link: string;
   read: boolean;
   createdAt: Timestamp;
+  type?: 'generic' | 'team_invite' | 'invite_response';
+  from?: { uid: string; name:string; };
+  team?: { id: string; name: string; };
+  status?: 'pending' | 'accepted' | 'rejected';
+  response?: 'accepted' | 'rejected';
 }
 
 export type TeamType = 'SOLO' | 'DUO' | 'SQUAD';
@@ -146,4 +152,21 @@ export interface RegistrationLog {
   players: { name: string; gamerId: string }[];
   status: 'approved';
   registeredAt: Timestamp;
+}
+
+export interface TeamMember {
+  uid: string;
+  name: string;
+  gamerId: string;
+  avatar: string;
+  role: 'Leader' | 'Member';
+}
+
+export interface UserTeam {
+  id: string;
+  name: string;
+  avatar: string;
+  dataAiHint?: string;
+  leaderId: string;
+  members: TeamMember[];
 }

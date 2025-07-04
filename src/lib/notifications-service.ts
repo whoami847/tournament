@@ -22,6 +22,12 @@ const fromFirestore = (doc: any): AppNotification => {
     link: data.link,
     read: data.read,
     createdAt: data.createdAt, // This will be a Firestore Timestamp
+    // NEW optional fields
+    type: data.type || 'generic',
+    from: data.from,
+    team: data.team,
+    status: data.status,
+    response: data.response,
   };
 };
 
@@ -68,6 +74,17 @@ export const markNotificationAsRead = async (notificationId: string) => {
         return { success: true };
     } catch (error) {
         console.error('Error marking notification as read:', error);
+        return { success: false, error: (error as Error).message };
+    }
+}
+
+export const updateNotificationStatus = async (notificationId: string, status: 'accepted' | 'rejected') => {
+    try {
+        const docRef = doc(firestore, 'notifications', notificationId);
+        await updateDoc(docRef, { status: status, read: true }); // Mark as read when action is taken
+        return { success: true };
+    } catch (error) {
+        console.error('Error updating notification status:', error);
         return { success: false, error: (error as Error).message };
     }
 }

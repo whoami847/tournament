@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, useParams } from 'next/navigation';
@@ -152,6 +152,23 @@ export default function TournamentPage() {
     }
   }, [matchesToSubmit, submissionDialogShown]);
 
+  const currentUserMatch = useMemo(() => {
+    if (!userTeam || !tournament?.bracket) {
+      return null;
+    }
+
+    const allUserMatches = tournament.bracket.flatMap(round =>
+      round.matches.filter(match =>
+        match.teams.some(t => t?.id === userTeam.id)
+      )
+    );
+
+    const relevantMatch = allUserMatches.find(m => m.status === 'live' && m.roomId) || 
+                          allUserMatches.find(m => m.status === 'pending' && m.roomId);
+
+    return relevantMatch || null;
+  }, [tournament, userTeam]);
+
   if (loading || (user && !profile)) {
     return <TournamentPageSkeleton />;
   }
@@ -164,21 +181,6 @@ export default function TournamentPage() {
   const totalPlayerSlots = tournament.maxTeams * teamSize;
   const currentPlayerCount = tournament.participants.reduce((sum, team) => sum + (team.members?.length || 0), 0);
   const isFull = currentPlayerCount >= totalPlayerSlots;
-
-
-  let currentUserMatch: Match | null = null;
-  if (userTeam && tournament) {
-      for (const round of tournament.bracket) {
-          const foundMatch = round.matches.find(m => 
-              m.status !== 'completed' &&
-              (m.teams[0]?.id === userTeam.id || m.teams[1]?.id === userTeam.id)
-          );
-          if (foundMatch) {
-              currentUserMatch = foundMatch;
-              break;
-          }
-      }
-  }
 
   return (
     <>
@@ -292,13 +294,13 @@ export default function TournamentPage() {
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="p-4 bg-muted/50 rounded-b-md text-sm text-muted-foreground">
-                                    {currentUserMatch && currentUserMatch.roomId ? (
+                                    {currentUserMatch ? (
                                         <div className="space-y-3">
-                                            <CopyToClipboard text={currentUserMatch.roomId} label="Room ID" />
+                                            <CopyToClipboard text={currentUserMatch.roomId!} label="Room ID" />
                                             {currentUserMatch.roomPass && <CopyToClipboard text={currentUserMatch.roomPass} label="Room Password" />}
                                         </div>
                                     ) : (
-                                        <p>Room ID and password will be shared here 15 minutes before the match starts.</p>
+                                        <p>Room ID and password for your match will be shown here once published by the admin.</p>
                                     )}
                                 </AccordionContent>
                             </AccordionItem>

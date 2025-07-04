@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, GitBranch } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { Tournament } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -148,26 +148,23 @@ export default function AdminTournamentsPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                                        <Link href={`/admin/tournaments/${tournament.id}/edit`}>Edit</Link>
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                                        <Link href={`/tournaments/${tournament.id}`}>View Details</Link>
-                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); router.push(`/admin/tournaments/${tournament.id}/edit`);}}>Edit</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); router.push(`/admin/tournaments/${tournament.id}/edit?tab=bracket`);}}>Manage Bracket</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); router.push(`/tournaments/${tournament.id}`);}}>View Details</DropdownMenuItem>
                                                     
                                                     {tournament.status === 'upcoming' && (
-                                                        <DropdownMenuItem onSelect={() => handleStatusChange(tournament.id, tournament.name, 'live')}>
+                                                        <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); handleStatusChange(tournament.id, tournament.name, 'live')}}>
                                                             Go Live
                                                         </DropdownMenuItem>
                                                     )}
                                                     {tournament.status === 'live' && (
-                                                        <DropdownMenuItem onSelect={() => handleStatusChange(tournament.id, tournament.name, 'completed')}>
+                                                        <DropdownMenuItem onSelect={(e) => {e.stopPropagation(); handleStatusChange(tournament.id, tournament.name, 'completed')}}>
                                                             Mark as Completed
                                                         </DropdownMenuItem>
                                                     )}
                                                     
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => handleDelete(tournament.id, tournament.name)}>Delete</DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={(e) => {e.stopPropagation(); handleDelete(tournament.id, tournament.name)}}>Delete</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -212,6 +209,7 @@ export default function AdminTournamentsPage() {
                                     </CardContent>
                                     <CardFooter className="p-2 border-t flex flex-wrap gap-2">
                                         <Button asChild size="sm" variant="outline" onClick={(e) => e.stopPropagation()}><Link href={`/tournaments/${tournament.id}`}>View</Link></Button>
+                                        <Button asChild size="sm" variant="outline" onClick={(e) => e.stopPropagation()}><Link href={`/admin/tournaments/${tournament.id}/edit?tab=bracket`}><GitBranch className="mr-2 h-4 w-4"/>Bracket</Link></Button>
                                         
                                         {tournament.status === 'upcoming' && (
                                             <Button size="sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(tournament.id, tournament.name, 'live')}}>

@@ -6,7 +6,7 @@ import { produce } from 'immer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Swords, Trophy, Crown, User, CheckCircle, Clock, Send, Hourglass, Dices, Edit2 } from 'lucide-react';
+import { Swords, Trophy, Crown, User, CheckCircle, Clock, Send, Hourglass, Dices } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { requestMatchResults, setMatchWinner, undoMatchResult, updateTournament, updateMatchDetails } from '@/lib/tournaments-service';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useParams, notFound, useRouter } from 'next/navigation';
+import { useParams, notFound, useRouter, useSearchParams } from 'next/navigation';
 import { getTournament, updateTournament } from '@/lib/tournaments-service';
 import type { Tournament } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -42,10 +42,12 @@ const EditTournamentPageSkeleton = () => (
 export default function EditTournamentPage() {
     const params = useParams<{ id: string }>();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { toast } = useToast();
     
     const [tournament, setTournament] = useState<Tournament | null>(null);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'info');
 
     const fetchTournament = useCallback(async () => {
         if (params.id) {
@@ -80,6 +82,13 @@ export default function EditTournamentPage() {
             toast({ title: "Error", description: result.error, variant: "destructive" });
         }
     };
+    
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (tab) {
+            setActiveTab(tab);
+        }
+    }, [searchParams]);
 
     if (loading) {
         return <EditTournamentPageSkeleton />;
@@ -102,7 +111,7 @@ export default function EditTournamentPage() {
                 </div>
             </div>
 
-            <Tabs defaultValue="info">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="info">Info</TabsTrigger>
                     <TabsTrigger value="rules">Rules</TabsTrigger>

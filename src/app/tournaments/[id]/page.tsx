@@ -41,6 +41,15 @@ const getEntryType = (format: string = '') => {
   return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
 };
 
+const getTeamSize = (format: string = ''): number => {
+    const type = format.split('_')[1]?.toUpperCase() || 'SQUAD';
+    if (type === 'SOLO') return 1;
+    if (type === 'DUO') return 2;
+    if (type === 'SQUAD') return 4;
+    return 4; // Default
+};
+
+
 const TournamentPageSkeleton = () => (
     <div className="container mx-auto px-4 py-8 md:pb-8 pb-24 space-y-8">
         <Skeleton className="h-64 md:h-80 rounded-lg w-full" />
@@ -148,7 +157,11 @@ export default function TournamentPage() {
     notFound();
   }
 
-  const isFull = tournament.teamsCount >= tournament.maxTeams;
+  const teamSize = getTeamSize(tournament.format);
+  const totalPlayerSlots = tournament.maxTeams * teamSize;
+  const currentPlayerCount = tournament.participants.reduce((sum, team) => sum + (team.members?.length || 0), 0);
+  const isFull = currentPlayerCount >= totalPlayerSlots;
+
 
   let currentUserMatch: Match | null = null;
   if (userTeam && tournament) {
@@ -235,12 +248,12 @@ export default function TournamentPage() {
                           <div className="flex items-center gap-4">
                               <div className="w-full">
                                   <Progress 
-                                    value={(tournament.teamsCount / tournament.maxTeams) * 100} 
+                                    value={(currentPlayerCount / totalPlayerSlots) * 100} 
                                     indicatorClassName={cn(isFull && "bg-destructive")} 
                                   />
                                   <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
-                                      <span>{isFull ? 'Registration is closed' : `Only ${tournament.maxTeams - tournament.teamsCount} spots are left`}</span>
-                                      <span>{tournament.teamsCount}/{tournament.maxTeams}</span>
+                                      <span>{isFull ? 'Registration is closed' : `Only ${totalPlayerSlots - currentPlayerCount} spots are left`}</span>
+                                      <span>{currentPlayerCount}/{totalPlayerSlots} Players</span>
                                   </div>
                               </div>
                               {tournament.status === 'upcoming' && (

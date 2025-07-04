@@ -131,7 +131,7 @@ export default function JoinTournamentPage() {
 
 
     const teamType = tournament ? getTeamType(tournament.format) : 'SQUAD';
-    const initialRegistrationSize = teamType === 'SOLO' ? 1 : 1;
+    const initialRegistrationSize = 1;
 
     // State to manage how many players are being registered
     const [registrationSize, setRegistrationSize] = React.useState(initialRegistrationSize);
@@ -175,13 +175,8 @@ export default function JoinTournamentPage() {
     }, [registrationSize, replace, form, profile]);
 
     React.useEffect(() => {
-        // If tournament type is solo, always set player count to 1
-        if (teamType === 'SOLO') {
-            setRegistrationSize(1);
-        } else {
-            // When tournament data loads, reset to 1
-            setRegistrationSize(1);
-        }
+        // When tournament data loads, reset to 1
+        setRegistrationSize(1);
     }, [teamType]);
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -249,11 +244,14 @@ export default function JoinTournamentPage() {
         const options = [];
         
         options.push({ label: 'Register Solo', value: 1, icon: User });
-        if (teamType === 'DUO' || teamType === 'SQUAD') {
+        
+        if (teamType === 'DUO') {
             options.push({ label: 'Register as Duo', value: 2, icon: Users });
         }
+        
         if (teamType === 'SQUAD') {
-            options.push({ label: 'Register as Squad', value: 4, icon: Shield });
+             options.push({ label: 'Register as Duo', value: 2, icon: Users });
+             options.push({ label: 'Register as Squad', value: 4, icon: Shield });
         }
 
         return (

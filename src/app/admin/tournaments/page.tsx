@@ -188,47 +188,45 @@ export default function AdminTournamentsPage() {
                         {filteredTournaments.length > 0 ? filteredTournaments.map((tournament) => {
                             const config = statusConfig[tournament.status] ?? { variant: 'secondary' };
                             return (
-                                <Link key={tournament.id} href={`/admin/tournaments/${tournament.id}/edit`} className="block">
-                                    <Card>
-                                        <CardContent className="p-4 pb-2">
-                                            <div className="flex justify-between items-start mb-4">
-                                                <div>
-                                                    <p className="font-semibold">{tournament.name}</p>
-                                                    <p className="text-sm text-muted-foreground">{tournament.game}</p>
-                                                </div>
-                                                <Badge variant={config.variant} className={`capitalize ${config.className ?? ''}`}>
-                                                    {tournament.status}
-                                                </Badge>
+                                <Card key={tournament.id} onClick={() => router.push(`/admin/tournaments/${tournament.id}/edit`)} className="cursor-pointer">
+                                    <CardContent className="p-4 pb-2">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <p className="font-semibold">{tournament.name}</p>
+                                                <p className="text-sm text-muted-foreground">{tournament.game}</p>
                                             </div>
-                                            <div className="flex justify-between items-center text-sm text-muted-foreground">
-                                                <div>
-                                                    <p className="font-medium text-foreground">{tournament.teamsCount} / {tournament.maxTeams}</p>
-                                                    <p className="text-xs">Participants</p>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="font-medium text-foreground">{tournament.prizePool} TK</p>
-                                                    <p className="text-xs">Prize Pool</p>
-                                                </div>
+                                            <Badge variant={config.variant} className={`capitalize ${config.className ?? ''}`}>
+                                                {tournament.status}
+                                            </Badge>
+                                        </div>
+                                        <div className="flex justify-between items-center text-sm text-muted-foreground">
+                                            <div>
+                                                <p className="font-medium text-foreground">{tournament.teamsCount} / {tournament.maxTeams}</p>
+                                                <p className="text-xs">Participants</p>
                                             </div>
-                                        </CardContent>
-                                        <CardFooter className="p-2 border-t flex flex-wrap gap-2">
-                                            <Button asChild size="sm" variant="outline" onClick={(e) => e.stopPropagation()}><Link href={`/tournaments/${tournament.id}`}>View</Link></Button>
-                                            
-                                            {tournament.status === 'upcoming' && (
-                                                <Button size="sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(tournament.id, tournament.name, 'live')}}>
-                                                    Go Live
-                                                </Button>
-                                            )}
-                                            {tournament.status === 'live' && (
-                                                <Button size="sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(tournament.id, tournament.name, 'completed')}}>
-                                                    Mark Completed
-                                                </Button>
-                                            )}
-                                            
-                                            <Button size="sm" variant="destructive" className="ml-auto" onClick={(e) => {e.stopPropagation(); handleDelete(tournament.id, tournament.name)}}>Delete</Button>
-                                        </CardFooter>
-                                    </Card>
-                                </Link>
+                                            <div className="text-right">
+                                                <p className="font-medium text-foreground">{tournament.prizePool} TK</p>
+                                                <p className="text-xs">Prize Pool</p>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="p-2 border-t flex flex-wrap gap-2">
+                                        <Button asChild size="sm" variant="outline" onClick={(e) => e.stopPropagation()}><Link href={`/tournaments/${tournament.id}`}>View</Link></Button>
+                                        
+                                        {tournament.status === 'upcoming' && (
+                                            <Button size="sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(tournament.id, tournament.name, 'live')}}>
+                                                Go Live
+                                            </Button>
+                                        )}
+                                        {tournament.status === 'live' && (
+                                            <Button size="sm" onClick={(e) => { e.stopPropagation(); handleStatusChange(tournament.id, tournament.name, 'completed')}}>
+                                                Mark Completed
+                                            </Button>
+                                        )}
+                                        
+                                        <Button size="sm" variant="destructive" className="ml-auto" onClick={(e) => {e.stopPropagation(); handleDelete(tournament.id, tournament.name)}}>Delete</Button>
+                                    </CardFooter>
+                                </Card>
                         )}) : (
                             <div className="text-center py-16 border border-dashed rounded-lg">
                                 <h3 className="text-xl font-medium">No Tournaments Found</h3>

@@ -13,7 +13,7 @@ import { Award, KeyRound, Trophy, Users, Ticket, Map as MapIcon, Smartphone, Cli
 import type { LucideIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
-import { getTournament } from '@/lib/tournaments-service';
+import { getTournamentStream } from '@/lib/tournaments-service';
 import type { Tournament, Match, Team } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -112,19 +112,20 @@ export default function TournamentPage() {
 
   useEffect(() => {
     if (params.id) {
-      const fetchTournament = async () => {
-        setLoading(true);
-        const data = await getTournament(params.id as string);
+      setLoading(true);
+      const unsubscribe = getTournamentStream(params.id as string, (data) => {
         if (data) {
           setTournament(data);
+          setLoading(false);
         } else {
+          setLoading(false);
           notFound();
         }
-        setLoading(false);
-      };
-      fetchTournament();
+      });
+      
+      return () => unsubscribe();
     }
-  }, [params.id]);
+  }, [params.id, notFound]);
 
   const userTeam = tournament?.participants.find(p => p.members?.some(m => m.gamerId === (profile as any)?.gamerId));
 

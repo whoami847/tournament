@@ -151,6 +151,21 @@ export const getTournamentsStream = (callback: (tournaments: Tournament[]) => vo
   return unsubscribe;
 };
 
+export const getTournamentStream = (id: string, callback: (tournament: Tournament | null) => void) => {
+    const docRef = doc(firestore, 'tournaments', id);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+            callback(fromFirestore(docSnap));
+        } else {
+            callback(null);
+        }
+    }, (error) => {
+        console.error(`Error fetching tournament stream for ID ${id}: `, error);
+        callback(null);
+    });
+    return unsubscribe;
+};
+
 export const getTournament = async (id: string): Promise<Tournament | null> => {
   try {
     const docRef = doc(firestore, 'tournaments', id);

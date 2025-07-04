@@ -198,6 +198,7 @@ export interface WithdrawRequest {
   userGamerId: string;
   amount: number;
   method: string;
+  accountNumber: string;
   status: 'pending' | 'approved' | 'rejected';
   requestedAt: Timestamp;
 }

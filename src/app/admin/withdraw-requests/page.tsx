@@ -50,7 +50,7 @@ export default function AdminWithdrawRequestsPage() {
                             <TableRow>
                                 <TableHead>User</TableHead>
                                 <TableHead>Amount</TableHead>
-                                <TableHead>Method</TableHead>
+                                <TableHead>Method &amp; Account</TableHead>
                                 <TableHead>Requested</TableHead>
                                 <TableHead>Actions</TableHead>
                             </TableRow>
@@ -63,7 +63,10 @@ export default function AdminWithdrawRequestsPage() {
                                         <div className="text-sm text-muted-foreground">{req.userGamerId}</div>
                                     </TableCell>
                                     <TableCell>{req.amount} TK</TableCell>
-                                    <TableCell>{req.method}</TableCell>
+                                    <TableCell>
+                                        <div className="font-medium">{req.method}</div>
+                                        <div className="text-sm text-muted-foreground">{req.accountNumber}</div>
+                                    </TableCell>
                                     <TableCell>{formatDistanceToNow(req.requestedAt.toDate(), { addSuffix: true })}</TableCell>
                                     <TableCell className="flex gap-2">
                                         <Button size="icon" variant="outline" className="text-green-500" onClick={() => handleProcessRequest(req.id, 'approved')}>

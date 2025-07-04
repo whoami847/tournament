@@ -106,15 +106,27 @@ function AddMoneyForm({ profile }: { profile: PlayerProfile | null }) {
     );
 }
 
-function WithdrawDialogContent({ closeDialog, profile, methods }: { closeDialog: () => void, profile: PlayerProfile | null, methods: WithdrawMethod[] }) {
+function WithdrawDialogContent({ closeDialog, profile }: { closeDialog: () => void, profile: PlayerProfile | null }) {
     const { toast } = useToast();
+    const [methods, setMethods] = useState<WithdrawMethod[]>([]);
+    const [loading, setLoading] = useState(true);
     const [selectedMethod, setSelectedMethod] = useState<WithdrawMethod | null>(null);
     const [amount, setAmount] = useState('');
+    const [accountNumber, setAccountNumber] = useState('');
     const [isWithdrawing, setIsWithdrawing] = useState(false);
 
+    useEffect(() => {
+        const fetchMethods = async () => {
+            const activeMethods = await getActiveWithdrawMethods();
+            setMethods(activeMethods);
+            setLoading(false);
+        };
+        fetchMethods();
+    }, []);
+
     const handleWithdraw = async () => {
-        if (!profile || !selectedMethod || !amount) {
-            toast({ title: "Missing Information", description: "Please select a method and enter an amount.", variant: "destructive" });
+        if (!profile || !selectedMethod || !amount || !accountNumber) {
+            toast({ title: "Missing Information", description: "Please select a method, enter an amount, and provide your account number.", variant: "destructive" });
             return;
         }
 
@@ -130,7 +142,7 @@ function WithdrawDialogContent({ closeDialog, profile, methods }: { closeDialog:
         }
 
         setIsWithdrawing(true);
-        const result = await createWithdrawalRequest(profile, withdrawalAmount, selectedMethod.name);
+        const result = await createWithdrawalRequest(profile, withdrawalAmount, selectedMethod.name, accountNumber);
 
         if (result.success) {
             toast({
@@ -144,6 +156,14 @@ function WithdrawDialogContent({ closeDialog, profile, methods }: { closeDialog:
         setIsWithdrawing(false);
     }
     
+    if (loading) {
+        return (
+            <DialogContent className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </DialogContent>
+        )
+    }
+
     return (
         <DialogContent>
             <DialogHeader>
@@ -154,7 +174,7 @@ function WithdrawDialogContent({ closeDialog, profile, methods }: { closeDialog:
                  <div className="space-y-2">
                     <Label>Withdrawal Method</Label>
                     <RadioGroup onValueChange={(value) => setSelectedMethod(methods.find(m => m.id === value) || null)}>
-                        {methods.map(method => (
+                        {methods.length > 0 ? methods.map(method => (
                             <div key={method.id}>
                                 <RadioGroupItem value={method.id} id={method.id} className="sr-only peer" />
                                 <Label htmlFor={method.id} className="flex flex-col rounded-lg border-2 border-muted bg-transparent p-4 cursor-pointer peer-data-[state=checked]:border-primary">
@@ -162,18 +182,26 @@ function WithdrawDialogContent({ closeDialog, profile, methods }: { closeDialog:
                                     <span className="text-sm text-muted-foreground">{method.receiverInfo}</span>
                                 </Label>
                             </div>
-                        ))}
+                        )) : (
+                            <p className="text-sm text-muted-foreground text-center p-4 border rounded-md">No active withdrawal methods available. Please check back later.</p>
+                        )}
                     </RadioGroup>
                 </div>
+                {selectedMethod && (
+                    <div className="space-y-2">
+                        <Label htmlFor="account-number">Your {selectedMethod.name} Number</Label>
+                        <Input id="account-number" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} placeholder="e.g., 01234567890" />
+                    </div>
+                )}
                  <div className="space-y-2">
                     <Label htmlFor="amount">Amount (TK)</Label>
-                    <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
+                    <Input id="amount" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" disabled={!selectedMethod} />
                     {selectedMethod && <p className="text-xs text-muted-foreground">Min: {selectedMethod.minAmount}, Max: {selectedMethod.maxAmount}, Fee: {selectedMethod.feePercentage}%</p>}
                 </div>
             </div>
             <DialogFooter>
                 <Button variant="outline" onClick={closeDialog}>Cancel</Button>
-                <Button onClick={handleWithdraw} disabled={isWithdrawing || !selectedMethod || !amount}>
+                <Button onClick={handleWithdraw} disabled={isWithdrawing || !selectedMethod || !amount || !accountNumber}>
                     {isWithdrawing ? "Submitting..." : "Submit Request"}
                 </Button>
             </DialogFooter>
@@ -201,8 +229,6 @@ const WalletHeader = ({ profile }: { profile: PlayerProfile | null }) => (
 const CardStack = ({ balance, profile }: { balance: number, profile: PlayerProfile | null }) => {
     const [isFanned, setIsFanned] = useState(false);
     const [isWithdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
-    const [withdrawMethods, setWithdrawMethods] = useState<WithdrawMethod[]>([]);
-
 
     const handleAddMoneyOpenChange = (open: boolean) => {
         if (!open) {
@@ -216,13 +242,6 @@ const CardStack = ({ balance, profile }: { balance: number, profile: PlayerProfi
         }
         setWithdrawDialogOpen(open);
     };
-
-    const openWithdrawDialog = async () => {
-        const methods = await getActiveWithdrawMethods();
-        setWithdrawMethods(methods);
-        setIsFanned(true);
-        setWithdrawDialogOpen(true);
-    }
 
     return (
         <div className={cn("relative h-60 flex items-center justify-center", !isFanned && "group")}>
@@ -302,11 +321,11 @@ const CardStack = ({ balance, profile }: { balance: number, profile: PlayerProfi
                     </Dialog>
                      <Dialog open={isWithdrawDialogOpen} onOpenChange={handleWithdrawOpenChange}>
                         <DialogTrigger asChild>
-                            <Button onClick={openWithdrawDialog} variant="secondary" className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
+                            <Button onClick={() => { setIsFanned(true); setWithdrawDialogOpen(true); }} variant="secondary" className="bg-white/20 hover:bg-white/30 text-white font-bold text-xs h-8 px-3 backdrop-blur-sm rounded-md">
                                 <ArrowDown className="mr-2 h-4 w-4" /> Withdraw
                             </Button>
                         </DialogTrigger>
-                        <WithdrawDialogContent profile={profile} closeDialog={() => handleWithdrawOpenChange(false)} methods={withdrawMethods} />
+                        {isWithdrawDialogOpen && <WithdrawDialogContent profile={profile} closeDialog={() => handleWithdrawOpenChange(false)} />}
                     </Dialog>
                 </div>
             </div>

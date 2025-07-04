@@ -24,6 +24,7 @@ const fromFirestore = (doc: any): WithdrawRequest => {
     userGamerId: data.userGamerId,
     amount: data.amount,
     method: data.method,
+    accountNumber: data.accountNumber,
     status: data.status,
     requestedAt: data.requestedAt,
   };
@@ -96,10 +97,12 @@ export const processWithdrawRequest = async (requestId: string, newStatus: 'appr
 export async function createWithdrawalRequest(
   profile: PlayerProfile,
   amount: number,
-  method: string
+  method: string,
+  accountNumber: string
 ): Promise<{ success: boolean; error?: string }> {
   if (!profile) return { success: false, error: 'User not authenticated.' };
   if (!amount || amount <= 0) return { success: false, error: 'Invalid withdrawal amount.' };
+  if (!accountNumber) return { success: false, error: 'Account number is required.' };
   if (profile.balance < amount) return { success: false, error: 'Insufficient balance.' };
   
   try {
@@ -117,6 +120,7 @@ export async function createWithdrawalRequest(
         userGamerId: profile.gamerId,
         amount: amount,
         method: method,
+        accountNumber: accountNumber,
         status: 'pending',
         requestedAt: Timestamp.now(),
     };

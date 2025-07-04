@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Award, KeyRound, Trophy, Users, Ticket, Map as MapIcon, Smartphone, ClipboardCheck } from 'lucide-react';
+import { Award, KeyRound, Trophy, Users, Ticket, Map as MapIcon, Smartphone, ClipboardCheck, Copy } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
@@ -19,6 +19,9 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { getUserProfileStream } from '@/lib/users-service';
 import { ResultSubmissionDialog } from '@/components/result-submission-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 const InfoRow = ({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: React.ReactNode }) => (
     <div className="flex items-center justify-between py-3 border-b border-border/50 last:border-b-0">
@@ -57,6 +60,28 @@ const TournamentPageSkeleton = () => (
         </div>
     </div>
 );
+
+const CopyToClipboard = ({ text, label }: { text: string; label: string }) => {
+    const { toast } = useToast();
+    const handleCopy = () => {
+      navigator.clipboard.writeText(text);
+      toast({
+        title: `${label} Copied!`,
+        description: text,
+      });
+    };
+    return (
+      <div className='space-y-1'>
+        <Label>{label}</Label>
+        <div className="flex items-center gap-2">
+          <Input readOnly value={text} className="bg-muted/50" />
+          <Button variant="ghost" size="icon" onClick={handleCopy}>
+            <Copy className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+};
 
 export default function TournamentPage() {
   const params = useParams<{ id: string }>();
@@ -123,6 +148,20 @@ export default function TournamentPage() {
   }
 
   const isFull = tournament.teamsCount >= tournament.maxTeams;
+
+  let currentUserMatch: Match | null = null;
+  if (userTeam && tournament) {
+      for (const round of tournament.bracket) {
+          const foundMatch = round.matches.find(m => 
+              m.status !== 'completed' &&
+              (m.teams[0]?.id === userTeam.id || m.teams[1]?.id === userTeam.id)
+          );
+          if (foundMatch) {
+              currentUserMatch = foundMatch;
+              break;
+          }
+      }
+  }
 
   return (
     <>
@@ -235,7 +274,14 @@ export default function TournamentPage() {
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="p-4 bg-muted/50 rounded-b-md text-sm text-muted-foreground">
-                                    <p>Room ID and password will be shared with registered participants 15 minutes before the match starts via the app.</p>
+                                    {currentUserMatch && currentUserMatch.roomId ? (
+                                        <div className="space-y-3">
+                                            <CopyToClipboard text={currentUserMatch.roomId} label="Room ID" />
+                                            {currentUserMatch.roomPass && <CopyToClipboard text={currentUserMatch.roomPass} label="Room Password" />}
+                                        </div>
+                                    ) : (
+                                        <p>Room ID and password will be shared here 15 minutes before the match starts.</p>
+                                    )}
                                 </AccordionContent>
                             </AccordionItem>
                         </Accordion>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useParams, notFound, useRouter } from 'next/navigation';
 import { getTournament, updateTournament } from '@/lib/tournaments-service';
 import type { Tournament } from '@/types';
@@ -132,26 +132,13 @@ export default function EditTournamentPage() {
                     </Card>
                 </TabsContent>
                 <TabsContent value="bracket">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Edit Bracket</CardTitle>
-                             <CardDescription>
-                                {tournament.pointSystemEnabled 
-                                    ? "Request results from teams. Approvals are handled in the Results Approval panel."
-                                    : "Set winners for each match manually. Changes are saved automatically."
-                                }
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <BracketEditor 
-                                tournamentId={tournament.id}
-                                bracket={tournament.bracket} 
-                                participants={tournament.participants}
-                                pointSystemEnabled={tournament.pointSystemEnabled ?? false}
-                                onUpdate={fetchTournament}
-                            />
-                        </CardContent>
-                    </Card>
+                    <BracketEditor 
+                        tournamentId={tournament.id}
+                        bracket={tournament.bracket} 
+                        participants={tournament.participants}
+                        pointSystemEnabled={tournament.pointSystemEnabled ?? false}
+                        onUpdate={fetchTournament}
+                    />
                 </TabsContent>
                 <TabsContent value="points">
                     <Card>

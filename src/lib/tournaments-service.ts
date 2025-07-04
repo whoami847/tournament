@@ -80,6 +80,8 @@ const generateBracketStructure = (maxTeams: number, tournamentId: string): Round
             scores: [0, 0],
             status: 'pending',
             resultSubmissionStatus: {},
+            roomId: '',
+            roomPass: '',
         }));
         rounds.push({ name: roundName, matches });
         currentTeams /= 2;
@@ -433,4 +435,38 @@ export const undoMatchResult = async (
         console.error('Error undoing match result:', error);
         return { success: false, error: (error as Error).message };
     }
+};
+
+export const updateMatchDetails = async (
+  tournamentId: string,
+  matchId: string,
+  details: { roomId: string; roomPass: string }
+) => {
+  const tournamentRef = doc(firestore, 'tournaments', tournamentId);
+  try {
+    const tournamentSnap = await getDoc(tournamentRef);
+    if (!tournamentSnap.exists()) throw new Error('Tournament not found');
+
+    const tournament = fromFirestore(tournamentSnap);
+    const newBracket = JSON.parse(JSON.stringify(tournament.bracket));
+
+    let matchFound = false;
+    for (const round of newBracket) {
+      const matchIndex = round.matches.findIndex((m: Match) => m.id === matchId);
+      if (matchIndex !== -1) {
+        round.matches[matchIndex].roomId = details.roomId;
+        round.matches[matchIndex].roomPass = details.roomPass;
+        matchFound = true;
+        break;
+      }
+    }
+
+    if (!matchFound) throw new Error("Match not found in bracket");
+
+    await updateDoc(tournamentRef, { bracket: newBracket });
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating match details:', error);
+    return { success: false, error: (error as Error).message };
+  }
 };

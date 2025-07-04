@@ -26,6 +26,8 @@ export interface Match {
   scores: [number, number];
   status: 'pending' | 'live' | 'completed';
   resultSubmissionStatus?: { [teamId: string]: 'pending' | 'submitted' | 'approved' | 'rejected' };
+  roomId?: string;
+  roomPass?: string;
 }
 
 export interface Round {

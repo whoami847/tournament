@@ -67,6 +67,7 @@ export interface Tournament {
   createdAt?: string;
   pointSystemEnabled?: boolean;
   pointSystem?: PointSystem;
+  tournamentName?: string; // For MatchHistoryCard consistency
 }
 
 export interface AuthUser {

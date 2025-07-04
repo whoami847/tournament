@@ -16,13 +16,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, User, Gamepad2, Mail, Calendar, Users, Shield, Trophy, Star, Flame, LogOut, Pencil, Check, X, Loader2, UserPlus, LogOut as LeaveIcon, Search } from 'lucide-react';
+import { MoreHorizontal, User, Gamepad2, Mail, Calendar, Users, Shield, Trophy, Star, Flame, LogOut, Pencil, Check, X, Loader2, UserPlus, LogOut as LeaveIcon, Search, Award } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { signOutUser } from '@/lib/auth-service';
 import { useRouter } from 'next/navigation';
-import { getUserProfileStream, findUserByGamerId } from '@/lib/users-service';
-import type { PlayerProfile, UserTeam, AppNotification, TeamMember } from '@/types';
+import { getUserProfileStream } from '@/lib/users-service';
+import type { PlayerProfile, UserTeam, AppNotification, TeamMember, Tournament, Team } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -45,6 +45,8 @@ import {
     leaveTeam
 } from '@/lib/teams-service';
 import { getNotificationsStream } from '@/lib/notifications-service';
+import { getTournamentsStream } from '@/lib/tournaments-service';
+import { Badge } from '@/components/ui/badge';
 
 
 // --- SUB-COMPONENTS ---
@@ -402,6 +404,105 @@ const Achievements = () => (
     </Card>
 );
 
+const MatchHistoryCard = ({ tournament, profile }: { tournament: Tournament, profile: PlayerProfile }) => {
+    const userTeam = tournament.participants.find(p => p.members?.some(m => m.gamerId === profile.gamerId));
+    let finalRank: string = 'Participant';
+
+    if (tournament.status === 'completed' && userTeam) {
+        const bracket = tournament.bracket;
+        if (bracket && bracket.length > 0) {
+            const finalRound = bracket[bracket.length - 1];
+            if (finalRound && finalRound.matches.length === 1) {
+                const finalMatch = finalRound.matches[0];
+                if (finalMatch.status === 'completed') {
+                    const winner = finalMatch.scores[0] > finalMatch.scores[1] ? finalMatch.teams[0] : finalMatch.teams[1];
+                    const loser = finalMatch.scores[0] < finalMatch.scores[1] ? finalMatch.teams[0] : finalMatch.teams[1];
+
+                    if (winner?.id === userTeam.id) {
+                        finalRank = 'Winner';
+                    } else if (loser?.id === userTeam.id) {
+                        finalRank = 'Runner-up';
+                    }
+                }
+            }
+        }
+    } else if (tournament.status !== 'completed') {
+        finalRank = 'Ongoing';
+    }
+
+    return (
+        <Card className="overflow-hidden">
+            <CardHeader className="flex flex-row items-center gap-4 p-4">
+                <Image src={tournament.image} alt={tournament.name} width={80} height={80} className="rounded-lg aspect-square object-cover" data-ai-hint={tournament.dataAiHint} />
+                <div className="flex-1">
+                    <CardTitle className="text-base">{tournament.tournamentName}</CardTitle>
+                    <CardDescription>{tournament.game}</CardDescription>
+                    <Badge variant="outline" className="mt-2">{finalRank}</Badge>
+                </div>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 space-y-2 text-sm">
+                <div className="flex justify-between items-center text-muted-foreground">
+                    <span className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Date</span>
+                    <span className="font-medium text-foreground">{format(new Date(tournament.startDate), 'PPP')}</span>
+                </div>
+                <div className="flex justify-between items-center text-muted-foreground">
+                    <span className="flex items-center gap-2"><Award className="h-4 w-4" /> Kills/Points</span>
+                    <span className="font-medium text-foreground">N/A</span>
+                </div>
+                <div className="flex justify-between items-center text-muted-foreground">
+                    <span className="flex items-center gap-2"><Trophy className="h-4 w-4" /> Final Rank</span>
+                    <span className="font-medium text-foreground">{finalRank}</span>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
+const MatchHistory = ({ profile }: { profile: PlayerProfile }) => {
+    const [tournaments, setTournaments] = useState<Tournament[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const unsubscribe = getTournamentsStream((allTournaments) => {
+            if (!profile?.gamerId) {
+                setTournaments([]);
+                setLoading(false);
+                return;
+            }
+            
+            const userTournaments = allTournaments.filter(t => 
+                t.participants.some(p => p.members?.some(m => m.gamerId === profile.gamerId))
+            ).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+            
+            setTournaments(userTournaments);
+            setLoading(false);
+        });
+        return () => unsubscribe();
+    }, [profile]);
+    
+    if (loading) {
+        return <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    }
+    
+    if (tournaments.length === 0) {
+        return (
+            <Card>
+                <CardContent className="p-6 text-center text-muted-foreground">
+                    You haven't participated in any matches yet.
+                </CardContent>
+            </Card>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            {tournaments.map(tournament => (
+                <MatchHistoryCard key={tournament.id} tournament={tournament} profile={profile} />
+            ))}
+        </div>
+    );
+};
+
 
 export default function ProfilePage() {
     const { user } = useAuth();
@@ -473,7 +574,7 @@ export default function ProfilePage() {
             <div className="relative z-10 -mt-16 flex flex-col items-center text-center px-4">
                 <div className="relative">
                     <Avatar className="h-28 w-28 border-4 border-background">
-                        <AvatarImage src={profile?.avatar || user?.photoURL || ''} alt={displayName} data-ai-hint="fantasy character" />
+                        <Image src={profile?.avatar || user?.photoURL || ''} alt={displayName} data-ai-hint="fantasy character" />
                         <AvatarFallback>{fallback}</AvatarFallback>
                     </Avatar>
                     <div className="absolute bottom-1 right-1 h-5 w-5 bg-teal-400 rounded-full border-2 border-background" />
@@ -485,9 +586,10 @@ export default function ProfilePage() {
             {/* Tabs Navigation */}
             <div className="px-4 mt-6">
                 <Tabs defaultValue="info" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 bg-card p-1 h-auto rounded-lg border">
+                    <TabsList className="grid w-full grid-cols-4 bg-card p-1 h-auto rounded-lg border">
                         <TabsTrigger value="info" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Information</TabsTrigger>
                         <TabsTrigger value="team" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Team</TabsTrigger>
+                        <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">🏅 Match History</TabsTrigger>
                         <TabsTrigger value="success" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Achievements</TabsTrigger>
                     </TabsList>
                     <TabsContent value="info" className="mt-4">
@@ -495,6 +597,9 @@ export default function ProfilePage() {
                     </TabsContent>
                     <TabsContent value="team" className="mt-4">
                         <TeamInfo profile={profile} />
+                    </TabsContent>
+                    <TabsContent value="history" className="mt-4">
+                        <MatchHistory profile={profile} />
                     </TabsContent>
                     <TabsContent value="success" className="mt-4">
                         <Achievements />

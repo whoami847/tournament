@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
 import { User, Users, Shield, ArrowLeft, CheckCircle } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getTournament, joinTournament } from '@/lib/tournaments-service';
 import type { Tournament, Team, PlayerProfile, UserTeam, TeamMember } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';

@@ -1,3 +1,4 @@
+
 import {
   collection,
   addDoc,
@@ -107,6 +108,8 @@ export const addTournament = async (tournament: Omit<Tournament, 'id' | 'created
       bracket: generateBracketStructure(tournament.maxTeams, tournamentId), // Auto-generate bracket
       image: tournament.image || 'https://placehold.co/600x400.png',
       dataAiHint: tournament.dataAiHint || 'esports tournament',
+      map: tournament.map || 'TBD',
+      version: tournament.version || 'Mobile',
       pointSystemEnabled: false,
       pointSystem: { perKillPoints: 1, placementPoints: [
           { place: 1, points: 15 },

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect, useState } from "react"
@@ -307,6 +308,43 @@ export default function CreateTournamentPage() {
                                                 <Input placeholder="e.g. 10,000" {...field} />
                                             </FormControl>
                                             <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <FormField
+                                    control={form.control}
+                                    name="map"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Map</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="e.g. Bermuda, Erangel" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="version"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Game Version</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a version" />
+                                                </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="Mobile">Mobile</SelectItem>
+                                                    <SelectItem value="PC">PC</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        <FormMessage />
                                         </FormItem>
                                     )}
                                 />

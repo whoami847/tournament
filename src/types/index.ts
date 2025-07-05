@@ -99,6 +99,7 @@ export interface PlayerProfile {
   winrate: number;
   games: number;
   balance: number;
+  pendingBalance: number;
   teamId?: string;
   status: 'active' | 'banned';
 }
@@ -202,4 +203,17 @@ export interface WithdrawRequest {
   accountNumber: string;
   status: 'pending' | 'approved' | 'rejected';
   requestedAt: Timestamp;
+}
+
+export interface PendingPrize {
+  id: string;
+  userId: string;
+  userName: string;
+  userGamerId: string;
+  amount: number;
+  tournamentId: string;
+  tournamentName: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: Timestamp;
 }

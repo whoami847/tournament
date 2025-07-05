@@ -302,10 +302,22 @@ const CardStack = ({ balance, profile }: { balance: number, profile: PlayerProfi
                 </div>
 
                 <div className="mt-auto mb-2">
-                    <p className="text-xs uppercase text-gray-400">Current Balance</p>
-                    <p className="text-3xl font-bold tracking-tight">
-                        {balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TK
-                    </p>
+                     <div className="flex justify-between items-baseline">
+                        <div>
+                            <p className="text-xs uppercase text-gray-400">Current Balance</p>
+                            <p className="text-3xl font-bold tracking-tight">
+                                {balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TK
+                            </p>
+                        </div>
+                        {(profile?.pendingBalance ?? 0) > 0 && (
+                            <div className="text-right">
+                                <p className="text-xs uppercase text-gray-400">Pending</p>
+                                <p className="text-lg font-bold tracking-tight text-amber-400">
+                                    {profile?.pendingBalance?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TK
+                                </p>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex justify-start gap-4">

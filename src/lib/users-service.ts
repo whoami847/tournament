@@ -1,5 +1,6 @@
 
 
+
 import {
   collection,
   doc,
@@ -37,6 +38,7 @@ const fromFirestore = (doc: any): PlayerProfile => {
     winrate: data.winrate,
     games: data.games,
     balance: data.balance || 0,
+    pendingBalance: data.pendingBalance || 0,
     teamId: data.teamId || undefined,
     status: data.status || 'active',
   };
@@ -60,6 +62,7 @@ export const createUserProfile = async (user: User) => {
       winrate: 0,
       games: 0,
       balance: 0,
+      pendingBalance: 0,
       teamId: '',
       status: 'active',
     };

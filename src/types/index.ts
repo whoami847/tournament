@@ -151,7 +151,7 @@ export interface RegistrationLog {
   id: string;
   tournamentId: string;
   tournamentName: string;
-  game: Game;
+  game: string;
   teamName: string;
   teamType: TeamType;
   players: { name: string; gamerId: string }[];
@@ -187,6 +187,7 @@ export interface PaymentGatewaySettings {
 
 export interface WithdrawMethod {
   id: string;
+  image?: string;
   name: string;
   receiverInfo: string;
   feePercentage: number;

@@ -18,6 +18,7 @@ const fromFirestore = (doc: any): WithdrawMethod => {
   const data = doc.data();
   return {
     id: doc.id,
+    image: data.image || '',
     name: data.name,
     receiverInfo: data.receiverInfo,
     feePercentage: data.feePercentage,

@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import type { WithdrawMethod } from '@/types';
 import { getWithdrawMethodsStream, addWithdrawMethod, updateWithdrawMethod, deleteWithdrawMethod } from '@/lib/withdraw-methods-service';
 import { Button } from '@/components/ui/button';
@@ -126,6 +127,7 @@ export default function AdminWithdrawMethodsPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead>Icon</TableHead>
                                         <TableHead>Name</TableHead>
                                         <TableHead>Receiver Info</TableHead>
                                         <TableHead>Fee</TableHead>
@@ -137,6 +139,13 @@ export default function AdminWithdrawMethodsPage() {
                                 <TableBody>
                                     {methods.map((method) => (
                                         <TableRow key={method.id}>
+                                            <TableCell>
+                                                {method.image ? (
+                                                    <Image src={method.image} alt={method.name} width={40} height={40} className="rounded-md object-contain" />
+                                                ) : (
+                                                    <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-xs">No Icon</div>
+                                                )}
+                                            </TableCell>
                                             <TableCell className="font-medium">{method.name}</TableCell>
                                             <TableCell>{method.receiverInfo}</TableCell>
                                             <TableCell>{method.feePercentage}%</TableCell>
@@ -170,11 +179,18 @@ export default function AdminWithdrawMethodsPage() {
                             {methods.map((method) => (
                                <div key={method.id} className="bg-muted/50 p-4 rounded-lg border">
                                     <div className="flex justify-between items-start mb-3">
-                                        <div>
-                                            <p className="font-semibold">{method.name}</p>
-                                            <p className="text-sm text-muted-foreground">{method.receiverInfo}</p>
+                                        <div className="flex items-center gap-3">
+                                             {method.image ? (
+                                                <Image src={method.image} alt={method.name} width={40} height={40} className="rounded-md object-contain" />
+                                            ) : (
+                                                <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-xs flex-shrink-0">No Icon</div>
+                                            )}
+                                            <div>
+                                                <p className="font-semibold">{method.name}</p>
+                                                <p className="text-sm text-muted-foreground">{method.receiverInfo}</p>
+                                            </div>
                                         </div>
-                                        <Badge variant={method.status === 'active' ? 'default' : 'secondary'} className={method.status === 'active' ? 'bg-green-500' : ''}>
+                                        <Badge variant={method.status === 'active' ? 'default' : 'secondary'} className={`${method.status === 'active' ? 'bg-green-500' : ''} flex-shrink-0`}>
                                             {method.status}
                                         </Badge>
                                     </div>

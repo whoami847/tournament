@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -8,9 +9,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import type { WithdrawMethod } from '@/types';
+import { ImageUpload } from './image-upload';
 
 const formSchema = z.object({
   name: z.string().min(2, "Method name is required."),
+  image: z.string().url("Please upload an icon for the method."),
   receiverInfo: z.string().min(5, "Receiver info is required."),
   feePercentage: z.coerce.number().min(0).max(100),
   minAmount: z.coerce.number().min(0),
@@ -34,6 +37,7 @@ export function WithdrawMethodForm({ method, onSubmit, isSubmitting }: WithdrawM
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: method?.name || '',
+            image: method?.image || '',
             receiverInfo: method?.receiverInfo || '',
             feePercentage: method?.feePercentage || 0,
             minAmount: method?.minAmount || 50,
@@ -45,6 +49,22 @@ export function WithdrawMethodForm({ method, onSubmit, isSubmitting }: WithdrawM
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                 <FormField
+                    control={form.control}
+                    name="image"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Method Icon</FormLabel>
+                            <FormControl>
+                                <ImageUpload
+                                    initialImageUrl={field.value}
+                                    onUploadComplete={(url) => form.setValue('image', url, { shouldValidate: true })}
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem><FormLabel>Method Name</FormLabel><FormControl><Input placeholder="e.g., bKash" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />

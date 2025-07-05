@@ -208,7 +208,7 @@ export default function EditProfilePage() {
       />
 
       {/* Header Section */}
-      <div className="relative h-48 w-full group">
+      <div className="relative h-48 w-full">
         <Image
           src={bannerPreview}
           alt="Profile banner"
@@ -217,22 +217,25 @@ export default function EditProfilePage() {
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
-        <div className="absolute top-4 left-4">
+        <div className="absolute top-4 left-4 z-10">
             <Button variant="outline" size="icon" onClick={() => router.back()}>
               <ArrowLeft className="h-4 w-4" />
               <span className="sr-only">Back</span>
             </Button>
         </div>
-        <h1 className="absolute top-16 left-4 text-2xl font-bold text-white sm:top-6">Edit Profile</h1>
-        <Button
+        <h1 className="absolute top-16 left-4 text-2xl font-bold text-white sm:top-6 z-10">Edit Profile</h1>
+        
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+          <Button
             variant="outline"
             size="sm"
-            className="absolute bottom-4 right-4 bg-black/50 text-white hover:bg-black/70 hover:text-white border-white/50"
+            className="bg-black/50 text-white hover:bg-black/70 hover:text-white border-white/50"
             onClick={() => bannerInputRef.current?.click()}
-        >
+          >
             <Camera className="mr-2 h-4 w-4" />
             Upload Banner
-        </Button>
+          </Button>
+        </div>
       </div>
 
       {/* Profile Info Section */}

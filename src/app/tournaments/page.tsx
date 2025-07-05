@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type Format = 'all' | 'BR' | 'CS' | 'LONE WOLF';
 type SubMode = 'all' | 'solo' | 'duo' | 'squad';
@@ -136,7 +137,7 @@ export default function TournamentsPage() {
               <Button variant={selectedStatus === 'completed' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('completed')}>Finished</Button>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex flex-col md:flex-row gap-2 self-start sm:self-center w-full">
               <div className="flex items-center gap-2 p-1 bg-muted rounded-full self-start flex-wrap">
                 <Button variant={selectedFormat === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => handleFormatChange('all')}>All Modes</Button>
@@ -179,16 +180,26 @@ export default function TournamentsPage() {
         {loading ? (
             <TournamentGridSkeleton />
         ) : filteredTournaments.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <AnimatePresence>
             {filteredTournaments.map(tournament => (
-              <TournamentCard 
+              <motion.div
                 key={tournament.id}
-                tournament={tournament}
-                isBookmarked={!!bookmarked[tournament.id]}
-                onBookmarkToggle={() => handleBookmarkToggle(tournament.id)}
-              />
+                layout
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+              >
+                  <TournamentCard 
+                    tournament={tournament}
+                    isBookmarked={!!bookmarked[tournament.id]}
+                    onBookmarkToggle={() => handleBookmarkToggle(tournament.id)}
+                  />
+              </motion.div>
             ))}
-          </div>
+            </AnimatePresence>
+          </motion.div>
         ) : (
           <div className="text-center py-16 border border-dashed rounded-lg">
             <h3 className="text-xl font-medium">No Tournaments Found</h3>

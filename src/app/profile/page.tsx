@@ -47,12 +47,18 @@ import {
 import { getNotificationsStream } from '@/lib/notifications-service';
 import { getTournamentsStream } from '@/lib/tournaments-service';
 import { Badge } from '@/components/ui/badge';
+import { motion } from 'framer-motion';
 
 
 // --- SUB-COMPONENTS ---
 
-const InfoItem = ({ icon: Icon, label, value }: { icon: LucideIcon, label: string, value: string }) => (
-    <div className="flex items-center gap-4">
+const InfoItem = ({ icon: Icon, label, value, index }: { icon: LucideIcon, label: string, value: string, index: number }) => (
+    <motion.div 
+        className="flex items-center gap-4"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 * index }}
+    >
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
             <Icon className="h-5 w-5 text-muted-foreground" />
         </div>
@@ -60,21 +66,27 @@ const InfoItem = ({ icon: Icon, label, value }: { icon: LucideIcon, label: strin
             <p className="text-sm text-muted-foreground">{label}</p>
             <p className="font-semibold">{value}</p>
         </div>
-    </div>
+    </motion.div>
 );
 
 const UserInfo = ({ profile }: { profile: PlayerProfile | null }) => {
+    const infoItems = [
+        { icon: User, label: "Full Name", value: profile?.name || 'N/A' },
+        { icon: Mail, label: "Email", value: profile?.email || 'N/A' },
+        { icon: Gamepad2, label: "Game Name", value: profile?.gameName || 'Not Set' },
+        { icon: Shield, label: "Gamer ID", value: profile?.gamerId || 'N/A' },
+        { icon: Calendar, label: "Joined", value: profile?.joined ? format(new Date(profile.joined), 'PPP') : 'N/A' },
+    ];
+
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Personal Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                <InfoItem icon={User} label="Full Name" value={profile?.name || 'N/A'} />
-                <InfoItem icon={Mail} label="Email" value={profile?.email || 'N/A'} />
-                <InfoItem icon={Gamepad2} label="Game Name" value={profile?.gameName || 'Not Set'} />
-                <InfoItem icon={Shield} label="Gamer ID" value={profile?.gamerId || 'N/A'} />
-                <InfoItem icon={Calendar} label="Joined" value={profile?.joined ? format(new Date(profile.joined), 'PPP') : 'N/A'} />
+                 {infoItems.map((item, index) => (
+                    <InfoItem key={item.label} {...item} index={index} />
+                ))}
             </CardContent>
         </Card>
     );
@@ -586,7 +598,7 @@ export default function ProfilePage() {
             {/* Tabs Navigation */}
             <div className="px-4 mt-6">
                 <Tabs defaultValue="info" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-card p-1 h-auto rounded-lg border">
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 bg-card p-1 h-auto rounded-lg border">
                         <TabsTrigger value="info" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Information</TabsTrigger>
                         <TabsTrigger value="team" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Team</TabsTrigger>
                         <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Match History</TabsTrigger>

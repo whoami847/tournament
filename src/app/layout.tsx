@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster"
 import BottomNav from '@/components/layout/bottom-nav';
 import { AuthProvider } from '@/context/auth-context';
 import AuthGuard from '@/components/auth-guard';
+import { ThemeProvider } from '@/components/theme-provider';
 
 
 export const metadata: Metadata = {
@@ -18,24 +19,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
       </head>
       <body className={cn("font-body antialiased bg-background text-foreground min-h-screen flex flex-col")}>
-        <AuthProvider>
-          <AuthGuard>
-            <>
-              <main className="flex-grow">
-                {children}
-              </main>
-              <BottomNav />
-              <Toaster />
-            </>
-          </AuthGuard>
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            <AuthGuard>
+              <>
+                <main className="flex-grow">
+                  {children}
+                </main>
+                <BottomNav />
+                <Toaster />
+              </>
+            </AuthGuard>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

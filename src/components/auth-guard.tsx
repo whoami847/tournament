@@ -27,39 +27,40 @@ export default function AuthGuard({ children }: { children: ReactNode }) {
         }
     }, [profile, loading, toast]);
     
-    if (loading) {
-        return <FullPageLoader />;
-    }
-    
-    // Don't render anything if the user is banned and we're waiting for sign out/redirect
-    if (profile?.status === 'banned') {
-        return <FullPageLoader />;
-    }
+    useEffect(() => {
+        // Don't run redirect logic while loading or if user is banned
+        if (loading || profile?.status === 'banned') return;
+
+        const pathIsPublic = PUBLIC_ROUTES.includes(pathname);
+
+        // If user is not logged in and trying to access a protected route, redirect to login
+        if (!user && !pathIsPublic) {
+            router.replace('/login');
+        }
+        
+        // If user is logged in and trying to access a public route (login/register), redirect to home
+        if (user && pathIsPublic) {
+            router.replace('/');
+        }
+    }, [user, profile, loading, pathname, router]);
 
     const pathIsPublic = PUBLIC_ROUTES.includes(pathname);
 
-    // If user is not logged in and trying to access a protected route, redirect to login
+    // Show a loader if auth state is loading, or if user is banned (and will be logged out)
+    if (loading || profile?.status === 'banned') {
+        return <FullPageLoader />;
+    }
+
+    // Determine if a redirect is needed and show a loader while it's in progress.
+    // This prevents rendering the wrong page for a split second.
     if (!user && !pathIsPublic) {
-        router.replace('/login');
-        return <FullPageLoader />;
+        return <FullPageLoader />; // Will be redirected to /login
     }
-    
-    // If user is logged in and trying to access a public route (login/register), redirect to home
+
     if (user && pathIsPublic) {
-        router.replace('/');
-        return <FullPageLoader />;
+        return <FullPageLoader />; // Will be redirected to /
     }
 
-    // If the route is public and there's no user, render the public page (login/register)
-    if (!user && pathIsPublic) {
-        return <>{children}</>;
-    }
-
-    // If user is logged in and on a protected route, render the page with its layout
-    if (user && !pathIsPublic) {
-        return <>{children}</>;
-    }
-    
-    // Fallback loader
-    return <FullPageLoader />;
+    // If we reach here, the state is valid for the current route, so render the children.
+    return <>{children}</>;
 }

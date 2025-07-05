@@ -574,7 +574,7 @@ export default function ProfilePage() {
             <div className="relative z-10 -mt-16 flex flex-col items-center text-center px-4">
                 <div className="relative">
                     <Avatar className="h-28 w-28 border-4 border-background">
-                        <Image src={profile?.avatar || user?.photoURL || ''} alt={displayName} data-ai-hint="fantasy character" />
+                        <AvatarImage src={profile?.avatar || user?.photoURL || ''} alt={displayName} data-ai-hint="fantasy character" />
                         <AvatarFallback>{fallback}</AvatarFallback>
                     </Avatar>
                     <div className="absolute bottom-1 right-1 h-5 w-5 bg-teal-400 rounded-full border-2 border-background" />

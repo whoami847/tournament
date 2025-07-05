@@ -88,24 +88,24 @@ export default function AdminGatewayPage() {
                         <Skeleton className="h-8 w-full" />
                     </div>
                 ) : settings ? (
-                    <div className="space-y-4 text-sm">
-                        <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-6 text-sm">
+                        <div className="flex flex-col gap-1 md:grid md:grid-cols-3 md:items-center md:gap-4">
                             <span className="font-medium text-muted-foreground">Provider Name</span>
-                            <span className="col-span-2 font-semibold">{settings.name}</span>
+                            <span className="md:col-span-2 font-semibold">{settings.name}</span>
                         </div>
-                         <div className="grid grid-cols-3 gap-4">
+                         <div className="flex flex-col gap-1 md:grid md:grid-cols-3 md:items-center md:gap-4">
                             <span className="font-medium text-muted-foreground">Access Token</span>
-                            <span className="col-span-2 font-mono text-xs bg-muted p-2 rounded-md">
+                            <span className="md:col-span-2 font-mono text-xs bg-muted p-2 rounded-md break-all">
                                 {settings.accessToken ? '••••••••' + settings.accessToken.slice(-4) : 'Not Set'}
                             </span>
                         </div>
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="flex flex-col gap-1 md:grid md:grid-cols-3 md:items-center md:gap-4">
                             <span className="font-medium text-muted-foreground">Checkout URL</span>
-                            <span className="col-span-2 font-mono text-xs">{settings.checkoutUrl}</span>
+                            <span className="md:col-span-2 font-mono text-xs break-all">{settings.checkoutUrl}</span>
                         </div>
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="flex flex-col gap-1 md:grid md:grid-cols-3 md:items-center md:gap-4">
                             <span className="font-medium text-muted-foreground">Verify URL</span>
-                            <span className="col-span-2 font-mono text-xs">{settings.verifyUrl}</span>
+                            <span className="md:col-span-2 font-mono text-xs break-all">{settings.verifyUrl}</span>
                         </div>
                     </div>
                 ) : (

@@ -140,7 +140,7 @@ const TeamInfo = ({ profile }: { profile: PlayerProfile }) => {
         } else {
             toast({ title: "Error", description: result.error, variant: "destructive" });
         }
-        setIsSubmitting(false);
+        setIsSubmitting(true);
     }
     
     const handleFindUser = async () => {
@@ -574,7 +574,7 @@ export default function ProfilePage() {
             <div className="relative z-10 -mt-16 flex flex-col items-center text-center px-4">
                 <div className="relative">
                     <Avatar className="h-28 w-28 border-4 border-background">
-                        <AvatarImage src={profile?.avatar || user?.photoURL || ''} alt={displayName} data-ai-hint="fantasy character" />
+                        <AvatarImage src={profile?.avatar || user?.photoURL || ''} alt={displayName} />
                         <AvatarFallback>{fallback}</AvatarFallback>
                     </Avatar>
                     <div className="absolute bottom-1 right-1 h-5 w-5 bg-teal-400 rounded-full border-2 border-background" />
@@ -586,10 +586,10 @@ export default function ProfilePage() {
             {/* Tabs Navigation */}
             <div className="px-4 mt-6">
                 <Tabs defaultValue="info" className="w-full">
-                    <TabsList className="grid w-full grid-cols-4 bg-card p-1 h-auto rounded-lg border">
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-card p-1 h-auto rounded-lg border">
                         <TabsTrigger value="info" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Information</TabsTrigger>
                         <TabsTrigger value="team" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Team</TabsTrigger>
-                        <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">🏅 Match History</TabsTrigger>
+                        <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Match History</TabsTrigger>
                         <TabsTrigger value="success" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Achievements</TabsTrigger>
                     </TabsList>
                     <TabsContent value="info" className="mt-4">

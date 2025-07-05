@@ -162,12 +162,12 @@ export default function AdminBannersPage() {
     return (
         <>
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <CardTitle>Featured Banners</CardTitle>
                         <CardDescription>Manage the featured banners on the home page.</CardDescription>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                         {/* Dialog for adding from a tournament */}
                         <Dialog open={isTournamentDialogOpen} onOpenChange={handleTournamentDialogChange}>
                             <DialogTrigger asChild>
@@ -351,3 +351,5 @@ export default function AdminBannersPage() {
         </>
     );
 }
+
+    

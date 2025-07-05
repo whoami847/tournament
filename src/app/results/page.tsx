@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -34,8 +35,10 @@ const MatchHistoryCard = ({ tournament, profile }: { tournament: Tournament, pro
             }
         }
     } else if (tournament.status !== 'completed' && userTeam) {
-        finalRank = 'Ongoing';
+        finalRank = 'Live';
     }
+
+    const badgeVariant = finalRank === 'Live' ? 'destructive' : 'outline';
 
     return (
         <Card className="overflow-hidden">
@@ -44,7 +47,7 @@ const MatchHistoryCard = ({ tournament, profile }: { tournament: Tournament, pro
                 <div className="flex-1">
                     <CardTitle className="text-base">{tournament.name}</CardTitle>
                     <CardDescription>{tournament.game}</CardDescription>
-                    <Badge variant="outline" className="mt-2">{finalRank}</Badge>
+                    <Badge variant={badgeVariant} className="mt-2">{finalRank}</Badge>
                 </div>
             </CardHeader>
             <CardContent className="px-4 pb-4 space-y-2 text-sm">

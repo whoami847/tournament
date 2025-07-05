@@ -25,14 +25,19 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
 
-const InfoRow = ({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: React.ReactNode }) => (
-    <div className="flex items-center justify-between py-3 border-b border-border/50 last:border-b-0">
+const InfoRow = ({ icon: Icon, label, value, index }: { icon: LucideIcon; label: string; value: React.ReactNode; index: number; }) => (
+    <motion.div 
+        className="flex items-center justify-between py-3 border-b border-border/50 last:border-b-0"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 + (index * 0.05) }}
+    >
         <div className="flex items-center gap-3">
             <Icon className="h-5 w-5 text-primary" />
             <span className="text-sm font-medium text-muted-foreground">{label}</span>
         </div>
         <span className="text-sm font-semibold text-foreground text-right">{value}</span>
-    </div>
+    </motion.div>
 );
 
 
@@ -290,12 +295,12 @@ export default function TournamentPage() {
                   <Card>
                     <CardContent className="p-6">
                       <div className="mb-8">
-                          <InfoRow icon={Trophy} label="Total Prize" value={`${tournament.prizePool} TK`} />
-                          <InfoRow icon={Award} label="Per Kill Prize" value={`${tournament.perKillPrize || 0} TK`} />
-                          <InfoRow icon={Ticket} label="Entry Fee" value={tournament.entryFee > 0 ? `${tournament.entryFee} TK` : 'Free'} />
-                          <InfoRow icon={Users} label="Team Format" value={getEntryType(tournament.format)} />
-                          <InfoRow icon={MapIcon} label="Map" value={tournament.map || 'TBD'} />
-                          <InfoRow icon={Smartphone} label="Game Version" value={tournament.version || 'N/A'} />
+                          <InfoRow icon={Trophy} label="Total Prize" value={`${tournament.prizePool} TK`} index={0} />
+                          <InfoRow icon={Award} label="Per Kill Prize" value={`${tournament.perKillPrize || 0} TK`} index={1} />
+                          <InfoRow icon={Ticket} label="Entry Fee" value={tournament.entryFee > 0 ? `${tournament.entryFee} TK` : 'Free'} index={2} />
+                          <InfoRow icon={Users} label="Team Format" value={getEntryType(tournament.format)} index={3} />
+                          <InfoRow icon={MapIcon} label="Map" value={tournament.map || 'TBD'} index={4} />
+                          <InfoRow icon={Smartphone} label="Game Version" value={tournament.version || 'N/A'} index={5} />
                       </div>
 
 

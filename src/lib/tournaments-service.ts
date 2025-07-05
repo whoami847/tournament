@@ -182,56 +182,73 @@ export const getTournament = async (id: string): Promise<Tournament | null> => {
 export const updateTournament = async (id: string, data: Partial<Tournament>) => {
   try {
     const docRef = doc(firestore, 'tournaments', id);
+
+    const tournamentSnapBeforeUpdate = await getDoc(docRef);
+    if (!tournamentSnapBeforeUpdate.exists()) {
+      throw new Error("Tournament not found");
+    }
+    const tournamentBeforeUpdate = fromFirestore(tournamentSnapBeforeUpdate);
+
     const updateData: { [key: string]: any } = { ...data };
 
     if (data.startDate) {
-        updateData.startDate = Timestamp.fromDate(new Date(data.startDate));
+      updateData.startDate = Timestamp.fromDate(new Date(data.startDate));
     }
 
-    // If the tournament is being set to 'live', process byes in the first round.
-    if (data.status === 'live') {
-        const tournamentSnap = await getDoc(docRef);
-        if (tournamentSnap.exists()) {
-            const tournament = fromFirestore(tournamentSnap);
-            const currentBracket = tournament.bracket;
+    if (data.status === 'live' && tournamentBeforeUpdate.status !== 'live') {
+      const currentBracket = tournamentBeforeUpdate.bracket;
+      if (currentBracket && currentBracket.length > 0 && currentBracket[0].matches) {
+        const bracketWithByesProcessed = JSON.parse(JSON.stringify(currentBracket));
+        const firstRound = bracketWithByesProcessed[0];
+        const nextRound = bracketWithByesProcessed.length > 1 ? bracketWithByesProcessed[1] : null;
 
-            if (currentBracket && currentBracket.length > 0 && currentBracket[0].matches) {
-                const firstRound = currentBracket[0];
-                const nextRound = currentBracket.length > 1 ? currentBracket[1] : null;
-
-                const bracketWithByesProcessed = JSON.parse(JSON.stringify(currentBracket));
-
-                firstRound.matches.forEach((match, matchIndex) => {
-                    const team1 = match.teams[0];
-                    const team2 = match.teams[1];
-
-                    // Check for a bye (one team present, one is null)
-                    if ((team1 && !team2) || (!team1 && team2)) {
-                        const winner = team1 || team2;
-                        
-                        // Update the current match as completed
-                        const matchInDraft = bracketWithByesProcessed[0].matches[matchIndex];
-                        matchInDraft.status = 'completed';
-                        matchInDraft.scores = team1 ? [1, 0] : [0, 1];
-
-                        // Advance the winner to the next round, if a next round exists
-                        if (nextRound && winner) {
-                            const nextRoundMatchIndex = Math.floor(matchIndex / 2);
-                            const teamSlotInNextMatch = matchIndex % 2;
-                            
-                            if (bracketWithByesProcessed[1].matches[nextRoundMatchIndex]) {
-                                bracketWithByesProcessed[1].matches[nextRoundMatchIndex].teams[teamSlotInNextMatch] = winner;
-                            }
-                        }
-                    }
-                });
-                
-                updateData.bracket = bracketWithByesProcessed;
+        firstRound.matches.forEach((match: Match, matchIndex: number) => {
+          const team1 = match.teams[0];
+          const team2 = match.teams[1];
+          if ((team1 && !team2) || (!team1 && team2)) {
+            const winner = team1 || team2;
+            match.status = 'completed';
+            match.scores = team1 ? [1, 0] : [0, 1];
+            if (nextRound && winner) {
+              const nextRoundMatchIndex = Math.floor(matchIndex / 2);
+              const teamSlotInNextMatch = matchIndex % 2;
+              if (bracketWithByesProcessed[1].matches[nextRoundMatchIndex]) {
+                bracketWithByesProcessed[1].matches[nextRoundMatchIndex].teams[teamSlotInNextMatch] = winner;
+              }
             }
-        }
+          }
+        });
+        updateData.bracket = bracketWithByesProcessed;
+      }
     }
 
     await updateDoc(docRef, updateData);
+
+    if (data.status === 'completed' && tournamentBeforeUpdate.status !== 'completed') {
+      const tournamentAfterUpdateSnap = await getDoc(docRef);
+      if (tournamentAfterUpdateSnap.exists()) {
+        const completedTournament = fromFirestore(tournamentAfterUpdateSnap);
+        const finalRound = completedTournament.bracket?.[completedTournament.bracket.length - 1];
+        if (finalRound && finalRound.matches.length === 1) {
+          const finalMatch = finalRound.matches[0];
+          if (finalMatch.status === 'completed' && finalMatch.teams[0] && finalMatch.teams[1]) {
+            const winnerTeam = finalMatch.scores[0] > finalMatch.scores[1] ? finalMatch.teams[0] : finalMatch.teams[1];
+            if (winnerTeam?.members) {
+              const batch = writeBatch(firestore);
+              const winnerUids = winnerTeam.members
+                .map(m => m.uid)
+                .filter((uid): uid is string => !!uid);
+              for (const uid of winnerUids) {
+                const userRef = doc(firestore, 'users', uid);
+                batch.update(userRef, { wins: increment(1) });
+              }
+              await batch.commit();
+            }
+          }
+        }
+      }
+    }
+
     return { success: true };
   } catch (error) {
     console.error('Error updating tournament: ', error);

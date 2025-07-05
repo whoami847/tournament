@@ -244,7 +244,7 @@ const TopPlayers = ({ players, loading }: { players: PlayerProfile[], loading: b
                     </div>
                     <div className="text-right">
                         <p className="font-bold text-primary">{p.winrate}%</p>
-                        <p className="text-xs text-muted-foreground">{p.games} Games</p>
+                        <p className="text-xs text-muted-foreground">{p.wins ?? 0} Wins</p>
                     </div>
                 </Card>
             ))}

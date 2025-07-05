@@ -17,7 +17,7 @@ export interface Team {
   name: string;
   avatar: string;
   dataAiHint?: string;
-  members?: { name: string; gamerId: string }[];
+  members?: { name: string; gamerId: string; uid?: string }[];
 }
 
 export interface Match {
@@ -99,6 +99,7 @@ export interface PlayerProfile {
   role: string;
   winrate: number;
   games: number;
+  wins?: number;
   balance: number;
   pendingBalance: number;
   teamId?: string;

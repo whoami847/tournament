@@ -566,7 +566,9 @@ export default function ProfilePage() {
                             <DropdownMenuItem asChild>
                                 <Link href="/profile/edit">Edit Profile</Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem>Settings</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/settings">Settings</Link>
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
                                 <Link href="/admin">Admin Panel</Link>

@@ -12,6 +12,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { MoreHorizontal, PlusCircle, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,6 +35,7 @@ export default function AdminBannersPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isCustomDialogOpen, setCustomDialogOpen] = useState(false);
     const [selectedBanner, setSelectedBanner] = useState<FeaturedBanner | undefined>(undefined);
+    const [bannerToDelete, setBannerToDelete] = useState<FeaturedBanner | null>(null);
     const { toast } = useToast();
 
     // --- New State for "Add from Tournament" ---
@@ -108,14 +119,14 @@ export default function AdminBannersPage() {
         }
     };
 
-    const handleDelete = async (bannerId: string, bannerName: string) => {
-        if (!window.confirm(`Are you sure you want to delete the banner "${bannerName}"?`)) return;
+    const handleDelete = async () => {
+        if (!bannerToDelete) return;
 
-        const result = await deleteBanner(bannerId);
+        const result = await deleteBanner(bannerToDelete.id);
         if (result.success) {
             toast({
                 title: "Banner Deleted",
-                description: `The banner "${bannerName}" has been successfully deleted.`,
+                description: `The banner "${bannerToDelete.name}" has been successfully deleted.`,
             });
         } else {
             toast({
@@ -124,6 +135,7 @@ export default function AdminBannersPage() {
                 variant: "destructive",
             });
         }
+        setBannerToDelete(null);
     };
     
     const openCustomDialog = (banner?: FeaturedBanner) => {
@@ -148,152 +160,170 @@ export default function AdminBannersPage() {
     const upcomingTournaments = tournaments.filter(t => t.status === 'upcoming' && t.game === selectedGameName);
 
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle>Featured Banners</CardTitle>
-                    <CardDescription>Manage the featured banners on the home page.</CardDescription>
-                </div>
-                <div className="flex gap-2">
-                    {/* Dialog for adding from a tournament */}
-                    <Dialog open={isTournamentDialogOpen} onOpenChange={handleTournamentDialogChange}>
-                        <DialogTrigger asChild>
-                            <Button size="sm">
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Add from Tournament
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-2xl">
-                            <DialogHeader>
-                                <DialogTitle>Add Banner from Tournament</DialogTitle>
-                                <DialogDescription>
-                                    {selectedGameName 
-                                        ? `Select an upcoming tournament from ${selectedGameName}.`
-                                        : "First, select a game to see its upcoming tournaments."}
-                                </DialogDescription>
-                            </DialogHeader>
-                            {selectedGameName ? (
-                                <div>
-                                    <Button variant="link" onClick={() => setSelectedGameName(null)} className="p-0 h-auto mb-4 text-sm">
-                                       &larr; Back to Games
-                                    </Button>
-                                    <div className="space-y-2 max-h-[60vh] overflow-y-auto p-1">
-                                        {upcomingTournaments.length > 0 ? upcomingTournaments.map(t => (
-                                            <div key={t.id} className="flex items-center justify-between p-2 rounded-md border">
-                                                <div className="flex items-center gap-3 overflow-hidden">
-                                                    <Image src={t.image} alt={t.name} width={80} height={45} className="rounded-md object-cover aspect-video flex-shrink-0" data-ai-hint={t.dataAiHint} />
-                                                    <div className="overflow-hidden">
-                                                        <p className="font-semibold truncate">{t.name}</p>
-                                                        <p className="text-sm text-muted-foreground">{format(new Date(t.startDate), 'PPP')}</p>
-                                                    </div>
-                                                </div>
-                                                <Button size="sm" onClick={() => handleAddFromTournament(t)} className="flex-shrink-0">Add Banner</Button>
-                                            </div>
-                                        )) : (
-                                            <p className="text-center text-muted-foreground py-8">No upcoming tournaments for this game.</p>
-                                        )}
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="space-y-2 max-h-[60vh] overflow-y-auto p-1">
-                                    {games.map(game => (
-                                        <button
-                                            key={game.id}
-                                            onClick={() => setSelectedGameName(game.name)}
-                                            className="w-full flex items-center justify-between p-3 rounded-md border hover:bg-accent transition-colors text-left"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <Image src={game.image} alt={game.name} width={64} height={36} className="rounded-md object-cover aspect-video" data-ai-hint={game.dataAiHint} />
-                                                <p className="font-semibold">{game.name}</p>
-                                            </div>
-                                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </DialogContent>
-                    </Dialog>
-                    {/* Dialog for custom banner add/edit */}
-                    <Dialog open={isCustomDialogOpen} onOpenChange={handleCustomDialogChange}>
-                        <DialogTrigger asChild>
-                            <Button size="sm" variant="outline" onClick={() => openCustomDialog()}>
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Add Custom
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>{selectedBanner ? 'Edit Banner' : 'Add Custom Banner'}</DialogTitle>
-                                <DialogDescription>
-                                    Fill in the details for the featured banner.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <BannerForm 
-                                banner={selectedBanner}
-                                onSubmit={handleCustomFormSubmit}
-                                isSubmitting={isSubmitting}
-                            />
-                        </DialogContent>
-                    </Dialog>
-                </div>
-            </CardHeader>
-            <CardContent>
-                {loading ? (
-                    <div className="space-y-2">
-                        {Array.from({ length: 2 }).map((_, i) => (
-                             <Skeleton key={i} className="h-24 w-full" />
-                        ))}
+        <>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Featured Banners</CardTitle>
+                        <CardDescription>Manage the featured banners on the home page.</CardDescription>
                     </div>
-                ) : (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Image</TableHead>
-                                <TableHead>Title</TableHead>
-                                <TableHead>Game</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead><span className="sr-only">Actions</span></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {banners.length > 0 ? banners.map((banner) => (
-                                <TableRow key={banner.id}>
-                                    <TableCell>
-                                        <Image src={banner.image} alt={banner.name} width={120} height={60} className="rounded-md object-cover aspect-video" data-ai-hint={banner.dataAiHint} />
-                                    </TableCell>
-                                    <TableCell className="font-medium">{banner.name}</TableCell>
-                                    <TableCell>{banner.game}</TableCell>
-                                    <TableCell>{banner.date}</TableCell>
-                                    <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                    <span className="sr-only">Toggle menu</span>
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => openCustomDialog(banner)}>
-                                                    Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleDelete(banner.id, banner.name)} className="text-destructive focus:text-destructive">
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
-                                </TableRow>
-                            )) : (
+                    <div className="flex gap-2">
+                        {/* Dialog for adding from a tournament */}
+                        <Dialog open={isTournamentDialogOpen} onOpenChange={handleTournamentDialogChange}>
+                            <DialogTrigger asChild>
+                                <Button size="sm">
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Add from Tournament
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-2xl">
+                                <DialogHeader>
+                                    <DialogTitle>Add Banner from Tournament</DialogTitle>
+                                    <DialogDescription>
+                                        {selectedGameName 
+                                            ? `Select an upcoming tournament from ${selectedGameName}.`
+                                            : "First, select a game to see its upcoming tournaments."}
+                                    </DialogDescription>
+                                </DialogHeader>
+                                {selectedGameName ? (
+                                    <div>
+                                        <Button variant="link" onClick={() => setSelectedGameName(null)} className="p-0 h-auto mb-4 text-sm">
+                                           &larr; Back to Games
+                                        </Button>
+                                        <div className="space-y-2 max-h-[60vh] overflow-y-auto p-1">
+                                            {upcomingTournaments.length > 0 ? upcomingTournaments.map(t => (
+                                                <div key={t.id} className="flex items-center justify-between p-2 rounded-md border">
+                                                    <div className="flex items-center gap-3 overflow-hidden">
+                                                        <Image src={t.image} alt={t.name} width={80} height={45} className="rounded-md object-cover aspect-video flex-shrink-0" data-ai-hint={t.dataAiHint} />
+                                                        <div className="overflow-hidden">
+                                                            <p className="font-semibold truncate">{t.name}</p>
+                                                            <p className="text-sm text-muted-foreground">{format(new Date(t.startDate), 'PPP')}</p>
+                                                        </div>
+                                                    </div>
+                                                    <Button size="sm" onClick={() => handleAddFromTournament(t)} className="flex-shrink-0">Add Banner</Button>
+                                                </div>
+                                            )) : (
+                                                <p className="text-center text-muted-foreground py-8">No upcoming tournaments for this game.</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2 max-h-[60vh] overflow-y-auto p-1">
+                                        {games.map(game => (
+                                            <button
+                                                key={game.id}
+                                                onClick={() => setSelectedGameName(game.name)}
+                                                className="w-full flex items-center justify-between p-3 rounded-md border hover:bg-accent transition-colors text-left"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <Image src={game.image} alt={game.name} width={64} height={36} className="rounded-md object-cover aspect-video" data-ai-hint={game.dataAiHint} />
+                                                    <p className="font-semibold">{game.name}</p>
+                                                </div>
+                                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </DialogContent>
+                        </Dialog>
+                        {/* Dialog for custom banner add/edit */}
+                        <Dialog open={isCustomDialogOpen} onOpenChange={handleCustomDialogChange}>
+                            <DialogTrigger asChild>
+                                <Button size="sm" variant="outline" onClick={() => openCustomDialog()}>
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Add Custom
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>{selectedBanner ? 'Edit Banner' : 'Add Custom Banner'}</DialogTitle>
+                                    <DialogDescription>
+                                        Fill in the details for the featured banner.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <BannerForm 
+                                    banner={selectedBanner}
+                                    onSubmit={handleCustomFormSubmit}
+                                    isSubmitting={isSubmitting}
+                                />
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {loading ? (
+                        <div className="space-y-2">
+                            {Array.from({ length: 2 }).map((_, i) => (
+                                 <Skeleton key={i} className="h-24 w-full" />
+                            ))}
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24">
-                                        No banners found. Add one to get started.
-                                    </TableCell>
+                                    <TableHead>Image</TableHead>
+                                    <TableHead>Title</TableHead>
+                                    <TableHead>Game</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead><span className="sr-only">Actions</span></TableHead>
                                 </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                )}
-            </CardContent>
-        </Card>
+                            </TableHeader>
+                            <TableBody>
+                                {banners.length > 0 ? banners.map((banner) => (
+                                    <TableRow key={banner.id}>
+                                        <TableCell>
+                                            <Image src={banner.image} alt={banner.name} width={120} height={60} className="rounded-md object-cover aspect-video" data-ai-hint={banner.dataAiHint} />
+                                        </TableCell>
+                                        <TableCell className="font-medium">{banner.name}</TableCell>
+                                        <TableCell>{banner.game}</TableCell>
+                                        <TableCell>{banner.date}</TableCell>
+                                        <TableCell>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                        <span className="sr-only">Toggle menu</span>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => openCustomDialog(banner)}>
+                                                        Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => setBannerToDelete(banner)} className="text-destructive focus:text-destructive">
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                )) : (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center h-24">
+                                            No banners found. Add one to get started.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    )}
+                </CardContent>
+            </Card>
+            <AlertDialog open={!!bannerToDelete} onOpenChange={(open) => !open && setBannerToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the banner "{bannerToDelete?.name}".
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 }

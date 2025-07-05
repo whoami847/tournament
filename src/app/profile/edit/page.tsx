@@ -217,24 +217,21 @@ export default function EditProfilePage() {
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
-        <div className="absolute top-4 left-4 z-10">
+        
+        <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={() => router.back()}>
               <ArrowLeft className="h-4 w-4" />
               <span className="sr-only">Back</span>
             </Button>
-        </div>
-        <h1 className="absolute top-16 left-4 text-2xl font-bold text-white sm:top-6 z-10">Edit Profile</h1>
-        
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-black/50 text-white hover:bg-black/70 hover:text-white border-white/50"
-            onClick={() => bannerInputRef.current?.click()}
-          >
-            <Camera className="mr-2 h-4 w-4" />
-            Upload Banner
-          </Button>
+             <Button
+                variant="outline"
+                size="sm"
+                className="bg-black/50 text-white hover:bg-black/70 hover:text-white border-white/50"
+                onClick={() => bannerInputRef.current?.click()}
+              >
+                <Camera className="mr-2 h-4 w-4" />
+                Upload Banner
+              </Button>
         </div>
       </div>
 
@@ -263,7 +260,7 @@ export default function EditProfilePage() {
       <div className="px-4 mt-6">
         <Card>
             <CardHeader>
-                <CardTitle>Update Information</CardTitle>
+                <CardTitle>Edit Profile</CardTitle>
                 <CardDescription>Change your details below. Click save when you're done.</CardDescription>
             </CardHeader>
             <CardContent>

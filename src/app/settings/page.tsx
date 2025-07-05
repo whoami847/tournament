@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useTheme } from 'next-themes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,8 @@ import { Monitor, Sun, Moon, Bell, Languages } from 'lucide-react';
 
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
+    const [language, setLanguage] = useState('en-us');
+    const [pushNotifications, setPushNotifications] = useState(false);
 
     return (
         <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
@@ -68,13 +71,14 @@ export default function SettingsPage() {
                                     <p className="text-xs text-muted-foreground">Select your preferred language.</p>
                                 </div>
                             </Label>
-                             <Select defaultValue="en-us" disabled>
+                             <Select value={language} onValueChange={setLanguage}>
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="Select language" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="en-us">English (US)</SelectItem>
-                                    <SelectItem value="bn-bd" disabled>Bengali (BD)</SelectItem>
+                                    <SelectItem value="en-us">English</SelectItem>
+                                    <SelectItem value="bn-bd">বাংলা</SelectItem>
+                                    <SelectItem value="hi-in">हिंदी</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -90,7 +94,7 @@ export default function SettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                          <div className="flex items-center justify-between">
-                            <Label htmlFor="language" className="flex items-center gap-3">
+                            <Label htmlFor="push-notifications" className="flex items-center gap-3">
                                 <span className="p-2 bg-muted rounded-full">
                                     <Bell className="h-5 w-5" />
                                 </span>
@@ -99,7 +103,11 @@ export default function SettingsPage() {
                                     <p className="text-xs text-muted-foreground">Receive notifications on your device.</p>
                                 </div>
                             </Label>
-                            <Switch id="push-notifications" disabled />
+                            <Switch 
+                                id="push-notifications"
+                                checked={pushNotifications}
+                                onCheckedChange={setPushNotifications}
+                            />
                         </div>
                     </CardContent>
                 </Card>

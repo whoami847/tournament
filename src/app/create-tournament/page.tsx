@@ -3,9 +3,10 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { PlusCircle, Trash2 } from 'lucide-react';
 
 import { Button } from "@/components/ui/button"
 import {
@@ -32,6 +33,7 @@ import { useToast } from "@/hooks/use-toast"
 import { addTournament } from "@/lib/tournaments-service"
 import { getGamesStream } from "@/lib/games-service"
 import { ImageUpload } from "@/components/admin/image-upload"
+import { Switch } from "@/components/ui/switch"
 
 const formSchema = z.object({
   name: z.string().min(5, "Tournament name must be at least 5 characters."),
@@ -51,6 +53,12 @@ const formSchema = z.object({
   map: z.string().optional(),
   perKillPrize: z.coerce.number().min(0).optional(),
   version: z.string().optional(),
+  pointSystemEnabled: z.boolean().default(false),
+  perKillPoints: z.coerce.number().min(0).optional(),
+  placementPoints: z.array(z.object({
+    place: z.coerce.number().int().min(1),
+    points: z.coerce.number().min(0),
+  })).optional(),
 }).refine(data => {
     if (data.mode === 'LONE WOLF' && data.teamType === 'SQUAD') {
         return false;
@@ -90,11 +98,25 @@ export default function CreateTournamentPage() {
             map: "Bermuda",
             perKillPrize: 10,
             version: "Mobile",
+            pointSystemEnabled: false,
+            perKillPoints: 1,
+            placementPoints: [
+                { place: 1, points: 12 },
+                { place: 2, points: 9 },
+                { place: 3, points: 8 },
+                { place: 4, points: 7 },
+            ]
         },
     })
 
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "placementPoints"
+    });
+
     const mode = form.watch('mode');
     const teamType = form.watch('teamType');
+    const pointSystemEnabled = form.watch('pointSystemEnabled');
 
     useEffect(() => {
         if (mode === 'LONE WOLF' && form.getValues('teamType') === 'SQUAD') {
@@ -109,7 +131,18 @@ export default function CreateTournamentPage() {
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsSubmitting(true);
         try {
-            const result = await addTournament(values as Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket'>);
+            const { perKillPoints, placementPoints, ...restOfValues } = values;
+
+            const tournamentData: Partial<Tournament> = { ...restOfValues };
+
+            if (values.pointSystemEnabled) {
+                tournamentData.pointSystem = {
+                    perKillPoints: perKillPoints || 0,
+                    placementPoints: placementPoints || [],
+                };
+            }
+
+            const result = await addTournament(tournamentData as Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket'>);
             if (result.success) {
                 toast({
                     title: "Tournament Created!",
@@ -271,7 +304,7 @@ export default function CreateTournamentPage() {
                                 />
                             </div>
 
-                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <FormField
                                     control={form.control}
                                     name="maxTeams"
@@ -298,14 +331,30 @@ export default function CreateTournamentPage() {
                                         </FormItem>
                                     )}
                                 />
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                  <FormField
                                     control={form.control}
                                     name="prizePool"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Prize Pool (TK)</FormLabel>
+                                            <FormLabel>Total Prize Pool (TK)</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="e.g. 10,000" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={form.control}
+                                    name="perKillPrize"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Per Kill Prize (TK)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="e.g., 5" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -366,6 +415,84 @@ export default function CreateTournamentPage() {
                                     </FormItem>
                                 )}
                             />
+
+                            <Card className="p-6">
+                                <FormField
+                                    control={form.control}
+                                    name="pointSystemEnabled"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-between">
+                                            <div className="space-y-0.5">
+                                                <FormLabel className="text-base">Enable Point System</FormLabel>
+                                                <FormDescription>
+                                                    Enable if qualification is based on points, not direct wins.
+                                                </FormDescription>
+                                            </div>
+                                            <FormControl>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                {pointSystemEnabled && (
+                                    <div className="space-y-6 pt-6 mt-6 border-t">
+                                        <FormField
+                                            control={form.control}
+                                            name="perKillPoints"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Points Per Kill</FormLabel>
+                                                    <FormControl><Input type="number" {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <div>
+                                            <h4 className="mb-2 text-lg font-medium">Placement Points</h4>
+                                            <div className="space-y-4">
+                                                {fields.map((field, index) => (
+                                                    <div key={field.id} className="flex items-center gap-4 p-4 border rounded-md bg-muted/50">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`placementPoints.${index}.place`}
+                                                            render={({ field }) => (
+                                                                <FormItem className="flex-1">
+                                                                    <FormLabel>Place</FormLabel>
+                                                                    <FormControl><Input type="number" placeholder="e.g., 1" {...field} /></FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`placementPoints.${index}.points`}
+                                                            render={({ field }) => (
+                                                                <FormItem className="flex-1">
+                                                                    <FormLabel>Points</FormLabel>
+                                                                    <FormControl><Input type="number" placeholder="e.g., 15" {...field} /></FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} className="self-end">
+                                                            <Trash2 className="h-4 w-4" />
+                                                            <span className="sr-only">Remove Placement</span>
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <Button type="button" variant="outline" size="sm" onClick={() => append({ place: fields.length + 1, points: 0 })} className="mt-4">
+                                                <PlusCircle className="mr-2 h-4 w-4" />
+                                                Add Placement
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </Card>
 
                             <div className="flex items-center gap-4">
                                 <Button type="submit" size="lg" disabled={isSubmitting}>

@@ -102,7 +102,7 @@ const generateBracketStructure = (maxTeams: number, tournamentId: string): Round
 };
 
 
-export const addTournament = async (tournament: Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket' | 'pointSystem'>) => {
+export const addTournament = async (tournament: Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket'>) => {
   try {
     const newTournamentRef = doc(collection(firestore, 'tournaments'));
     const tournamentId = newTournamentRef.id;
@@ -111,17 +111,16 @@ export const addTournament = async (tournament: Omit<Tournament, 'id' | 'created
       ...tournament,
       startDate: Timestamp.fromDate(new Date(tournament.startDate)),
       createdAt: Timestamp.now(),
-      // Default values for a new tournament
       teamsCount: 0,
       status: 'upcoming', 
       participants: [],
-      bracket: generateBracketStructure(tournament.maxTeams, tournamentId), // Auto-generate bracket
+      bracket: generateBracketStructure(tournament.maxTeams, tournamentId),
       image: tournament.image || 'https://placehold.co/600x400.png',
       dataAiHint: tournament.dataAiHint || 'esports tournament',
       map: tournament.map || 'TBD',
       version: tournament.version || 'Mobile',
-      pointSystemEnabled: false,
-      pointSystem: { perKillPoints: 1, placementPoints: [
+      pointSystemEnabled: tournament.pointSystemEnabled ?? false,
+      pointSystem: tournament.pointSystem ?? { perKillPoints: 1, placementPoints: [
           { place: 1, points: 15 },
           { place: 2, points: 12 },
           { place: 3, points: 10 },
@@ -341,6 +340,7 @@ export const joinTournament = async (
         tournamentName: tournamentData.name,
         game: tournamentData.game,
         teamType: getTeamType(tournamentData.format),
+        teamName: newParticipant.name,
         players: newParticipant.members || [],
     });
 

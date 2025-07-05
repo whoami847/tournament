@@ -334,7 +334,7 @@ export default function HomePage() {
             <GamesList games={games} />
           </section>
           <section>
-            <SectionHeader title="Top Players" actionText="Full Ranking" actionHref="#" />
+            <SectionHeader title="Top Players" actionText="Full Ranking" actionHref="/leaderboard" />
             <TopPlayers players={topPlayers} loading={loadingPlayers} />
           </section>
         </div>

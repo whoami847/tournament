@@ -1,6 +1,4 @@
 
-
-
 import {
   collection,
   doc,
@@ -97,6 +95,20 @@ export const getTopPlayersStream = (callback: (players: PlayerProfile[]) => void
 
   return unsubscribe;
 }
+
+export const getPlayersStream = (callback: (players: PlayerProfile[]) => void) => {
+  const q = query(collection(firestore, 'users'), orderBy('winrate', 'desc'));
+
+  const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const players = querySnapshot.docs.map(fromFirestore);
+    callback(players);
+  }, (error) => {
+    console.error("Error fetching players stream: ", error);
+    callback([]);
+  });
+
+  return unsubscribe;
+};
 
 export const getUserProfileStream = (userId: string, callback: (profile: PlayerProfile | null) => void) => {
     const userRef = doc(firestore, 'users', userId);

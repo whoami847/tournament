@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -128,20 +129,15 @@ export default function TournamentsPage() {
         </div>
         
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="flex items-center gap-2 p-1 bg-muted rounded-full flex-wrap">
-                  <Button variant={selectedStatus === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('all')}>All</Button>
-                  <Button variant={selectedStatus === 'live' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('live')}>Ongoing</Button>
-                  <Button variant={selectedStatus === 'upcoming' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('upcoming')}>Upcoming</Button>
-                  <Button variant={selectedStatus === 'completed' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('completed')}>Finished</Button>
-              </div>
-              <div className="flex items-center space-x-2">
-              <Switch id="bookmarks-only" checked={showBookmarkedOnly} onCheckedChange={setShowBookmarkedOnly} />
-              <Label htmlFor="bookmarks-only">My Bookmarks</Label>
-              </div>
+          <div className="flex items-center gap-2 p-1 bg-muted rounded-full flex-wrap self-start">
+              <Button variant={selectedStatus === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('all')}>All</Button>
+              <Button variant={selectedStatus === 'live' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('live')}>Ongoing</Button>
+              <Button variant={selectedStatus === 'upcoming' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('upcoming')}>Upcoming</Button>
+              <Button variant={selectedStatus === 'completed' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => setSelectedStatus('completed')}>Finished</Button>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex flex-col md:flex-row gap-2 self-start sm:self-center w-full">
               <div className="flex items-center gap-2 p-1 bg-muted rounded-full self-start flex-wrap">
                 <Button variant={selectedFormat === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4" onClick={() => handleFormatChange('all')}>All Modes</Button>
                 {formats.map(format => (
@@ -172,6 +168,11 @@ export default function TournamentsPage() {
                   ))}
                 </div>
               )}
+            </div>
+            <div className="flex items-center space-x-2 self-end sm:self-center">
+              <Switch id="bookmarks-only" checked={showBookmarkedOnly} onCheckedChange={setShowBookmarkedOnly} />
+              <Label htmlFor="bookmarks-only">My Bookmarks</Label>
+            </div>
           </div>
         </div>
 

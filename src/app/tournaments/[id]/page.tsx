@@ -23,6 +23,7 @@ import { ResultSubmissionDialog } from '@/components/result-submission-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { motion } from 'framer-motion';
 
 const InfoRow = ({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: React.ReactNode }) => (
     <div className="flex items-center justify-between py-3 border-b border-border/50 last:border-b-0">
@@ -235,7 +236,12 @@ export default function TournamentPage() {
     )}
     <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
       <div className="space-y-8">
-        <header className="relative h-64 md:h-80 rounded-lg overflow-hidden">
+        <motion.header
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative h-64 md:h-80 rounded-lg overflow-hidden"
+        >
           <Image
             src={tournament.image}
             alt={tournament.name}
@@ -248,9 +254,13 @@ export default function TournamentPage() {
             <Badge variant="secondary" className="mb-2">{tournament.game}</Badge>
             <h1 className="text-3xl md:text-5xl font-extrabold text-white shadow-lg">{tournament.name}</h1>
           </div>
-        </header>
+        </motion.header>
 
-        <div>
+        <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+        >
             {matchesToSubmit.length > 0 && (
                 <Card className="mb-6 bg-primary/10 border-primary/20">
                     <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
@@ -373,7 +383,7 @@ export default function TournamentPage() {
                     </Card>
                 </TabsContent>
             </Tabs>
-        </div>
+        </motion.div>
       </div>
     </div>
     </>

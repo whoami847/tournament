@@ -33,12 +33,14 @@ const fromFirestore = (doc: any): WithdrawRequest => {
 export const getPendingWithdrawRequestsStream = (callback: (requests: WithdrawRequest[]) => void) => {
   const q = query(
     collection(firestore, 'withdrawRequests'), 
-    where('status', '==', 'pending'),
-    orderBy('requestedAt', 'asc')
+    where('status', '==', 'pending')
   );
   
   const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    callback(querySnapshot.docs.map(fromFirestore));
+    const requests = querySnapshot.docs.map(fromFirestore);
+    // Sort client-side to avoid needing a composite index
+    requests.sort((a, b) => a.requestedAt.seconds - b.requestedAt.seconds);
+    callback(requests);
   }, (error) => {
     console.error("Error fetching withdraw requests:", error);
     callback([]);

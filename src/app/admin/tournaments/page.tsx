@@ -109,7 +109,7 @@ const RoomManager = ({ tournament }: { tournament: Tournament }) => {
 export default function AdminTournamentsPage() {
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedStatus, setSelectedStatus] = useState<'live' | 'upcoming' | 'completed'>('upcoming');
+    const [selectedStatus, setSelectedStatus] = useState<'all' | 'live' | 'upcoming' | 'completed'>('all');
     const { toast } = useToast();
     const router = useRouter();
 
@@ -123,6 +123,7 @@ export default function AdminTournamentsPage() {
 
     const filteredTournaments = useMemo(() => {
         if (!tournaments) return [];
+        if (selectedStatus === 'all') return tournaments;
         return tournaments.filter((tournament: Tournament) => tournament.status === selectedStatus);
     }, [tournaments, selectedStatus]);
 
@@ -181,7 +182,8 @@ export default function AdminTournamentsPage() {
                 </Button>
             </CardHeader>
             <CardContent>
-                <div className="flex items-center gap-2 p-1 bg-muted rounded-full flex-wrap mb-6 self-start">
+                <div className="flex flex-wrap items-center gap-2 mb-6">
+                    <Button variant={selectedStatus === 'all' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4 capitalize" onClick={() => setSelectedStatus('all')}>All</Button>
                     <Button variant={selectedStatus === 'upcoming' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4 capitalize" onClick={() => setSelectedStatus('upcoming')}>Upcoming</Button>
                     <Button variant={selectedStatus === 'live' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4 capitalize" onClick={() => setSelectedStatus('live')}>Live</Button>
                     <Button variant={selectedStatus === 'completed' ? 'default' : 'ghost'} size="sm" className="rounded-full h-8 px-4 capitalize" onClick={() => setSelectedStatus('completed')}>Completed</Button>

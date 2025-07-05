@@ -8,6 +8,7 @@ import {
   query,
   orderBy,
   Timestamp,
+  getDoc,
 } from 'firebase/firestore';
 import { firestore } from './firebase';
 import type { GameCategory } from '@/types';
@@ -21,6 +22,7 @@ const fromFirestore = (doc: any): GameCategory => {
     categories: data.categories,
     image: data.image,
     dataAiHint: data.dataAiHint,
+    description: data.description || '',
   };
 };
 
@@ -50,6 +52,20 @@ export const getGamesStream = (callback: (games: GameCategory[]) => void) => {
   });
 
   return unsubscribe;
+};
+
+export const getGame = async (id: string): Promise<GameCategory | null> => {
+    try {
+        const docRef = doc(firestore, 'games', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return fromFirestore(docSnap);
+        }
+        return null;
+    } catch (error) {
+        console.error('Error getting game:', error);
+        return null;
+    }
 };
 
 export const updateGame = async (id: string, data: Partial<GameCategory>) => {

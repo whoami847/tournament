@@ -9,6 +9,7 @@ export interface GameCategory {
   categories: string;
   image: string;
   dataAiHint?: string;
+  description?: string;
 }
 
 export interface Team {

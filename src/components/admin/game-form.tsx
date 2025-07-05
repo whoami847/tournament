@@ -8,12 +8,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import type { GameCategory } from '@/types';
 import { ImageUpload } from './image-upload';
+import { Textarea } from '@/components/ui/textarea';
 
 const formSchema = z.object({
   name: z.string().min(2, "Game name must be at least 2 characters."),
   categories: z.string().min(3, "Please enter at least one category."),
   image: z.string().url("Please upload an image for the game."),
   dataAiHint: z.string().optional(),
+  description: z.string().min(20, "Description must be at least 20 characters.").optional().or(z.literal('')),
 });
 
 type GameFormValues = z.infer<typeof formSchema>;
@@ -32,6 +34,7 @@ export function GameForm({ game, onSubmit, isSubmitting }: GameFormProps) {
             categories: game?.categories || '',
             image: game?.image || '',
             dataAiHint: game?.dataAiHint || 'game logo',
+            description: game?.description || '',
         },
     });
 
@@ -72,6 +75,19 @@ export function GameForm({ game, onSubmit, isSubmitting }: GameFormProps) {
                         <FormItem>
                             <FormLabel>Categories</FormLabel>
                             <FormControl><Input placeholder="e.g., Battle Royale • Action" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Game Description</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="Enter a detailed description of the game..." className="min-h-[120px]" {...field} />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}

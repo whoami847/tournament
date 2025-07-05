@@ -330,7 +330,7 @@ export default function HomePage() {
             <GameFilter games={games.slice(0, 4)} />
           </section>
           <section>
-            <SectionHeader title="Our Supported Games" actionText="All games" actionHref="#" />
+            <SectionHeader title="Our Supported Games" actionText="All games" actionHref="/games" />
             <GamesList games={games} />
           </section>
           <section>

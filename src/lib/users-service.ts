@@ -19,6 +19,7 @@ import {
 import type { User } from 'firebase/auth';
 import { firestore } from './firebase';
 import type { PlayerProfile } from '@/types';
+import { sendPasswordReset } from './auth-service';
 
 // Helper to convert Firestore doc to PlayerProfile type
 const fromFirestore = (doc: any): PlayerProfile => {
@@ -194,3 +195,16 @@ export const updateUserStatus = async (
         return { success: false, error: (error as Error).message };
     }
 }
+
+export const sendPasswordResetForUser = async (email: string | null): Promise<{ success: boolean; error?: string }> => {
+    if (!email) {
+        return { success: false, error: 'User email is not available.' };
+    }
+    try {
+        await sendPasswordReset(email);
+        return { success: true };
+    } catch (error) {
+        console.error('Error sending password reset email:', error);
+        return { success: false, error: (error as Error).message };
+    }
+};

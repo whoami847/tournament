@@ -7,6 +7,7 @@ import {
   updateProfile,
   type User,
   type UserCredential,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
 import type { AuthUser } from '@/types';
@@ -50,4 +51,8 @@ export async function signInWithGoogle(): Promise<UserCredential> {
 
 export function signOutUser(): Promise<void> {
   return signOut(auth);
+}
+
+export function sendPasswordReset(email: string): Promise<void> {
+  return sendPasswordResetEmail(auth, email);
 }

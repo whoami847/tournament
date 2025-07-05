@@ -1,13 +1,14 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getUsersStream, updateUserBalance, updateUserStatus } from '@/lib/users-service';
+import { getUsersStream, updateUserBalance, updateUserStatus, sendPasswordResetForUser } from '@/lib/users-service';
 import type { PlayerProfile } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MoreHorizontal, Wallet, UserX, UserCheck, ShieldCheck } from 'lucide-react';
+import { Wallet, UserX, UserCheck, ShieldCheck, Mail, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,42 +51,47 @@ const ManageWalletDialog = ({ user, onUpdate }: { user: PlayerProfile; onUpdate:
     };
 
     return (
-        <div className="rounded-lg border p-4">
-            <h4 className="font-semibold mb-2">Manage Wallet</h4>
-            <p className="text-sm text-muted-foreground mb-4">Current Balance: <span className="font-bold text-foreground">{user.balance.toFixed(2)} TK</span></p>
-            <div className="space-y-2">
-                <Label htmlFor="amount">Adjustment Amount (TK)</Label>
-                <Input
-                    id="amount"
-                    type="number"
-                    placeholder="e.g., 100"
-                    value={amount || ''}
-                    onChange={(e) => setAmount(Number(e.target.value))}
-                />
-            </div>
-            <div className="flex gap-2 mt-2">
-                 <Button
-                    variant="destructive"
-                    onClick={() => handleUpdateBalance(-amount)}
-                    disabled={isSubmitting || amount <= 0}
-                    className="flex-1"
-                >
-                    Remove
-                </Button>
-                <Button
-                    onClick={() => handleUpdateBalance(amount)}
-                    disabled={isSubmitting || amount <= 0}
-                    className="flex-1"
-                >
-                    Add
-                </Button>
-            </div>
-        </div>
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-lg">Manage Wallet</CardTitle>
+                <CardDescription>Current Balance: <span className="font-bold text-foreground">{user.balance.toFixed(2)} TK</span></CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    <Label htmlFor="amount">Adjustment Amount (TK)</Label>
+                    <Input
+                        id="amount"
+                        type="number"
+                        placeholder="e.g., 100"
+                        value={amount || ''}
+                        onChange={(e) => setAmount(Number(e.target.value))}
+                    />
+                </div>
+                <div className="flex gap-2 mt-2">
+                     <Button
+                        variant="destructive"
+                        onClick={() => handleUpdateBalance(-amount)}
+                        disabled={isSubmitting || amount <= 0}
+                        className="flex-1"
+                    >
+                        Remove
+                    </Button>
+                    <Button
+                        onClick={() => handleUpdateBalance(amount)}
+                        disabled={isSubmitting || amount <= 0}
+                        className="flex-1"
+                    >
+                        Add
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
     );
 };
 
 const UserDetailsDialog = ({ user, onClose }: { user: PlayerProfile, onClose: () => void }) => {
     const { toast } = useToast();
+    const [isResettingPassword, setIsResettingPassword] = useState(false);
 
     const handleStatusChange = async (status: 'active' | 'banned') => {
         const result = await updateUserStatus(user.id, status);
@@ -102,6 +108,23 @@ const UserDetailsDialog = ({ user, onClose }: { user: PlayerProfile, onClose: ()
                 variant: 'destructive',
             });
         }
+    };
+    
+    const handlePasswordReset = async () => {
+        if (!user.email) {
+            toast({ title: 'Cannot Reset Password', description: 'This user does not have an email address associated with their account.', variant: 'destructive' });
+            return;
+        }
+        if (!window.confirm(`Are you sure you want to send a password reset email to ${user.name}?`)) return;
+
+        setIsResettingPassword(true);
+        const result = await sendPasswordResetForUser(user.email);
+        if (result.success) {
+            toast({ title: 'Password Reset Email Sent', description: `An email has been sent to ${user.email} with instructions.` });
+        } else {
+            toast({ title: 'Error', description: result.error, variant: 'destructive' });
+        }
+        setIsResettingPassword(false);
     };
 
     return (
@@ -158,6 +181,18 @@ const UserDetailsDialog = ({ user, onClose }: { user: PlayerProfile, onClose: ()
                 </div>
                 <div className="space-y-4">
                      <ManageWalletDialog user={user} onUpdate={onClose} />
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Password Management</CardTitle>
+                            <CardDescription>If a user forgets their password, you can send them a reset link.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button className="w-full" variant="secondary" onClick={handlePasswordReset} disabled={isResettingPassword}>
+                                {isResettingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+                                Send Password Reset Email
+                            </Button>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </DialogContent>

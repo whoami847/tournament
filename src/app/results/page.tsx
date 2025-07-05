@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
@@ -9,6 +9,7 @@ import type { Tournament, PlayerProfile } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Award, Trophy, Loader2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const MatchHistoryCard = ({ tournament, profile }: { tournament: Tournament, profile: PlayerProfile }) => {
     const userTeam = tournament.participants.find(p => p.members?.some(m => m.gamerId === profile.gamerId));
@@ -75,7 +76,8 @@ export default function ResultsPage() {
         if (profile?.gamerId) {
             const unsubscribe = getTournamentsStream((allTournaments) => {
                 const userTournaments = allTournaments.filter(t => 
-                    t.participants.some(p => p.members?.some(m => m.gamerId === profile.gamerId))
+                    t.participants.some(p => p.members?.some(m => m.gamerId === profile.gamerId)) &&
+                    (t.status === 'live' || t.status === 'completed')
                 ).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
                 
                 setTournaments(userTournaments);
@@ -87,6 +89,14 @@ export default function ResultsPage() {
         }
     }, [profile, authLoading]);
     
+    const liveTournaments = useMemo(() => {
+        return tournaments.filter(t => t.status === 'live');
+    }, [tournaments]);
+
+    const completedTournaments = useMemo(() => {
+        return tournaments.filter(t => t.status === 'completed');
+    }, [tournaments]);
+
     if (loading || authLoading) {
         return (
             <div className="container mx-auto px-4 py-8 md:pb-8 pb-24 flex justify-center items-center h-[60vh]">
@@ -108,22 +118,45 @@ export default function ResultsPage() {
         <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
             <header className="mb-8">
                 <h1 className="text-3xl font-bold tracking-tight">Match History</h1>
-                <p className="text-muted-foreground">A record of all the tournaments you've participated in.</p>
+                <p className="text-muted-foreground">Review your live and completed matches.</p>
             </header>
             
-            {tournaments.length === 0 ? (
-                 <Card>
-                    <CardContent className="p-6 text-center text-muted-foreground">
-                        You haven't participated in any matches yet.
-                    </CardContent>
-                </Card>
-            ) : (
-                <div className="space-y-4">
-                    {tournaments.map(tournament => (
-                        <MatchHistoryCard key={tournament.id} tournament={tournament} profile={profile} />
-                    ))}
-                </div>
-            )}
+            <Tabs defaultValue="completed" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="live">Live Matches</TabsTrigger>
+                    <TabsTrigger value="completed">Completed Matches</TabsTrigger>
+                </TabsList>
+                <TabsContent value="live" className="mt-4">
+                    {liveTournaments.length > 0 ? (
+                        <div className="space-y-4">
+                            {liveTournaments.map(tournament => (
+                                <MatchHistoryCard key={tournament.id} tournament={tournament} profile={profile} />
+                            ))}
+                        </div>
+                    ) : (
+                        <Card>
+                            <CardContent className="p-6 text-center text-muted-foreground">
+                                You have no live matches right now.
+                            </CardContent>
+                        </Card>
+                    )}
+                </TabsContent>
+                <TabsContent value="completed" className="mt-4">
+                     {completedTournaments.length > 0 ? (
+                        <div className="space-y-4">
+                            {completedTournaments.map(tournament => (
+                                <MatchHistoryCard key={tournament.id} tournament={tournament} profile={profile} />
+                            ))}
+                        </div>
+                    ) : (
+                        <Card>
+                            <CardContent className="p-6 text-center text-muted-foreground">
+                                You have no completed matches.
+                            </CardContent>
+                        </Card>
+                    )}
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

@@ -252,59 +252,83 @@ export default function AdminBannersPage() {
                 </CardHeader>
                 <CardContent>
                     {loading ? (
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             {Array.from({ length: 2 }).map((_, i) => (
-                                 <Skeleton key={i} className="h-24 w-full" />
+                                 <Skeleton key={i} className="h-28 w-full" />
                             ))}
                         </div>
+                    ) : banners.length > 0 ? (
+                        <>
+                            {/* Desktop Table */}
+                            <div className="hidden md:block">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Image</TableHead>
+                                            <TableHead>Title</TableHead>
+                                            <TableHead>Game</TableHead>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead><span className="sr-only">Actions</span></TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {banners.map((banner) => (
+                                            <TableRow key={banner.id}>
+                                                <TableCell>
+                                                    <Image src={banner.image} alt={banner.name} width={120} height={60} className="rounded-md object-cover aspect-video" data-ai-hint={banner.dataAiHint} />
+                                                </TableCell>
+                                                <TableCell className="font-medium">{banner.name}</TableCell>
+                                                <TableCell>{banner.game}</TableCell>
+                                                <TableCell>{banner.date}</TableCell>
+                                                <TableCell>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                                <span className="sr-only">Toggle menu</span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onClick={() => openCustomDialog(banner)}>
+                                                                Edit
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={() => setBannerToDelete(banner)} className="text-destructive focus:text-destructive">
+                                                                Delete
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                            
+                            {/* Mobile Card List */}
+                            <div className="md:hidden space-y-4">
+                                {banners.map((banner) => (
+                                    <div key={banner.id} className="bg-muted/50 p-4 rounded-lg border">
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <Image src={banner.image} alt={banner.name} width={120} height={60} className="rounded-md object-cover aspect-video flex-shrink-0" data-ai-hint={banner.dataAiHint} />
+                                            <div className="flex-grow overflow-hidden">
+                                                <p className="font-semibold truncate">{banner.name}</p>
+                                                <p className="text-sm text-muted-foreground">{banner.game}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">{banner.date}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end gap-2 border-t border-muted-foreground/20 pt-3">
+                                            <Button variant="outline" size="sm" onClick={() => openCustomDialog(banner)}>Edit</Button>
+                                            <Button variant="destructive" size="sm" onClick={() => setBannerToDelete(banner)}>Delete</Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
                     ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Image</TableHead>
-                                    <TableHead>Title</TableHead>
-                                    <TableHead>Game</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead><span className="sr-only">Actions</span></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {banners.length > 0 ? banners.map((banner) => (
-                                    <TableRow key={banner.id}>
-                                        <TableCell>
-                                            <Image src={banner.image} alt={banner.name} width={120} height={60} className="rounded-md object-cover aspect-video" data-ai-hint={banner.dataAiHint} />
-                                        </TableCell>
-                                        <TableCell className="font-medium">{banner.name}</TableCell>
-                                        <TableCell>{banner.game}</TableCell>
-                                        <TableCell>{banner.date}</TableCell>
-                                        <TableCell>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                        <span className="sr-only">Toggle menu</span>
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => openCustomDialog(banner)}>
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={() => setBannerToDelete(banner)} className="text-destructive focus:text-destructive">
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                )) : (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24">
-                                            No banners found. Add one to get started.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                        <div className="text-center py-16 border border-dashed rounded-lg">
+                            <h3 className="text-xl font-medium">No Banners Found</h3>
+                            <p className="text-muted-foreground mt-2">Add a banner to get started.</p>
+                        </div>
                     )}
                 </CardContent>
             </Card>

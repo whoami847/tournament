@@ -1,16 +1,63 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Swords, Gamepad2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { getUsersStream } from '@/lib/users-service';
+import { getTournamentsStream } from '@/lib/tournaments-service';
+import type { PlayerProfile, Tournament } from '@/types';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const StatCard = ({ title, value, icon: Icon, loading, subtext }: { title: string; value: number; icon: React.ElementType; loading: boolean; subtext?: string }) => (
+    <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+            <Icon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+            {loading ? (
+                <Skeleton className="h-7 w-12" />
+            ) : (
+                <div className="text-2xl font-bold">{value}</div>
+            )}
+            {subtext && !loading && (
+                 <p className="text-xs text-muted-foreground">{subtext}</p>
+            )}
+        </CardContent>
+    </Card>
+);
+
 
 export default function AdminDashboardPage() {
-    // In a real app, these values would come from a database.
-    const stats = {
-        totalUsers: 150,
-        totalTournaments: 14,
-        liveTournaments: 2,
-        completedTournaments: 4,
-    };
+    const [userCount, setUserCount] = useState(0);
+    const [tournaments, setTournaments] = useState<Tournament[]>([]);
+    const [loadingUsers, setLoadingUsers] = useState(true);
+    const [loadingTournaments, setLoadingTournaments] = useState(true);
+
+    useEffect(() => {
+        const unsubUsers = getUsersStream((users: PlayerProfile[]) => {
+            setUserCount(users.length);
+            setLoadingUsers(false);
+        });
+
+        const unsubTournaments = getTournamentsStream((data: Tournament[]) => {
+            setTournaments(data);
+            setLoadingTournaments(false);
+        });
+
+        return () => {
+            unsubUsers();
+            unsubTournaments();
+        };
+    }, []);
+
+    const liveTournaments = tournaments.filter(t => t.status === 'live').length;
+    const completedTournaments = tournaments.filter(t => t.status === 'completed').length;
+    const totalTournaments = tournaments.length;
+    
+    const isLoading = loadingUsers || loadingTournaments;
 
     return (
         <div>
@@ -27,46 +74,34 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.totalUsers}</div>
-                        <p className="text-xs text-muted-foreground">+20.1% from last month</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Tournaments</CardTitle>
-                        <Swords className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.totalTournaments}</div>
-                        <p className="text-xs text-muted-foreground">+5 from last week</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Live Tournaments</CardTitle>
-                        <Gamepad2 className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.liveTournaments}</div>
-                        <p className="text-xs text-muted-foreground">Currently active</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Completed Tournaments</CardTitle>
-                        <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.completedTournaments}</div>
-                        <p className="text-xs text-muted-foreground">Finished this month</p>
-                    </CardContent>
-                </Card>
+                <StatCard 
+                    title="Total Users" 
+                    value={userCount} 
+                    icon={Users} 
+                    loading={isLoading} 
+                    subtext="Registered in the app"
+                />
+                <StatCard 
+                    title="Total Tournaments" 
+                    value={totalTournaments} 
+                    icon={Swords} 
+                    loading={isLoading} 
+                    subtext="All time"
+                />
+                <StatCard 
+                    title="Live Tournaments" 
+                    value={liveTournaments} 
+                    icon={Gamepad2} 
+                    loading={isLoading} 
+                    subtext="Currently active"
+                />
+                <StatCard 
+                    title="Completed Tournaments" 
+                    value={completedTournaments} 
+                    icon={ShieldCheck} 
+                    loading={isLoading} 
+                    subtext="Finished"
+                />
             </div>
             <div className="mt-8">
                 <Card>
@@ -74,7 +109,11 @@ export default function AdminDashboardPage() {
                         <CardTitle>Recent Activity</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-muted-foreground">Activity feed coming soon...</p>
+                        {isLoading ? (
+                            <Skeleton className="h-8 w-1/2" />
+                        ) : (
+                            <p className="text-muted-foreground">Activity feed coming soon...</p>
+                        )}
                     </CardContent>
                 </Card>
             </div>

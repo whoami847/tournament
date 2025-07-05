@@ -570,10 +570,6 @@ export default function ProfilePage() {
                                 <Link href="/settings">Settings</Link>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
-                                <Link href="/admin">Admin Panel</Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive/10 focus:text-destructive flex items-center gap-2">
                                 <LogOut className="h-4 w-4" />
                                 <span>Log Out</span>
@@ -623,3 +619,4 @@ export default function ProfilePage() {
         </div>
     );
 }
+

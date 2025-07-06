@@ -2,72 +2,109 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import Image from 'next/image';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 import { getTournamentsStream } from '@/lib/tournaments-service';
-import type { Tournament, PlayerProfile } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import type { Tournament, PlayerProfile, Team } from '@/types';
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Award, Trophy, Loader2 } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-const MatchHistoryCard = ({ tournament, profile }: { tournament: Tournament, profile: PlayerProfile }) => {
-    const userTeam = tournament.participants.find(p => p.members?.some(m => m.gamerId === profile.gamerId));
-    let finalRank: string = 'Participant';
+// --- Re-designed Match Result Card ---
 
-    if (tournament.status === 'completed' && userTeam) {
-        const bracket = tournament.bracket;
-        if (bracket && bracket.length > 0) {
-            const finalRound = bracket[bracket.length - 1];
-            if (finalRound && finalRound.matches.length === 1) {
-                const finalMatch = finalRound.matches[0];
-                if (finalMatch.status === 'completed') {
-                    const winner = finalMatch.scores[0] > finalMatch.scores[1] ? finalMatch.teams[0] : finalMatch.teams[1];
-                    const loser = finalMatch.scores[0] < finalMatch.scores[1] ? finalMatch.teams[0] : finalMatch.teams[1];
+const TeamDisplay = ({ team }: { team: Team | null }) => (
+    <div className="flex flex-col items-center gap-2 w-24 text-center">
+        {team?.avatar ? (
+            <Avatar className="h-16 w-16">
+                <AvatarImage src={team.avatar} alt={team.name || 'Team'} data-ai-hint="team logo" />
+                <AvatarFallback>{team.name?.charAt(0) || 'T'}</AvatarFallback>
+            </Avatar>
+        ) : (
+            <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center">
+                <svg width="40" height="40" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="text-muted-foreground">
+                    <path d="M0 8.81V7.15L5.43 7.15V0H7.34V7.15L12.77 7.15V8.81L7.34 8.81V16H5.43V8.81H0Z" />
+                </svg>
+            </div>
+        )}
+        <p className="font-semibold text-sm truncate">{team?.name || 'Team'}</p>
+    </div>
+);
 
-                    if (winner?.id === userTeam.id) {
-                        finalRank = 'Winner';
-                    } else if (loser?.id === userTeam.id) {
-                        finalRank = 'Runner-up';
-                    }
-                }
-            }
+const MatchResultCard = ({ tournament, profile }: { tournament: Tournament; profile: PlayerProfile }) => {
+    const userTeam = useMemo(() => 
+        tournament.participants.find(p => p.members?.some(m => m.gamerId === profile.gamerId)),
+        [tournament.participants, profile.gamerId]
+    );
+
+    if (!userTeam) return null;
+
+    let match, team1, team2, score1, score2, result;
+    
+    if (tournament.status === 'completed') {
+        const userMatches = tournament.bracket
+            .flatMap(round => round.matches)
+            .filter(m => m.status === 'completed' && m.teams.some(t => t?.id === userTeam.id))
+            .sort((a,b) => tournament.bracket.findIndex(r => r.matches.includes(b)) - tournament.bracket.findIndex(r => r.matches.includes(a)));
+        
+        match = userMatches[0];
+        if (!match || !match.teams[0] || !match.teams[1]) return null;
+
+        team1 = match.teams[0];
+        team2 = match.teams[1];
+        score1 = match.scores[0];
+        score2 = match.scores[1];
+
+        if (score1 > score2) {
+            result = team1.id === userTeam.id ? 'Victory' : 'Defeat';
+        } else if (score2 > score1) {
+            result = team2.id === userTeam.id ? 'Victory' : 'Defeat';
+        } else {
+             result = 'Draw';
         }
-    } else if (tournament.status !== 'completed' && userTeam) {
-        finalRank = 'Live';
+
+    } else { // 'live'
+        const liveMatch = tournament.bracket
+            .flatMap(r => r.matches)
+            .find(m => m.status === 'live' && m.teams.some(t => t?.id === userTeam.id));
+        
+        match = liveMatch || tournament.bracket.flatMap(r => r.matches).find(m => m.teams.some(t => t?.id === userTeam.id) && m.status !== 'completed');
+        if (!match) return null;
+
+        team1 = match.teams[0];
+        team2 = match.teams[1];
+        score1 = match.scores[0];
+        score2 = match.scores[1];
+        result = 'Live';
     }
 
-    const badgeVariant = finalRank === 'Live' ? 'destructive' : 'outline';
+    const badgeClasses = 
+        result === 'Victory' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+        result === 'Defeat' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+        'bg-primary/20 text-primary border-primary/30';
 
     return (
-        <Card className="overflow-hidden">
-            <CardHeader className="flex flex-row items-center gap-4 p-4">
-                <Image src={tournament.image} alt={tournament.name} width={80} height={80} className="rounded-lg aspect-square object-cover" data-ai-hint={tournament.dataAiHint} />
-                <div className="flex-1">
-                    <CardTitle className="text-base">{tournament.name}</CardTitle>
-                    <CardDescription>{tournament.game}</CardDescription>
-                    <Badge variant={badgeVariant} className="mt-2">{finalRank}</Badge>
+        <Card className="bg-card/50 p-4">
+            <CardContent className="p-0">
+                <div className="flex justify-between items-center mb-4">
+                    <p className="text-sm text-muted-foreground">{tournament.name} • {tournament.game}</p>
+                    <Badge variant="outline" className={badgeClasses}>{result}</Badge>
                 </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 space-y-2 text-sm">
-                <div className="flex justify-between items-center text-muted-foreground">
-                    <span className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Date</span>
-                    <span className="font-medium text-foreground">{format(new Date(tournament.startDate), 'PPP')}</span>
-                </div>
-                <div className="flex justify-between items-center text-muted-foreground">
-                    <span className="flex items-center gap-2"><Award className="h-4 w-4" /> Kills/Points</span>
-                    <span className="font-medium text-foreground">N/A</span>
-                </div>
-                <div className="flex justify-between items-center text-muted-foreground">
-                    <span className="flex items-center gap-2"><Trophy className="h-4 w-4" /> Final Rank</span>
-                    <span className="font-medium text-foreground">{finalRank}</span>
+                <div className="flex justify-around items-center">
+                    <TeamDisplay team={team1} />
+                    <div className="text-center">
+                        <p className="text-4xl font-bold">{score1} <span className="text-2xl text-muted-foreground mx-2">vs</span> {score2}</p>
+                        <p className="text-xs text-muted-foreground mt-2">{format(new Date(tournament.startDate), 'dd.MM.yyyy')}</p>
+                    </div>
+                    <TeamDisplay team={team2} />
                 </div>
             </CardContent>
         </Card>
     );
 };
 
+
+// --- Main Page Component ---
 export default function ResultsPage() {
     const { profile, loading: authLoading } = useAuth();
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -81,8 +118,7 @@ export default function ResultsPage() {
                 const userTournaments = allTournaments.filter(t => 
                     t.participants.some(p => p.members?.some(m => m.gamerId === profile.gamerId)) &&
                     (t.status === 'live' || t.status === 'completed')
-                ).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-                
+                );
                 setTournaments(userTournaments);
                 setLoading(false);
             });
@@ -93,11 +129,15 @@ export default function ResultsPage() {
     }, [profile, authLoading]);
     
     const liveTournaments = useMemo(() => {
-        return tournaments.filter(t => t.status === 'live');
+        return tournaments
+            .filter(t => t.status === 'live')
+            .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
     }, [tournaments]);
 
     const completedTournaments = useMemo(() => {
-        return tournaments.filter(t => t.status === 'completed');
+        return tournaments
+            .filter(t => t.status === 'completed')
+            .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
     }, [tournaments]);
 
     if (loading || authLoading) {
@@ -118,48 +158,50 @@ export default function ResultsPage() {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
-            <header className="mb-8">
+        <div className="container mx-auto px-4 py-8 md:pb-8 pb-24 space-y-8">
+            <header>
                 <h1 className="text-3xl font-bold tracking-tight">Match History</h1>
                 <p className="text-muted-foreground">Review your live and completed matches.</p>
             </header>
             
-            <Tabs defaultValue="completed" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="live">Live Matches</TabsTrigger>
-                    <TabsTrigger value="completed">Completed Matches</TabsTrigger>
-                </TabsList>
-                <TabsContent value="live" className="mt-4">
-                    {liveTournaments.length > 0 ? (
+            <main className="space-y-8">
+                {liveTournaments.length > 0 && (
+                     <section>
+                        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+                            <span className="flex h-3 w-3 relative">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                            </span>
+                            Live
+                        </h2>
                         <div className="space-y-4">
                             {liveTournaments.map(tournament => (
-                                <MatchHistoryCard key={tournament.id} tournament={tournament} profile={profile} />
+                                <MatchResultCard key={tournament.id} tournament={tournament} profile={profile} />
                             ))}
                         </div>
-                    ) : (
-                        <Card>
-                            <CardContent className="p-6 text-center text-muted-foreground">
-                                You have no live matches right now.
-                            </CardContent>
-                        </Card>
-                    )}
-                </TabsContent>
-                <TabsContent value="completed" className="mt-4">
+                    </section>
+                )}
+
+                <section>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-lg font-semibold">Recent Matches</h2>
+                        <span className="text-sm text-muted-foreground">{completedTournaments.length} matches</span>
+                    </div>
                      {completedTournaments.length > 0 ? (
                         <div className="space-y-4">
                             {completedTournaments.map(tournament => (
-                                <MatchHistoryCard key={tournament.id} tournament={tournament} profile={profile} />
+                                <MatchResultCard key={tournament.id} tournament={tournament} profile={profile} />
                             ))}
                         </div>
                     ) : (
-                        <Card>
-                            <CardContent className="p-6 text-center text-muted-foreground">
+                        <Card className="bg-card/50">
+                            <CardContent className="p-10 text-center text-muted-foreground">
                                 You have no completed matches.
                             </CardContent>
                         </Card>
                     )}
-                </TabsContent>
-            </Tabs>
+                </section>
+            </main>
         </div>
     );
 }

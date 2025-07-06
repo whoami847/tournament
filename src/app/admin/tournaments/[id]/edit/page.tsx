@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useParams, notFound, useRouter, useSearchParams } from 'next/navigation';
-import { getTournament, updateTournament } from '@/lib/tournaments-service';
+import { getTournament, updateTournament, getTournaments } from '@/lib/tournaments-service';
 import type { Tournament } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,13 @@ import { BracketEditor } from '@/components/admin/bracket-editor';
 import { ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EditPointsForm } from '@/components/admin/edit-points-form';
+
+export async function generateStaticParams() {
+  const tournaments = await getTournaments();
+  return tournaments.map((tournament) => ({
+    id: tournament.id,
+  }));
+}
 
 const EditTournamentPageSkeleton = () => (
     <div className="space-y-6 animate-pulse">

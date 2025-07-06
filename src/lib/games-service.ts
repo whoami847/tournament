@@ -9,6 +9,7 @@ import {
   orderBy,
   Timestamp,
   getDoc,
+  getDocs,
 } from 'firebase/firestore';
 import { firestore } from './firebase';
 import type { GameCategory } from '@/types';
@@ -52,6 +53,17 @@ export const getGamesStream = (callback: (games: GameCategory[]) => void) => {
   });
 
   return unsubscribe;
+};
+
+export const getGames = async (): Promise<GameCategory[]> => {
+    try {
+        const q = query(collection(firestore, 'games'), orderBy('name', 'asc'));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(fromFirestore);
+    } catch (error) {
+        console.error("Error fetching games: ", error);
+        return [];
+    }
 };
 
 export const getGame = async (id: string): Promise<GameCategory | null> => {

@@ -165,6 +165,17 @@ export const getTournamentStream = (id: string, callback: (tournament: Tournamen
     return unsubscribe;
 };
 
+export const getTournaments = async (): Promise<Tournament[]> => {
+  try {
+    const q = query(collection(firestore, 'tournaments'), orderBy('startDate', 'desc'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(fromFirestore);
+  } catch (error) {
+    console.error("Error fetching tournaments: ", error);
+    return [];
+  }
+};
+
 export const getTournament = async (id: string): Promise<Tournament | null> => {
   try {
     const docRef = doc(firestore, 'tournaments', id);

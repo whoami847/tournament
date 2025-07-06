@@ -13,7 +13,7 @@ import { Award, KeyRound, Trophy, Users, Ticket, Map as MapIcon, Smartphone, Cli
 import type { LucideIcon } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
-import { getTournamentStream } from '@/lib/tournaments-service';
+import { getTournamentStream, getTournaments } from '@/lib/tournaments-service';
 import type { Tournament, Match, Team, PlayerProfile } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
+
+export async function generateStaticParams() {
+  const tournaments = await getTournaments();
+  return tournaments.map((tournament) => ({
+    id: tournament.id,
+  }));
+}
 
 const InfoRow = ({ icon: Icon, label, value, index }: { icon: LucideIcon; label: string; value: React.ReactNode; index: number; }) => (
     <motion.div 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams, notFound } from 'next/navigation';
-import { getTournament } from '@/lib/tournaments-service';
+import { getTournament, getTournaments } from '@/lib/tournaments-service';
 import Bracket, { SoloBracket, processBracketForWinners, ChampionCard, ChampionPlaceholder } from '@/components/bracket';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, MoreHorizontal, Trophy, GitBranch } from 'lucide-react';
@@ -20,6 +20,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from '@/components/ui/skeleton';
 
+export async function generateStaticParams() {
+  const tournaments = await getTournaments();
+  return tournaments.map((tournament) => ({
+    id: tournament.id,
+  }));
+}
 
 const roundAbbreviationMap: Record<string, string> = {
     'Finals': 'Finals',

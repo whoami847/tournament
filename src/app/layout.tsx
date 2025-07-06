@@ -7,7 +7,6 @@ import { AuthProvider } from '@/context/auth-context';
 import AuthGuard from '@/components/auth-guard';
 import { ThemeProvider } from '@/components/theme-provider';
 import { LanguageProvider } from '@/context/language-context';
-import { FirebaseEnvValidator } from '@/components/firebase-env-validator';
 
 
 export const metadata: Metadata = {
@@ -35,19 +34,17 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LanguageProvider>
-            <FirebaseEnvValidator>
-              <AuthProvider>
-                <AuthGuard>
-                  <>
-                    <main className="flex-grow">
-                      {children}
-                    </main>
-                    <BottomNav />
-                    <Toaster />
-                  </>
-                </AuthGuard>
-              </AuthProvider>
-            </FirebaseEnvValidator>
+            <AuthProvider>
+              <AuthGuard>
+                <>
+                  <main className="flex-grow">
+                    {children}
+                  </main>
+                  <BottomNav />
+                  <Toaster />
+                </>
+              </AuthGuard>
+            </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

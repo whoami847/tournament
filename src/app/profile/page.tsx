@@ -3,7 +3,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,8 @@ import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { signOutUser } from '@/lib/auth-service';
 import { useRouter } from 'next/navigation';
-import { getUserProfileStream } from '@/lib/users-service';
-import type { PlayerProfile, UserTeam, AppNotification, TeamMember, Tournament, Team } from '@/types';
+import { getUserProfileStream, findUserByGamerId } from '@/lib/users-service';
+import type { PlayerProfile, UserTeam, AppNotification, TeamMember, Tournament, Team, Match } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -48,7 +48,6 @@ import { getNotificationsStream } from '@/lib/notifications-service';
 import { getTournamentsStream } from '@/lib/tournaments-service';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
-
 
 // --- SUB-COMPONENTS ---
 
@@ -416,87 +415,118 @@ const Achievements = () => (
     </Card>
 );
 
-const MatchHistoryCard = ({ tournament, profile }: { tournament: Tournament, profile: PlayerProfile }) => {
-    const userTeam = tournament.participants.find(p => p.members?.some(m => m.gamerId === profile.gamerId));
-    let finalRank: string = 'Participant';
+const MatchCard = ({ match, tournament, userTeam }: { match: Match, tournament: Tournament, userTeam: Team }) => {
+    if (!match.teams[0] || !match.teams[1]) return null; // Can't display match without both teams
 
-    if (tournament.status === 'completed' && userTeam) {
-        const bracket = tournament.bracket;
-        if (bracket && bracket.length > 0) {
-            const finalRound = bracket[bracket.length - 1];
-            if (finalRound && finalRound.matches.length === 1) {
-                const finalMatch = finalRound.matches[0];
-                if (finalMatch.status === 'completed') {
-                    const winner = finalMatch.scores[0] > finalMatch.scores[1] ? finalMatch.teams[0] : finalMatch.teams[1];
-                    const loser = finalMatch.scores[0] < finalMatch.scores[1] ? finalMatch.teams[0] : finalMatch.teams[1];
+    const { teams, scores, status } = match;
+    const [team1, team2] = teams;
 
-                    if (winner?.id === userTeam.id) {
-                        finalRank = 'Winner';
-                    } else if (loser?.id === userTeam.id) {
-                        finalRank = 'Runner-up';
-                    }
-                }
-            }
+    let result: 'Victory' | 'Defeat' | 'Live' | 'Draw' = 'Live';
+    let isUserTeam1 = team1.id === userTeam.id;
+
+    if (status === 'completed') {
+        if (scores[0] > scores[1]) {
+            result = isUserTeam1 ? 'Victory' : 'Defeat';
+        } else if (scores[1] > scores[0]) {
+            result = !isUserTeam1 ? 'Victory' : 'Defeat';
+        } else {
+            result = 'Draw';
         }
-    } else if (tournament.status !== 'completed') {
-        finalRank = 'Ongoing';
     }
 
+    const badgeClasses = 
+        result === 'Victory' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+        result === 'Defeat' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+        result === 'Live' ? 'bg-primary/20 text-primary border-primary/30' :
+        'bg-muted-foreground/20 text-muted-foreground border-muted-foreground/30';
+    
+    const score1Color = status === 'completed' && scores[0] > scores[1] ? 'text-green-400' : 'text-foreground';
+    const score2Color = status === 'completed' && scores[1] > scores[0] ? 'text-green-400' : 'text-foreground';
+
+    const TeamDisplay = ({ team }: { team: Team }) => (
+        <div className="flex flex-col items-center gap-2 w-24 text-center">
+            <Avatar className="h-10 w-10">
+                <AvatarImage src={team.avatar} alt={team.name} data-ai-hint="team logo" />
+                <AvatarFallback>{team.name?.charAt(0) || 'T'}</AvatarFallback>
+            </Avatar>
+            <p className="font-semibold text-sm truncate">{team.name}</p>
+        </div>
+    );
+
     return (
-        <Card className="overflow-hidden">
-            <CardHeader className="flex flex-row items-center gap-4 p-4">
-                <Image src={tournament.image} alt={tournament.name} width={80} height={80} className="rounded-lg aspect-square object-cover" data-ai-hint={tournament.dataAiHint} />
-                <div className="flex-1">
-                    <CardTitle className="text-base">{tournament.name}</CardTitle>
-                    <CardDescription>{tournament.game}</CardDescription>
-                    <Badge variant="outline" className="mt-2">{finalRank}</Badge>
+        <Card className="bg-card/70 p-4">
+            <div className="flex justify-between items-center mb-4">
+                <p className="text-sm text-muted-foreground">{tournament.name} • {tournament.game}</p>
+                <Badge variant="outline" className={badgeClasses}>{result}</Badge>
+            </div>
+            <div className="flex justify-around items-center">
+                <TeamDisplay team={team1} />
+                <div className="text-center">
+                    {status === 'live' ? (
+                        <p className="text-sm font-bold text-primary animate-pulse">LIVE</p>
+                    ) : (
+                        <p className="text-4xl font-bold">
+                            <span className={score1Color}>{scores[0]}</span>
+                            <span className="text-2xl text-muted-foreground mx-2">vs</span>
+                            <span className={score2Color}>{scores[1]}</span>
+                        </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">{format(new Date(tournament.startDate), 'dd.MM.yyyy')}</p>
                 </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 space-y-2 text-sm">
-                <div className="flex justify-between items-center text-muted-foreground">
-                    <span className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Date</span>
-                    <span className="font-medium text-foreground">{format(new Date(tournament.startDate), 'PPP')}</span>
-                </div>
-                <div className="flex justify-between items-center text-muted-foreground">
-                    <span className="flex items-center gap-2"><Award className="h-4 w-4" /> Kills/Points</span>
-                    <span className="font-medium text-foreground">N/A</span>
-                </div>
-                <div className="flex justify-between items-center text-muted-foreground">
-                    <span className="flex items-center gap-2"><Trophy className="h-4 w-4" /> Final Rank</span>
-                    <span className="font-medium text-foreground">{finalRank}</span>
-                </div>
-            </CardContent>
+                <TeamDisplay team={team2} />
+            </div>
         </Card>
     );
 };
 
 const MatchHistory = ({ profile }: { profile: PlayerProfile }) => {
-    const [tournaments, setTournaments] = useState<Tournament[]>([]);
+    const [allTournaments, setAllTournaments] = useState<Tournament[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = getTournamentsStream((allTournaments) => {
-            if (!profile?.gamerId) {
-                setTournaments([]);
-                setLoading(false);
-                return;
-            }
-            
-            const userTournaments = allTournaments.filter(t => 
-                t.participants.some(p => p.members?.some(m => m.gamerId === profile.gamerId))
-            ).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-            
-            setTournaments(userTournaments);
+        const unsubscribe = getTournamentsStream((data) => {
+            setAllTournaments(data);
             setLoading(false);
         });
         return () => unsubscribe();
-    }, [profile]);
-    
+    }, []);
+
+    const { liveMatches, completedMatches, userTeamMap } = useMemo(() => {
+        if (!profile?.gamerId) return { liveMatches: [], completedMatches: [], userTeamMap: new Map() };
+
+        const live: { match: Match; tournament: Tournament }[] = [];
+        const completed: { match: Match; tournament: Tournament }[] = [];
+        const teamMap = new Map<string, Team>();
+
+        for (const t of allTournaments) {
+            const userTeam = t.participants.find(p => p.members?.some(m => m.gamerId === profile.gamerId));
+            if (!userTeam) continue;
+            
+            teamMap.set(t.id, userTeam);
+
+            t.bracket.forEach(round => {
+                round.matches.forEach(match => {
+                    if (match.teams.some(team => team?.id === userTeam.id)) {
+                        if (match.status === 'live') {
+                            live.push({ match, tournament: t });
+                        } else if (match.status === 'completed') {
+                            completed.push({ match, tournament: t });
+                        }
+                    }
+                });
+            });
+        }
+        
+        completed.sort((a, b) => new Date(b.tournament.startDate).getTime() - new Date(a.tournament.startDate).getTime());
+
+        return { liveMatches: live, completedMatches: completed, userTeamMap: teamMap };
+    }, [allTournaments, profile]);
+
     if (loading) {
         return <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
     
-    if (tournaments.length === 0) {
+    if (liveMatches.length === 0 && completedMatches.length === 0) {
         return (
             <Card>
                 <CardContent className="p-6 text-center text-muted-foreground">
@@ -505,12 +535,39 @@ const MatchHistory = ({ profile }: { profile: PlayerProfile }) => {
             </Card>
         );
     }
-
+    
     return (
-        <div className="space-y-4">
-            {tournaments.map(tournament => (
-                <MatchHistoryCard key={tournament.id} tournament={tournament} profile={profile} />
-            ))}
+        <div className="space-y-6">
+            {liveMatches.length > 0 && (
+                <section>
+                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-3">
+                        <span className="flex h-2 w-2 relative">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                        </span>
+                        En live
+                    </h3>
+                    <div className="space-y-4">
+                        {liveMatches.map(({ match, tournament }) => (
+                            <MatchCard key={match.id} match={match} tournament={tournament} userTeam={userTeamMap.get(tournament.id)!} />
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {completedMatches.length > 0 && (
+                <section>
+                     <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-lg font-semibold">Les matchs récents</h3>
+                        <span className="text-sm text-muted-foreground">{completedMatches.length} matchs</span>
+                    </div>
+                    <div className="space-y-4">
+                        {completedMatches.map(({ match, tournament }) => (
+                            <MatchCard key={match.id} match={match} tournament={tournament} userTeam={userTeamMap.get(tournament.id)!} />
+                        ))}
+                    </div>
+                </section>
+            )}
         </div>
     );
 };
@@ -536,7 +593,6 @@ export default function ProfilePage() {
     };
     
     if (!profile) {
-        // You can return a loader here
         return <div className="flex items-center justify-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
     
@@ -545,7 +601,6 @@ export default function ProfilePage() {
 
     return (
         <div className="pb-24">
-            {/* Header Section */}
             <div className="relative h-48 w-full">
                 <Image
                     src={profile?.banner || "https://placehold.co/800x300.png"}
@@ -555,19 +610,20 @@ export default function ProfilePage() {
                     className="object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
-                <div className="absolute top-14 right-4 sm:top-4">
+                <div className="absolute top-4 right-4 left-4 z-10 flex items-center justify-between">
+                    <h1 className="text-xl font-bold text-white">Profile</h1>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="bg-black/20 hover:bg-black/40 text-white hover:text-white">
+                            <Button variant="ghost" size="icon" className="bg-black/20 hover:bg-black/40 text-white hover:text-white rounded-full">
                                 <MoreHorizontal className="h-5 w-5" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
-                                <Link href="/profile/edit">Edit Profile</Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link href="/settings">Settings</Link>
+                                <Link href="/profile/edit" className="flex items-center gap-2">
+                                  <Pencil className="h-4 w-4" />
+                                  <span>Edit Profile</span>
+                                </Link>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive/10 focus:text-destructive flex items-center gap-2">
@@ -577,10 +633,8 @@ export default function ProfilePage() {
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
-                <h1 className="absolute top-16 left-4 text-2xl font-bold text-white sm:top-6">Profile</h1>
             </div>
 
-            {/* Profile Info Section */}
             <div className="relative z-10 -mt-16 flex flex-col items-center text-center px-4">
                 <div className="relative">
                     <Avatar className="h-28 w-28 border-4 border-background">
@@ -593,14 +647,13 @@ export default function ProfilePage() {
                 <p className="text-muted-foreground">Player</p>
             </div>
             
-            {/* Tabs Navigation */}
             <div className="px-4 mt-6">
-                <Tabs defaultValue="info" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 bg-card p-1 h-auto rounded-lg border">
-                        <TabsTrigger value="info" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Information</TabsTrigger>
-                        <TabsTrigger value="team" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Team</TabsTrigger>
-                        <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Match History</TabsTrigger>
-                        <TabsTrigger value="success" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">Achievements</TabsTrigger>
+                <Tabs defaultValue="history" className="w-full">
+                    <TabsList className="grid w-full grid-cols-4 gap-2 bg-card p-1 h-auto rounded-full border">
+                        <TabsTrigger value="info" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Information</TabsTrigger>
+                        <TabsTrigger value="team" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Team</TabsTrigger>
+                        <TabsTrigger value="history" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Match History</TabsTrigger>
+                        <TabsTrigger value="success" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Achievements</TabsTrigger>
                     </TabsList>
                     <TabsContent value="info" className="mt-4">
                         <UserInfo profile={profile} />
@@ -619,4 +672,3 @@ export default function ProfilePage() {
         </div>
     );
 }
-

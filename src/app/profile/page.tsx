@@ -649,11 +649,11 @@ export default function ProfilePage() {
             
             <div className="px-4 mt-6">
                 <Tabs defaultValue="history" className="w-full">
-                    <TabsList className="grid w-full grid-cols-4 gap-2 bg-card p-1 h-auto rounded-full border">
-                        <TabsTrigger value="info" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Information</TabsTrigger>
-                        <TabsTrigger value="team" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Team</TabsTrigger>
-                        <TabsTrigger value="history" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Match History</TabsTrigger>
-                        <TabsTrigger value="success" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Achievements</TabsTrigger>
+                    <TabsList className="flex w-full justify-start gap-2 overflow-x-auto rounded-full border bg-card p-1 sm:justify-center no-scrollbar">
+                        <TabsTrigger value="info" className="shrink-0 rounded-full bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Information</TabsTrigger>
+                        <TabsTrigger value="team" className="shrink-0 rounded-full bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Team</TabsTrigger>
+                        <TabsTrigger value="history" className="shrink-0 rounded-full bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Match History</TabsTrigger>
+                        <TabsTrigger value="success" className="shrink-0 rounded-full bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">Achievements</TabsTrigger>
                     </TabsList>
                     <TabsContent value="info" className="mt-4">
                         <UserInfo profile={profile} />

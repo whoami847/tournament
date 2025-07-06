@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useTheme } from 'next-themes';
+import { useLanguage } from '@/context/language-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,21 +12,21 @@ import { Monitor, Sun, Moon, Bell, Languages } from 'lucide-react';
 
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
-    const [language, setLanguage] = useState('en-us');
+    const { language, setLanguage, t } = useLanguage();
     const [pushNotifications, setPushNotifications] = useState(false);
 
     return (
         <div className="container mx-auto px-4 py-8 md:pb-8 pb-24">
             <header className="mb-8">
-                <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-                <p className="text-muted-foreground">Manage your account and application preferences.</p>
+                <h1 className="text-3xl font-bold tracking-tight">{t('SettingsPage.title')}</h1>
+                <p className="text-muted-foreground mt-2">{t('SettingsPage.description')}</p>
             </header>
             <div className="grid gap-8">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Appearance</CardTitle>
+                        <CardTitle>{t('SettingsPage.appearanceTitle')}</CardTitle>
                         <CardDescription>
-                            Customize the look and feel of the app.
+                            {t('SettingsPage.appearanceDescription')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -35,8 +36,8 @@ export default function SettingsPage() {
                                     {theme === 'light' ? <Sun className="h-5 w-5" /> : theme === 'dark' ? <Moon className="h-5 w-5" /> : <Monitor className="h-5 w-5" />}
                                 </span>
                                 <div>
-                                    <p className="font-semibold">Theme</p>
-                                    <p className="text-xs text-muted-foreground">Select the application theme.</p>
+                                    <p className="font-semibold">{t('SettingsPage.themeLabel')}</p>
+                                    <p className="text-xs text-muted-foreground">{t('SettingsPage.themeDescription')}</p>
                                 </div>
                             </Label>
                             <Select value={theme} onValueChange={setTheme}>
@@ -44,9 +45,9 @@ export default function SettingsPage() {
                                     <SelectValue placeholder="Select theme" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="light">Light</SelectItem>
-                                    <SelectItem value="dark">Dark</SelectItem>
-                                    <SelectItem value="system">System</SelectItem>
+                                    <SelectItem value="light">{t('SettingsPage.themeLight')}</SelectItem>
+                                    <SelectItem value="dark">{t('SettingsPage.themeDark')}</SelectItem>
+                                    <SelectItem value="system">{t('SettingsPage.themeSystem')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -55,9 +56,9 @@ export default function SettingsPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Language & Region</CardTitle>
+                        <CardTitle>{t('SettingsPage.languageRegionTitle')}</CardTitle>
                         <CardDescription>
-                            Manage language and regional settings.
+                            {t('SettingsPage.languageRegionDescription')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -67,8 +68,8 @@ export default function SettingsPage() {
                                     <Languages className="h-5 w-5" />
                                 </span>
                                 <div>
-                                    <p className="font-semibold">Language</p>
-                                    <p className="text-xs text-muted-foreground">Select your preferred language.</p>
+                                    <p className="font-semibold">{t('SettingsPage.languageLabel')}</p>
+                                    <p className="text-xs text-muted-foreground">{t('SettingsPage.languageDescription')}</p>
                                 </div>
                             </Label>
                              <Select value={language} onValueChange={setLanguage}>
@@ -76,9 +77,9 @@ export default function SettingsPage() {
                                     <SelectValue placeholder="Select language" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="en-us">English</SelectItem>
-                                    <SelectItem value="bn-bd">বাংলা</SelectItem>
-                                    <SelectItem value="hi-in">हिंदी</SelectItem>
+                                    <SelectItem value="en">{t('SettingsPage.languageEnglish')}</SelectItem>
+                                    <SelectItem value="bn">{t('SettingsPage.languageBengali')}</SelectItem>
+                                    <SelectItem value="hi">{t('SettingsPage.languageHindi')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -87,9 +88,9 @@ export default function SettingsPage() {
                 
                  <Card>
                     <CardHeader>
-                        <CardTitle>Notifications</CardTitle>
+                        <CardTitle>{t('SettingsPage.notificationsTitle')}</CardTitle>
                         <CardDescription>
-                            Manage how you receive notifications.
+                            {t('SettingsPage.notificationsDescription')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -99,8 +100,8 @@ export default function SettingsPage() {
                                     <Bell className="h-5 w-5" />
                                 </span>
                                 <div>
-                                    <p className="font-semibold">Push Notifications</p>
-                                    <p className="text-xs text-muted-foreground">Receive notifications on your device.</p>
+                                    <p className="font-semibold">{t('SettingsPage.pushNotificationsLabel')}</p>
+                                    <p className="text-xs text-muted-foreground">{t('SettingsPage.pushNotificationsDescription')}</p>
                                 </div>
                             </Label>
                             <Switch 

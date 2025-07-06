@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -13,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from '@/components/ui/separator';
 import { User, Users, Shield, ArrowLeft, CheckCircle } from 'lucide-react';
 import React, { useState, useEffect, useMemo } from 'react';
-import { getTournament, joinTournament, getTournaments } from '@/lib/tournaments-service';
+import { getTournament, joinTournament } from '@/lib/tournaments-service';
 import type { Tournament, Team, PlayerProfile, UserTeam, TeamMember } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
@@ -23,13 +22,6 @@ import { getTeamStream } from '@/lib/teams-service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
-export async function generateStaticParams() {
-  const tournaments = await getTournaments();
-  return tournaments.map((tournament) => ({
-    id: tournament.id,
-  }));
-}
 
 const playerSchema = z.object({
   name: z.string().min(1, { message: "Player name is required." }),

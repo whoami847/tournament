@@ -3,20 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import Image from 'next/image';
-import { getGame, getGames } from '@/lib/games-service';
+import { getGame } from '@/lib/games-service';
 import type { GameCategory } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-
-export async function generateStaticParams() {
-  const games = await getGames();
-  return games.map((game) => ({
-    id: game.id,
-  }));
-}
 
 const GameDetailsSkeleton = () => (
     <div className="container mx-auto px-4 py-8 md:pb-8 pb-24 animate-pulse">

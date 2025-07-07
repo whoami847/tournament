@@ -1,4 +1,4 @@
-import type { PlayerProfile, Tournament, GameCategory, FeaturedBanner, Transaction, WithdrawMethod, WithdrawRequest, PendingPrize, RegistrationLog, UserTeam } from '@/types';
+import type { PlayerProfile, Tournament, GameCategory, FeaturedBanner, Transaction, WithdrawMethod, WithdrawRequest, PendingPrize, RegistrationLog, UserTeam, Match, TeamMember } from '@/types';
 
 // =================================
 // USERS
@@ -74,7 +74,7 @@ export const mockUsers: PlayerProfile[] = [
     wins: 41,
     balance: 3200.00,
     pendingBalance: 0,
-    teamId: '',
+    teamId: 'team_3',
     status: 'active',
   },
 ];
@@ -152,7 +152,7 @@ export const mockTeams: UserTeam[] = [
         dataAiHint: 'wolf logo dark',
         members: [
             { uid: 'usr_player_1', name: 'ShadowStriker', gamerId: 'shadow_123', avatar: 'https://placehold.co/96x96.png', role: 'Leader'},
-            { name: 'Ghost', gamerId: 'ghost_gamer_x', role: 'Member' },
+            { name: 'Ghost', gamerId: 'ghost_gamer_x', role: 'Member' } as TeamMember,
         ],
         memberGamerIds: ['shadow_123', 'ghost_gamer_x'],
     },
@@ -166,8 +166,37 @@ export const mockTeams: UserTeam[] = [
             { uid: 'usr_player_2', name: 'Vortex', gamerId: 'vortex_pro', avatar: 'https://placehold.co/96x96.png', role: 'Leader'},
         ],
         memberGamerIds: ['vortex_pro'],
+    },
+    {
+        id: 'team_3',
+        name: 'Crimson Fury',
+        leaderId: 'usr_player_3',
+        avatar: 'https://placehold.co/96x96.png',
+        dataAiHint: 'eagle logo red',
+        members: [
+            { uid: 'usr_player_3', name: 'Nova', gamerId: 'nova_plays', avatar: 'https://placehold.co/96x96.png', role: 'Leader' },
+            { name: 'Reaper', gamerId: 'reaper_ff', role: 'Member' } as TeamMember,
+        ],
+        memberGamerIds: ['nova_plays', 'reaper_ff'],
+    },
+    {
+        id: 'team_4',
+        name: 'Blue Phoenix',
+        leaderId: 'some_other_player',
+        avatar: 'https://placehold.co/96x96.png',
+        dataAiHint: 'phoenix logo blue',
+        members: [
+            { name: 'Raven', gamerId: 'raven_gaming', role: 'Leader' },
+            { name: 'Spike', gamerId: 'spike_yt', role: 'Member' },
+        ] as TeamMember[],
+        memberGamerIds: ['raven_gaming', 'spike_yt'],
     }
 ];
+
+// Define some teams for matches
+const team1 = mockTeams.find(t => t.id === 'team_1')!;
+const team3 = mockTeams.find(t => t.id === 'team_3')!;
+const team4 = mockTeams.find(t => t.id === 'team_4')!;
 
 // =================================
 // TOURNAMENTS
@@ -196,14 +225,35 @@ export const mockTournaments: Tournament[] = [
     name: 'PUBG Mobile Pro League',
     game: 'PUBG Mobile',
     startDate: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-    teamsCount: 32,
+    teamsCount: 4,
     maxTeams: 32,
     entryFee: 0,
     prizePool: '50,000',
     rules: 'Official PMGC ruleset applies. All matches are Best of 1. Good luck to all participants.',
     status: 'live',
-    participants: [],
-    bracket: [],
+    participants: [team1, team3],
+    bracket: [
+        {
+            name: 'Semi-finals',
+            matches: [
+                {
+                    id: 'tour_2_semis_m1',
+                    name: 'Semi-finals #1',
+                    teams: [team1, team3],
+                    scores: [0, 0],
+                    status: 'live',
+                    resultSubmissionStatus: {},
+                    roomId: '67890',
+                    roomPass: 'livepass',
+                },
+                { id: 'tour_2_semis_m2', name: 'Semi-finals #2', teams: [null, null], scores: [0, 0], status: 'pending' } as Match,
+            ]
+        },
+        {
+            name: 'Finals',
+            matches: [{ id: 'tour_2_final_m1', name: 'Finals #1', teams: [null, null], scores: [0, 0], status: 'pending' } as Match]
+        }
+    ],
     image: 'https://placehold.co/600x400.png',
     dataAiHint: 'esports soldier war',
     format: 'BR_SQUAD'
@@ -213,14 +263,30 @@ export const mockTournaments: Tournament[] = [
     name: 'ML:BB Diamond Challenge',
     game: 'Mobile Legends',
     startDate: new Date(Date.now() - 86400000 * 7).toISOString(), // 7 days ago
-    teamsCount: 8,
+    teamsCount: 2,
     maxTeams: 8,
     entryFee: 50,
     prizePool: '5,000',
     rules: '5v5 MOBA format. Single elimination bracket. Finals are Best of 3.',
     status: 'completed',
-    participants: [],
-    bracket: [],
+    participants: [team1, team4],
+    bracket: [
+      {
+          name: 'Finals',
+          matches: [
+            {
+                id: 'tour_3_final_m1',
+                name: 'Finals #1',
+                teams: [team1, team4],
+                scores: [1, 0], // ShadowStrikers win
+                status: 'completed',
+                resultSubmissionStatus: {},
+                roomId: '12345',
+                roomPass: 'pass',
+            }
+          ]
+      }
+    ],
     image: 'https://placehold.co/600x400.png',
     dataAiHint: 'esports magic fantasy',
     format: 'CS_SQUAD'

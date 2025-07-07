@@ -6,7 +6,7 @@ const listeners: ((user: AuthUser | null) => void)[] = [];
 
 // Simulate a logged-in user for demo purposes.
 // Switch between mockUser and mockAdmin to test different roles.
-const MOCK_AUTH_USER_ID = 'usr_admin_1'; // or 'usr_player_1'
+const MOCK_AUTH_USER_ID = 'usr_player_1'; // or 'usr_player_1'
 const activeMockUser = mockUsers.find(u => u.id === MOCK_AUTH_USER_ID) || mockAdmin;
 
 if (activeMockUser) {
@@ -118,5 +118,24 @@ export function sendPasswordReset(email: string): Promise<void> {
 
 // Add a function to ensure a profile exists. In mock mode, it always does.
 export const ensureUserProfile = async (user: AuthUser) => {
+    const userExists = mockUsers.some(u => u.id === user.uid);
+    if (!userExists) {
+        const newUser: PlayerProfile = {
+            id: user.uid,
+            name: user.displayName || 'New Player',
+            email: user.email || '',
+            avatar: user.photoURL || 'https://placehold.co/96x96.png',
+            gamerId: `player_${Date.now()}`,
+            joined: new Date().toISOString(),
+            role: 'Player',
+            winrate: 0,
+            games: 0,
+            balance: 100,
+            pendingBalance: 0,
+            status: 'active',
+            wins: 0,
+        };
+        mockUsers.push(newUser);
+    }
     return Promise.resolve();
 };

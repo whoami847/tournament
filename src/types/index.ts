@@ -1,6 +1,3 @@
-
-import type { Timestamp } from 'firebase/firestore';
-
 export type Game = string;
 
 export interface GameCategory {
@@ -137,7 +134,7 @@ export interface AppNotification {
   description: string;
   link: string;
   read: boolean;
-  createdAt: Timestamp;
+  createdAt: string; // ISO String
   type?: 'generic' | 'team_invite' | 'invite_response';
   from?: { uid: string; name:string; };
   team?: { id: string; name: string; };
@@ -156,7 +153,7 @@ export interface RegistrationLog {
   teamType: TeamType;
   players: { name: string; gamerId: string }[];
   status: 'approved';
-  registeredAt: Timestamp;
+  registeredAt: string; // ISO String
 }
 
 export interface TeamMember {
@@ -205,7 +202,7 @@ export interface WithdrawRequest {
   method: string;
   accountNumber: string;
   status: 'pending' | 'approved' | 'rejected';
-  requestedAt: Timestamp;
+  requestedAt: string; // ISO String
 }
 
 export interface PendingPrize {
@@ -218,5 +215,5 @@ export interface PendingPrize {
   tournamentName: string;
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
-  createdAt: Timestamp;
+  createdAt: string; // ISO String
 }

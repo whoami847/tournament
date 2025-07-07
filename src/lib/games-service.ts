@@ -1,102 +1,47 @@
-import {
-  collection,
-  addDoc,
-  onSnapshot,
-  deleteDoc,
-  doc,
-  updateDoc,
-  query,
-  orderBy,
-  Timestamp,
-  getDoc,
-  getDocs,
-} from 'firebase/firestore';
-import { firestore } from './firebase';
+import { mockGames } from './mock-data';
 import type { GameCategory } from '@/types';
 
-// Helper to convert Firestore doc to GameCategory type
-const fromFirestore = (doc: any): GameCategory => {
-  const data = doc.data();
-  return {
-    id: doc.id,
-    name: data.name,
-    categories: data.categories,
-    image: data.image,
-    dataAiHint: data.dataAiHint,
-    description: data.description || '',
-  };
-};
+let games = [...mockGames];
 
 export const addGame = async (game: Omit<GameCategory, 'id'>) => {
-  try {
-    const newGame = {
-      ...game,
-      createdAt: Timestamp.now(),
-    };
-    await addDoc(collection(firestore, 'games'), newGame);
-    return { success: true };
-  } catch (error) {
-    console.error('Error adding game: ', error);
-    return { success: false, error: (error as Error).message };
-  }
+  const newGame = {
+    ...game,
+    id: `game_${Date.now()}`,
+    description: game.description || "No description available.",
+  };
+  games.push(newGame);
+  games.sort((a, b) => a.name.localeCompare(b.name));
+  return { success: true };
 };
 
 export const getGamesStream = (callback: (games: GameCategory[]) => void) => {
-  const q = query(collection(firestore, 'games'), orderBy('name', 'asc'));
-  
-  const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    const games = querySnapshot.docs.map(fromFirestore);
-    callback(games);
-  }, (error) => {
-    console.error("Error fetching games stream: ", error);
-    callback([]);
-  });
-
-  return unsubscribe;
+  callback(games);
+  return () => {};
 };
 
 export const getGames = async (): Promise<GameCategory[]> => {
-    try {
-        const q = query(collection(firestore, 'games'), orderBy('name', 'asc'));
-        const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map(fromFirestore);
-    } catch (error) {
-        console.error("Error fetching games: ", error);
-        return [];
-    }
+  return Promise.resolve(games);
 };
 
 export const getGame = async (id: string): Promise<GameCategory | null> => {
-    try {
-        const docRef = doc(firestore, 'games', id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            return fromFirestore(docSnap);
-        }
-        return null;
-    } catch (error) {
-        console.error('Error getting game:', error);
-        return null;
-    }
+  const game = games.find(g => g.id === id);
+  return Promise.resolve(game || null);
 };
 
 export const updateGame = async (id: string, data: Partial<GameCategory>) => {
-  try {
-    const docRef = doc(firestore, 'games', id);
-    await updateDoc(docRef, data);
+  const gameIndex = games.findIndex(g => g.id === id);
+  if (gameIndex > -1) {
+    games[gameIndex] = { ...games[gameIndex], ...data };
     return { success: true };
-  } catch (error) {
-    console.error('Error updating game: ', error);
-    return { success: false, error: (error as Error).message };
   }
+  return { success: false, error: "Game not found." };
 };
 
 export const deleteGame = async (id: string) => {
-  try {
-    await deleteDoc(doc(firestore, 'games', id));
+  const initialLength = games.length;
+  games = games.filter(g => g.id !== id);
+  if (games.length < initialLength) {
     return { success: true };
-  } catch (error) {
-    console.error('Error deleting game: ', error);
-    return { success: false, error: (error as Error).message };
   }
+  return { success: false, error: "Game not found." };
 };

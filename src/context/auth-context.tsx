@@ -4,6 +4,7 @@ import { createContext, useEffect, useState, type ReactNode } from 'react';
 import { onAuthStateChanged } from '@/lib/auth-service';
 import type { AuthUser, PlayerProfile } from '@/types';
 import { getUserProfileStream } from '@/lib/users-service';
+import { ensureUserProfile } from '@/lib/auth-service';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -21,12 +22,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let profileUnsubscribe: (() => void) | null = null;
 
-    const authUnsubscribe = onAuthStateChanged((authUser) => {
+    const authUnsubscribe = onAuthStateChanged(async (authUser) => {
       setUser(authUser);
 
-      // If there's a user, listen to their profile
       if (authUser?.uid) {
-        // Clean up previous listener if it exists
+        // In a real app, you might want to create a profile if it doesn't exist.
+        // We'll add a helper for this.
+        await ensureUserProfile(authUser);
+        
         if (profileUnsubscribe) {
           profileUnsubscribe();
         }
@@ -35,7 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
         });
       } else {
-        // If no user, clear profile and stop loading
         if (profileUnsubscribe) {
           profileUnsubscribe();
           profileUnsubscribe = null;

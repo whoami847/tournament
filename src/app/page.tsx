@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -30,11 +29,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getNotificationsStream, markNotificationAsRead } from '@/lib/notifications-service';
 import { useRouter } from 'next/navigation';
-
-// --- MOCK DATA ---
-
-// This has been removed and is now fetched from Firestore.
-
 
 // --- SUB-COMPONENTS ---
 
@@ -89,7 +83,7 @@ const HomeHeader = () => {
                         <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1 p-3 cursor-pointer" onClick={() => handleNotificationClick(n)}>
                             <p className={cn("font-semibold", !n.read && "text-foreground")}>{n.title}</p>
                             <p className="text-xs text-muted-foreground">{n.description}</p>
-                            <p className="text-xs text-muted-foreground self-end">{formatDistanceToNow(n.createdAt.toDate(), { addSuffix: true })}</p>
+                            <p className="text-xs text-muted-foreground self-end">{formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}</p>
                         </DropdownMenuItem>
                     )) : (
                          <DropdownMenuItem disabled>

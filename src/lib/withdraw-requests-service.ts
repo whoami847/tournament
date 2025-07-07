@@ -1,99 +1,48 @@
-import {
-  collection,
-  onSnapshot,
-  doc,
-  writeBatch,
-  query,
-  orderBy,
-  where,
-  getDoc,
-  increment,
-  Timestamp,
-  addDoc
-} from 'firebase/firestore';
-import { firestore } from './firebase';
 import type { WithdrawRequest, PlayerProfile } from '@/types';
+import { mockWithdrawRequests, mockUsers, mockTransactions } from './mock-data';
 import { createNotification } from './notifications-service';
 
-const fromFirestore = (doc: any): WithdrawRequest => {
-  const data = doc.data();
-  return {
-    id: doc.id,
-    userId: data.userId,
-    userName: data.userName,
-    userGamerId: data.userGamerId,
-    amount: data.amount,
-    method: data.method,
-    accountNumber: data.accountNumber,
-    status: data.status,
-    requestedAt: data.requestedAt,
-  };
-};
+let requests = [...mockWithdrawRequests];
 
 export const getPendingWithdrawRequestsStream = (callback: (requests: WithdrawRequest[]) => void) => {
-  const q = query(
-    collection(firestore, 'withdrawRequests'), 
-    where('status', '==', 'pending')
-  );
-  
-  const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    const requests = querySnapshot.docs.map(fromFirestore);
-    // Sort client-side to avoid needing a composite index
-    requests.sort((a, b) => a.requestedAt.seconds - b.requestedAt.seconds);
-    callback(requests);
-  }, (error) => {
-    console.error("Error fetching withdraw requests:", error);
-    callback([]);
-  });
-
-  return unsubscribe;
+  const pending = requests.filter(r => r.status === 'pending');
+  pending.sort((a, b) => new Date(a.requestedAt).getTime() - new Date(b.requestedAt).getTime());
+  callback(pending);
+  return () => {};
 };
 
 export const processWithdrawRequest = async (requestId: string, newStatus: 'approved' | 'rejected') => {
-    const requestRef = doc(firestore, 'withdrawRequests', requestId);
-    
-    try {
-        const batch = writeBatch(firestore);
-        const requestSnap = await getDoc(requestRef);
-        if (!requestSnap.exists()) throw new Error("Request not found.");
-        
-        const requestData = requestSnap.data() as any;
-        const userRef = doc(firestore, 'users', requestData.userId);
+    const request = requests.find(r => r.id === requestId);
+    if (!request) return { success: false, error: "Request not found." };
 
-        batch.update(requestRef, { status: newStatus });
+    request.status = newStatus;
 
-        // If REJECTED, refund the money to the user's balance
-        if (newStatus === 'rejected') {
-            batch.update(userRef, { balance: increment(requestData.amount) });
+    if (newStatus === 'rejected') {
+        const user = mockUsers.find(u => u.id === request.userId);
+        if (user) {
+            user.balance += request.amount;
         }
-        
-        // If APPROVED, create a transaction log (money is already deducted on request)
-        if (newStatus === 'approved') {
-            const transactionRef = doc(collection(firestore, 'transactions'));
-            batch.set(transactionRef, {
-                userId: requestData.userId,
-                amount: -requestData.amount,
-                type: 'withdrawal',
-                description: `Withdrawal to ${requestData.method}`,
-                date: Timestamp.now(),
-                status: 'completed',
-            });
-        }
-        
-        await batch.commit();
-        
-        // Send notification to the user
-        await createNotification({
-            userId: requestData.userId,
-            title: `Withdrawal ${newStatus}`,
-            description: `Your withdrawal request of ${requestData.amount} TK has been ${newStatus}.`,
-            link: '/wallet'
-        });
-        
-        return { success: true };
-    } catch (error) {
-        return { success: false, error: (error as Error).message };
     }
+    
+    if (newStatus === 'approved') {
+        mockTransactions.unshift({
+            id: `w_trx_${Date.now()}`,
+            userId: request.userId,
+            amount: -request.amount,
+            type: 'withdrawal',
+            description: `Withdrawal to ${request.method}`,
+            date: new Date().toISOString(),
+        });
+    }
+
+    await createNotification({
+        userId: request.userId,
+        title: `Withdrawal ${newStatus}`,
+        description: `Your withdrawal request of ${request.amount} TK has been ${newStatus}.`,
+        link: '/wallet'
+    });
+    
+    return { success: true };
 };
 
 export async function createWithdrawalRequest(
@@ -105,33 +54,24 @@ export async function createWithdrawalRequest(
   if (!profile) return { success: false, error: 'User not authenticated.' };
   if (!amount || amount <= 0) return { success: false, error: 'Invalid withdrawal amount.' };
   if (!accountNumber) return { success: false, error: 'Account number is required.' };
-  if (profile.balance < amount) return { success: false, error: 'Insufficient balance.' };
   
-  try {
-    const batch = writeBatch(firestore);
-    const userRef = doc(firestore, 'users', profile.id);
-    const requestRef = doc(collection(firestore, 'withdrawRequests'));
-    
-    // Hold the funds by deducting from balance
-    batch.update(userRef, { balance: increment(-amount) });
-    
-    // Create the withdrawal request document
-    const newRequest: Omit<WithdrawRequest, 'id'> = {
-        userId: profile.id,
-        userName: profile.name,
-        userGamerId: profile.gamerId,
-        amount: amount,
-        method: method,
-        accountNumber: accountNumber,
-        status: 'pending',
-        requestedAt: Timestamp.now(),
-    };
-    batch.set(requestRef, newRequest);
-    
-    await batch.commit();
-    return { success: true };
-
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
-  }
+  const user = mockUsers.find(u => u.id === profile.id);
+  if (!user || user.balance < amount) return { success: false, error: 'Insufficient balance.' };
+  
+  user.balance -= amount;
+  
+  const newRequest: WithdrawRequest = {
+      id: `wr_${Date.now()}`,
+      userId: profile.id,
+      userName: profile.name,
+      userGamerId: profile.gamerId,
+      amount: amount,
+      method: method,
+      accountNumber: accountNumber,
+      status: 'pending',
+      requestedAt: new Date().toISOString(),
+  };
+  requests.unshift(newRequest);
+  
+  return { success: true };
 }

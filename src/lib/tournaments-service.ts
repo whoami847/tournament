@@ -1,26 +1,11 @@
 
-import {
-  collection,
-  addDoc,
-  onSnapshot,
-  deleteDoc,
-  doc,
-  updateDoc,
-  getDoc,
-  Timestamp,
-  query,
-  orderBy,
-  arrayUnion,
-  increment,
-  writeBatch,
-  setDoc,
-  getDocs,
-  where,
-} from 'firebase/firestore';
-import { firestore } from './firebase';
 import type { Tournament, Team, Match, Round, TeamType, PlayerProfile } from '@/types';
+import { mockTournaments, mockUsers } from './mock-data';
 import { createNotification } from './notifications-service';
 import { createRegistrationLog } from './registrations-service';
+
+// Make it a mutable copy so we can simulate writes
+let tournaments = [...mockTournaments];
 
 // Helper to get team type (SOLO, DUO, SQUAD)
 const getTeamType = (format: string = ''): TeamType => {
@@ -29,36 +14,6 @@ const getTeamType = (format: string = ''): TeamType => {
     return type;
   }
   return 'SQUAD';
-};
-
-// Helper to convert Firestore doc to Tournament type
-const fromFirestore = (doc: any): Tournament => {
-  const data = doc.data();
-  const a = {
-    id: doc.id,
-    name: data.name,
-    game: data.game,
-    // Convert Firestore Timestamp to ISO string for client-side compatibility
-    startDate: new Date(data.startDate.seconds * 1000).toISOString(),
-    teamsCount: data.teamsCount,
-    maxTeams: data.maxTeams,
-    entryFee: data.entryFee,
-    prizePool: data.prizePool,
-    rules: data.rules,
-    status: data.status,
-    participants: data.participants,
-    bracket: data.bracket,
-    image: data.image,
-    dataAiHint: data.dataAiHint,
-    format: data.format,
-    perKillPrize: data.perKillPrize,
-    map: data.map,
-    version: data.version,
-    createdAt: new Date(data.createdAt.seconds * 1000).toISOString(),
-    pointSystemEnabled: data.pointSystemEnabled ?? false,
-    pointSystem: data.pointSystem || { perKillPoints: 0, placementPoints: [] },
-  };
-  return a
 };
 
 // Helper to generate an empty bracket structure based on the maximum number of teams
@@ -101,113 +56,66 @@ const generateBracketStructure = (maxTeams: number, tournamentId: string): Round
     return rounds;
 };
 
-
-export const addTournament = async (tournament: Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket'>) => {
-  try {
-    const newTournamentRef = doc(collection(firestore, 'tournaments'));
-    const tournamentId = newTournamentRef.id;
-
-    const newTournament = {
-      ...tournament,
-      startDate: Timestamp.fromDate(new Date(tournament.startDate)),
-      createdAt: Timestamp.now(),
-      teamsCount: 0,
-      status: 'upcoming', 
-      participants: [],
-      bracket: generateBracketStructure(tournament.maxTeams, tournamentId),
-      image: tournament.image || 'https://placehold.co/600x400.png',
-      dataAiHint: tournament.dataAiHint || 'esports tournament',
-      map: tournament.map || 'TBD',
-      version: tournament.version || 'Mobile',
-      pointSystemEnabled: tournament.pointSystemEnabled ?? false,
-      pointSystem: tournament.pointSystem ?? { perKillPoints: 1, placementPoints: [
-          { place: 1, points: 15 },
-          { place: 2, points: 12 },
-          { place: 3, points: 10 },
-          { place: 4, points: 8 },
-        ] 
-      },
+export const addTournament = async (tournamentData: Omit<Tournament, 'id' | 'createdAt' | 'teamsCount' | 'status' | 'participants' | 'bracket'>) => {
+    const tournamentId = `tour_${Date.now()}`;
+    const newTournament: Tournament = {
+        ...tournamentData,
+        id: tournamentId,
+        createdAt: new Date().toISOString(),
+        teamsCount: 0,
+        status: 'upcoming',
+        participants: [],
+        bracket: generateBracketStructure(tournamentData.maxTeams, tournamentId),
+        image: tournamentData.image || 'https://placehold.co/600x400.png',
+        dataAiHint: tournamentData.dataAiHint || 'esports tournament',
+        map: tournamentData.map || 'TBD',
+        version: tournamentData.version || 'Mobile',
+        pointSystemEnabled: tournamentData.pointSystemEnabled ?? false,
+        pointSystem: tournamentData.pointSystem ?? { perKillPoints: 1, placementPoints: [
+            { place: 1, points: 15 },
+            { place: 2, points: 12 },
+            { place: 3, points: 10 },
+            { place: 4, points: 8 },
+          ] 
+        },
     };
-    await setDoc(newTournamentRef, newTournament);
+    tournaments.unshift(newTournament);
     return { success: true };
-  } catch (error) {
-    console.error('Error adding tournament: ', error);
-    return { success: false, error: (error as Error).message };
-  }
 };
 
 export const getTournamentsStream = (callback: (tournaments: Tournament[]) => void) => {
-  const q = query(collection(firestore, 'tournaments'), orderBy('startDate', 'desc'));
-  
-  const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    const tournaments = querySnapshot.docs.map(fromFirestore);
-    callback(tournaments);
-  }, (error) => {
-    console.error("Error fetching tournaments stream: ", error);
-    callback([]);
-  });
-
-  return unsubscribe;
+    const sorted = [...tournaments].sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+    callback(sorted);
+    return () => {};
 };
 
 export const getTournamentStream = (id: string, callback: (tournament: Tournament | null) => void) => {
-    const docRef = doc(firestore, 'tournaments', id);
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-        if (docSnap.exists()) {
-            callback(fromFirestore(docSnap));
-        } else {
-            callback(null);
-        }
-    }, (error) => {
-        console.error(`Error fetching tournament stream for ID ${id}: `, error);
-        callback(null);
-    });
-    return unsubscribe;
+    const tournament = tournaments.find(t => t.id === id) || null;
+    callback(tournament);
+    return () => {};
 };
 
 export const getTournaments = async (): Promise<Tournament[]> => {
-  try {
-    const q = query(collection(firestore, 'tournaments'), orderBy('startDate', 'desc'));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(fromFirestore);
-  } catch (error) {
-    console.error("Error fetching tournaments: ", error);
-    return [];
-  }
+    return Promise.resolve([...tournaments].sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
 };
 
 export const getTournament = async (id: string): Promise<Tournament | null> => {
-  try {
-    const docRef = doc(firestore, 'tournaments', id);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return fromFirestore(docSnap);
-    }
-    return null;
-  } catch (error) {
-    console.error('Error getting tournament: ', error);
-    return null;
-  }
+    const tournament = tournaments.find(t => t.id === id);
+    return Promise.resolve(tournament || null);
 };
 
 export const updateTournament = async (id: string, data: Partial<Tournament>) => {
-  try {
-    const docRef = doc(firestore, 'tournaments', id);
-
-    const tournamentSnapBeforeUpdate = await getDoc(docRef);
-    if (!tournamentSnapBeforeUpdate.exists()) {
-      throw new Error("Tournament not found");
-    }
-    const tournamentBeforeUpdate = fromFirestore(tournamentSnapBeforeUpdate);
-
-    const updateData: { [key: string]: any } = { ...data };
-
-    if (data.startDate) {
-      updateData.startDate = Timestamp.fromDate(new Date(data.startDate));
+    const tourIndex = tournaments.findIndex(t => t.id === id);
+    if (tourIndex === -1) {
+        return { success: false, error: "Tournament not found." };
     }
 
+    const tournamentBeforeUpdate = { ...tournaments[tourIndex] };
+    const updatedTournament = { ...tournamentBeforeUpdate, ...data };
+    
+    // Logic for processing byes when going live
     if (data.status === 'live' && tournamentBeforeUpdate.status !== 'live') {
-      const currentBracket = tournamentBeforeUpdate.bracket;
+      const currentBracket = updatedTournament.bracket;
       if (currentBracket && currentBracket.length > 0 && currentBracket[0].matches) {
         const bracketWithByesProcessed = JSON.parse(JSON.stringify(currentBracket));
         const firstRound = bracketWithByesProcessed[0];
@@ -229,52 +137,21 @@ export const updateTournament = async (id: string, data: Partial<Tournament>) =>
             }
           }
         });
-        updateData.bracket = bracketWithByesProcessed;
+        updatedTournament.bracket = bracketWithByesProcessed;
       }
     }
 
-    await updateDoc(docRef, updateData);
-
-    if (data.status === 'completed' && tournamentBeforeUpdate.status !== 'completed') {
-      const tournamentAfterUpdateSnap = await getDoc(docRef);
-      if (tournamentAfterUpdateSnap.exists()) {
-        const completedTournament = fromFirestore(tournamentAfterUpdateSnap);
-        const finalRound = completedTournament.bracket?.[completedTournament.bracket.length - 1];
-        if (finalRound && finalRound.matches.length === 1) {
-          const finalMatch = finalRound.matches[0];
-          if (finalMatch.status === 'completed' && finalMatch.teams[0] && finalMatch.teams[1]) {
-            const winnerTeam = finalMatch.scores[0] > finalMatch.scores[1] ? finalMatch.teams[0] : finalMatch.teams[1];
-            if (winnerTeam?.members) {
-              const batch = writeBatch(firestore);
-              const winnerUids = winnerTeam.members
-                .map(m => m.uid)
-                .filter((uid): uid is string => !!uid);
-              for (const uid of winnerUids) {
-                const userRef = doc(firestore, 'users', uid);
-                batch.update(userRef, { wins: increment(1) });
-              }
-              await batch.commit();
-            }
-          }
-        }
-      }
-    }
-
+    tournaments[tourIndex] = updatedTournament;
     return { success: true };
-  } catch (error) {
-    console.error('Error updating tournament: ', error);
-    return { success: false, error: (error as Error).message };
-  }
 };
 
 export const deleteTournament = async (id: string) => {
-  try {
-    await deleteDoc(doc(firestore, 'tournaments', id));
-    return { success: true };
-  } catch (error) {
-    console.error('Error deleting tournament: ', error);
-    return { success: false, error: (error as Error).message };
-  }
+    const initialLength = tournaments.length;
+    tournaments = tournaments.filter(t => t.id !== id);
+    if (tournaments.length < initialLength) {
+        return { success: true };
+    }
+    return { success: false, error: "Tournament not found." };
 };
 
 export const joinTournament = async (
@@ -282,64 +159,35 @@ export const joinTournament = async (
   newParticipant: Team,
   userId: string
 ) => {
-  const tournamentRef = doc(firestore, 'tournaments', tournamentId);
-  const userRef = doc(firestore, 'users', userId);
-  
-  try {
-    const tournamentSnap = await getDoc(tournamentRef);
-    const userSnap = await getDoc(userRef);
+    const tourIndex = tournaments.findIndex(t => t.id === tournamentId);
+    if (tourIndex === -1) return { success: false, error: 'Tournament not found.' };
 
-    if (!tournamentSnap.exists()) {
-      return { success: false, error: 'Tournament not found.' };
-    }
-    if (!userSnap.exists()) {
-      return { success: false, error: 'User profile not found.' };
-    }
+    const user = mockUsers.find(u => u.id === userId);
+    if (!user) return { success: false, error: 'User profile not found.' };
 
-    const tournamentData = fromFirestore(tournamentSnap);
-    const userData = userSnap.data() as PlayerProfile;
+    const tournament = tournaments[tourIndex];
 
-    if (tournamentData.teamsCount >= tournamentData.maxTeams) {
+    if (tournament.teamsCount >= tournament.maxTeams) {
         return { success: false, error: 'Tournament is already full.' };
     }
 
-    const allJoinedGamerIds = new Set(tournamentData.participants.flatMap(p => p.members?.map(m => m.gamerId) || []));
+    const allJoinedGamerIds = new Set(tournament.participants.flatMap(p => p.members?.map(m => m.gamerId) || []));
     const newTeamGamerIds = newParticipant.members?.map(m => m.gamerId) || [];
     const alreadyJoinedMemberId = newTeamGamerIds.find(id => allJoinedGamerIds.has(id));
     if (alreadyJoinedMemberId) {
         return { success: false, error: `A player with Gamer ID ${alreadyJoinedMemberId} is already part of this tournament.` };
     }
 
-    const batch = writeBatch(firestore);
-
-    // Handle entry fee
-    const entryFee = tournamentData.entryFee;
+    const entryFee = tournament.entryFee;
     if (entryFee > 0) {
-        if (userData.balance < entryFee) {
-            return { success: false, error: 'Insufficient balance.' }; // Server-side check
+        if (user.balance < entryFee) {
+            return { success: false, error: 'Insufficient balance.' };
         }
-        
-        // Deduct fee and create transaction log for the team leader
-        batch.update(userRef, { balance: increment(-entryFee) });
-        
-        const transactionRef = doc(collection(firestore, 'transactions'));
-        batch.set(transactionRef, {
-            userId: userId,
-            amount: -entryFee,
-            type: 'fee',
-            description: `Entry fee for ${tournamentData.name}`,
-            date: Timestamp.now(),
-            status: 'completed',
-        });
+        user.balance -= entryFee;
     }
 
-    // Deep copy the bracket to avoid mutation issues.
-    const updatedBracket = JSON.parse(JSON.stringify(tournamentData.bracket)); 
     let teamPlaced = false;
-
-    // Find the first empty slot in the first round and place the new team
-    if (updatedBracket.length > 0 && updatedBracket[0].matches) {
-      for (const match of updatedBracket[0].matches) {
+    for (const match of tournament.bracket[0]?.matches || []) {
         for (let i = 0; i < match.teams.length; i++) {
             if (match.teams[i] === null) {
                 match.teams[i] = newParticipant;
@@ -348,227 +196,138 @@ export const joinTournament = async (
             }
         }
         if (teamPlaced) break;
-      }
     }
 
-    const updateData: any = {
-      participants: arrayUnion(newParticipant),
-      teamsCount: increment(1),
-    };
+    tournament.participants.push(newParticipant);
+    tournament.teamsCount += 1;
 
-    if (teamPlaced) {
-        updateData.bracket = updatedBracket;
-    }
-
-    batch.update(tournamentRef, updateData);
-
-    // Add a registration log
-    createRegistrationLog(batch, {
+    // This function is mock and doesn't do anything with batch, so null is fine.
+    createRegistrationLog(null, {
         tournamentId: tournamentId,
-        tournamentName: tournamentData.name,
-        game: tournamentData.game,
-        teamType: getTeamType(tournamentData.format),
+        tournamentName: tournament.name,
+        game: tournament.game,
+        teamType: getTeamType(tournament.format),
         teamName: newParticipant.name,
         players: newParticipant.members || [],
     });
 
-    await batch.commit();
     return { success: true };
-
-  } catch (error) {
-    console.error('Error joining tournament:', error);
-    return { success: false, error: (error as Error).message };
-  }
 };
 
+
 export const requestMatchResults = async (tournamentId: string, roundName: string, matchId: string) => {
-    const tournamentRef = doc(firestore, 'tournaments', tournamentId);
-    try {
-        const docSnap = await getDoc(tournamentRef);
-        if (!docSnap.exists()) {
-            throw new Error("Tournament not found");
+    const tournament = tournaments.find(t => t.id === tournamentId);
+    if (!tournament) return { success: false, error: "Tournament not found" };
+
+    const round = tournament.bracket.find(r => r.name === roundName);
+    if (!round) return { success: false, error: "Round not found" };
+
+    const match = round.matches.find(m => m.id === matchId);
+    if (!match) return { success: false, error: "Match not found" };
+
+    if (match.teams[0] && match.teams[1]) {
+        match.resultSubmissionStatus = {
+            [match.teams[0].id]: 'pending',
+            [match.teams[1].id]: 'pending',
+        };
+
+        const allUserIdsInMatch = [
+            ...(match.teams[0].members?.map(m => m.uid) || []),
+            ...(match.teams[1].members?.map(m => m.uid) || [])
+        ].filter((uid): uid is string => !!uid);
+
+        for (const userId of allUserIdsInMatch) {
+            await createNotification({
+                userId: userId,
+                title: 'Match Result Submission',
+                description: `Please submit your results for match "${match.name}" in the "${tournament.name}" tournament.`,
+                link: `/tournaments/${tournamentId}`
+            });
         }
-        
-        const tournament = docSnap.data() as Tournament;
-        const newBracket = JSON.parse(JSON.stringify(tournament.bracket));
-
-        const round = newBracket.find((r: Round) => r.name === roundName);
-        if (!round) throw new Error("Round not found");
-        
-        const match = round.matches.find((m: Match) => m.id === matchId);
-        if (!match) throw new Error("Match not found");
-
-        if (match.teams[0] && match.teams[1]) {
-             match.resultSubmissionStatus = {
-                [match.teams[0].id]: 'pending',
-                [match.teams[1].id]: 'pending',
-            };
-
-            // Create notifications for all players in the match
-            const allMemberGamerIds = [
-                ...(match.teams[0].members?.map(m => m.gamerId) || []),
-                ...(match.teams[1].members?.map(m => m.gamerId) || [])
-            ].filter(id => id); // Filter out any potential undefined IDs
-
-            if (allMemberGamerIds.length > 0) {
-                const usersQuery = query(collection(firestore, 'users'), where('gamerId', 'in', allMemberGamerIds));
-                const usersSnapshot = await getDocs(usersQuery);
-
-                for (const userDoc of usersSnapshot.docs) {
-                    await createNotification({
-                        userId: userDoc.id,
-                        title: 'Match Result Submission',
-                        description: `Please submit your results for match "${match.name}" in the "${tournament.name}" tournament.`,
-                        link: `/tournaments/${tournamentId}`
-                    });
-                }
-            }
-
-        } else {
-            throw new Error("Both teams must be present to request results.");
-        }
-
-        await updateDoc(tournamentRef, { bracket: newBracket });
         return { success: true };
-
-    } catch(error) {
-        console.error("Error requesting match results:", error);
-        return { success: false, error: (error as Error).message };
     }
+    return { success: false, error: "Both teams must be present to request results." };
 }
 
-export const setMatchWinner = async (
-  tournamentId: string,
-  roundName: string,
-  matchId: string,
-  winnerTeamId: string
-) => {
-  const tournamentRef = doc(firestore, 'tournaments', tournamentId);
-  try {
-    const tournamentSnap = await getDoc(tournamentRef);
-    if (!tournamentSnap.exists()) throw new Error('Tournament not found');
-
-    const tournament = fromFirestore(tournamentSnap);
-    const newBracket = JSON.parse(JSON.stringify(tournament.bracket));
-
-    const roundIndex = newBracket.findIndex((r: Round) => r.name === roundName);
-    if (roundIndex === -1) throw new Error('Round not found');
-
-    const matchIndex = newBracket[roundIndex].matches.findIndex((m: Match) => m.id === matchId);
-    if (matchIndex === -1) throw new Error('Match not found');
-
-    const match = newBracket[roundIndex].matches[matchIndex];
+export const setMatchWinner = async (tournamentId: string, roundName: string, matchId: string, winnerTeamId: string) => {
+    const tournament = tournaments.find(t => t.id === tournamentId);
+    if (!tournament) return { success: false, error: "Tournament not found." };
+    
+    const roundIndex = tournament.bracket.findIndex(r => r.name === roundName);
+    const round = tournament.bracket[roundIndex];
+    if (!round) return { success: false, error: "Round not found." };
+    
+    const matchIndex = round.matches.findIndex(m => m.id === matchId);
+    const match = round.matches[matchIndex];
+    if (!match) return { success: false, error: "Match not found." };
+    
     if (!match.teams[0] || !match.teams[1]) {
-      throw new Error("Both teams must be present to set a winner.");
+      return { success: false, error: "Both teams must be present to set a winner." };
     }
     
-    const winnerIndex = match.teams.findIndex((t: Team | null) => t?.id === winnerTeamId);
-    if (winnerIndex === -1) throw new Error('Winner team not found in the match');
+    const winnerIndex = match.teams.findIndex(t => t?.id === winnerTeamId);
+    if (winnerIndex === -1) return { success: false, error: 'Winner team not found in the match' };
 
     match.status = 'completed';
     match.scores = [0, 0];
     match.scores[winnerIndex] = 1;
 
-    // Advance winner
     const winner = match.teams[winnerIndex];
-    if (winner && roundIndex < newBracket.length - 1) {
-      const nextRoundIndex = roundIndex + 1;
+    if (winner && roundIndex < tournament.bracket.length - 1) {
+      const nextRound = tournament.bracket[roundIndex + 1];
       const nextMatchIndex = Math.floor(matchIndex / 2);
       const teamSlotInNextMatch = matchIndex % 2;
-
-      if (newBracket[nextRoundIndex]?.matches[nextMatchIndex]) {
-        newBracket[nextRoundIndex].matches[nextMatchIndex].teams[teamSlotInNextMatch] = winner;
+      if (nextRound?.matches[nextMatchIndex]) {
+        nextRound.matches[nextMatchIndex].teams[teamSlotInNextMatch] = winner;
       }
     }
     
-    await updateDoc(tournamentRef, { bracket: newBracket });
     return { success: true };
-  } catch (error) {
-    console.error('Error setting match winner:', error);
-    return { success: false, error: (error as Error).message };
-  }
 };
 
-export const undoMatchResult = async (
-  tournamentId: string,
-  roundName: string,
-  matchId: string
-) => {
-    const tournamentRef = doc(firestore, 'tournaments', tournamentId);
-    try {
-        const tournamentSnap = await getDoc(tournamentRef);
-        if (!tournamentSnap.exists()) throw new Error('Tournament not found');
+export const undoMatchResult = async (tournamentId: string, roundName: string, matchId: string) => {
+    const tournament = tournaments.find(t => t.id === tournamentId);
+    if (!tournament) return { success: false, error: "Tournament not found." };
+    
+    const roundIndex = tournament.bracket.findIndex(r => r.name === roundName);
+    const round = tournament.bracket[roundIndex];
+    if (!round) return { success: false, error: "Round not found." };
+    
+    const matchIndex = round.matches.findIndex(m => m.id === matchId);
+    const match = round.matches[matchIndex];
+    if (!match) return { success: false, error: "Match not found." };
 
-        const tournament = fromFirestore(tournamentSnap);
-        const newBracket = JSON.parse(JSON.stringify(tournament.bracket));
+    const oldWinnerIndex = match.scores[0] > match.scores[1] ? 0 : 1;
+    const oldWinner = match.teams[oldWinnerIndex];
 
-        const roundIndex = newBracket.findIndex((r: Round) => r.name === roundName);
-        if (roundIndex === -1) throw new Error('Round not found');
+    match.status = 'pending';
+    match.scores = [0, 0];
 
-        const matchIndex = newBracket[roundIndex].matches.findIndex((m: Match) => m.id === matchId);
-        if (matchIndex === -1) throw new Error('Match not found');
-        
-        const match = newBracket[roundIndex].matches[matchIndex];
-        const oldWinnerIndex = match.scores[0] > match.scores[1] ? 0 : 1;
-        const oldWinner = match.teams[oldWinnerIndex];
-
-        // Revert match
-        match.status = 'pending';
-        match.scores = [0, 0];
-        
-        // Revert next round
-        if (oldWinner && roundIndex < newBracket.length - 1) {
-            const nextRoundIndex = roundIndex + 1;
-            const nextMatchIndex = Math.floor(matchIndex / 2);
-            const teamSlotInNextMatch = matchIndex % 2;
-
-            if (newBracket[nextRoundIndex]?.matches[nextMatchIndex]) {
-                const teamInNextMatch = newBracket[nextRoundIndex].matches[nextMatchIndex].teams[teamSlotInNextMatch];
-                // Only remove if it's the same team, to prevent race conditions or weird states
-                if (teamInNextMatch && teamInNextMatch.id === oldWinner.id) {
-                    newBracket[nextRoundIndex].matches[nextMatchIndex].teams[teamSlotInNextMatch] = null;
-                }
+    if (oldWinner && roundIndex < tournament.bracket.length - 1) {
+        const nextRound = tournament.bracket[roundIndex + 1];
+        const nextMatchIndex = Math.floor(matchIndex / 2);
+        const teamSlotInNextMatch = matchIndex % 2;
+        if (nextRound?.matches[nextMatchIndex]) {
+            const teamInNextMatch = nextRound.matches[nextMatchIndex].teams[teamSlotInNextMatch];
+            if (teamInNextMatch && teamInNextMatch.id === oldWinner.id) {
+                nextRound.matches[nextMatchIndex].teams[teamSlotInNextMatch] = null;
             }
         }
-
-        await updateDoc(tournamentRef, { bracket: newBracket });
-        return { success: true };
-    } catch (error) {
-        console.error('Error undoing match result:', error);
-        return { success: false, error: (error as Error).message };
     }
+    return { success: true };
 };
 
-export const updateMatchDetails = async (
-  tournamentId: string,
-  matchId: string,
-  details: { roomId: string; roomPass: string }
-) => {
-  const tournamentRef = doc(firestore, 'tournaments', tournamentId);
-  try {
-    const tournamentSnap = await getDoc(tournamentRef);
-    if (!tournamentSnap.exists()) throw new Error('Tournament not found');
+export const updateMatchDetails = async (tournamentId: string, matchId: string, details: { roomId: string; roomPass: string }) => {
+    const tournament = tournaments.find(t => t.id === tournamentId);
+    if (!tournament) return { success: false, error: "Tournament not found." };
 
-    const tournament = fromFirestore(tournamentSnap);
-    const newBracket = JSON.parse(JSON.stringify(tournament.bracket));
-
-    let matchFound = false;
-    for (const round of newBracket) {
-      const matchIndex = round.matches.findIndex((m: Match) => m.id === matchId);
-      if (matchIndex !== -1) {
-        round.matches[matchIndex].roomId = details.roomId;
-        round.matches[matchIndex].roomPass = details.roomPass;
-        matchFound = true;
-        break;
+    for (const round of tournament.bracket) {
+      const match = round.matches.find(m => m.id === matchId);
+      if (match) {
+        match.roomId = details.roomId;
+        match.roomPass = details.roomPass;
+        return { success: true };
       }
     }
-
-    if (!matchFound) throw new Error("Match not found in bracket");
-
-    await updateDoc(tournamentRef, { bracket: newBracket });
-    return { success: true };
-  } catch (error) {
-    console.error('Error updating match details:', error);
-    return { success: false, error: (error as Error).message };
-  }
+    return { success: false, error: "Match not found in bracket." };
 };

@@ -28,6 +28,8 @@ export default function AdminPrizeApprovalsPage() {
         const result = await processPendingPrize(prizeId, status);
         if (result.success) {
             toast({ title: `Prize ${status} successfully.` });
+            // Re-fetch data to update the UI
+            getPendingPrizesStream(setPrizes);
         } else {
             toast({ title: "Error", description: result.error, variant: "destructive" });
         }
@@ -70,7 +72,7 @@ export default function AdminPrizeApprovalsPage() {
                                                 <div className="font-medium">{prize.tournamentName}</div>
                                                 <div className="text-sm text-muted-foreground">{prize.reason}</div>
                                             </TableCell>
-                                            <TableCell>{formatDistanceToNow(prize.createdAt.toDate(), { addSuffix: true })}</TableCell>
+                                            <TableCell>{formatDistanceToNow(new Date(prize.createdAt), { addSuffix: true })}</TableCell>
                                             <TableCell className="flex gap-2">
                                                 <Button size="icon" variant="outline" className="text-green-500" onClick={() => handleProcessRequest(prize.id, 'approved')}>
                                                     <CheckCircle className="h-4 w-4" />
@@ -104,7 +106,7 @@ export default function AdminPrizeApprovalsPage() {
                                 
                                     <div className="flex justify-between items-center">
                                         <p className="text-xs text-muted-foreground">
-                                            {formatDistanceToNow(prize.createdAt.toDate(), { addSuffix: true })}
+                                            {formatDistanceToNow(new Date(prize.createdAt), { addSuffix: true })}
                                         </p>
                                         <div className="flex gap-2">
                                             <Button size="sm" variant="outline" className="text-green-500" onClick={() => handleProcessRequest(prize.id, 'approved')}>

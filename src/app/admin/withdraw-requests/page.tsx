@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -29,6 +28,8 @@ export default function AdminWithdrawRequestsPage() {
         const result = await processWithdrawRequest(requestId, status);
         if (result.success) {
             toast({ title: `Request ${status} successfully.` });
+             // Re-fetch data to update the UI
+            getPendingWithdrawRequestsStream(setRequests);
         } else {
             toast({ title: "Error", description: result.error, variant: "destructive" });
         }
@@ -71,7 +72,7 @@ export default function AdminWithdrawRequestsPage() {
                                                 <div className="font-medium">{req.method}</div>
                                                 <div className="text-sm text-muted-foreground">{req.accountNumber}</div>
                                             </TableCell>
-                                            <TableCell>{formatDistanceToNow(req.requestedAt.toDate(), { addSuffix: true })}</TableCell>
+                                            <TableCell>{formatDistanceToNow(new Date(req.requestedAt), { addSuffix: true })}</TableCell>
                                             <TableCell className="flex gap-2">
                                                 <Button size="icon" variant="outline" className="text-green-500" onClick={() => handleProcessRequest(req.id, 'approved')}>
                                                     <CheckCircle className="h-4 w-4" />
@@ -105,7 +106,7 @@ export default function AdminWithdrawRequestsPage() {
                                 
                                     <div className="flex justify-between items-center">
                                         <p className="text-xs text-muted-foreground">
-                                            {formatDistanceToNow(req.requestedAt.toDate(), { addSuffix: true })}
+                                            {formatDistanceToNow(new Date(req.requestedAt), { addSuffix: true })}
                                         </p>
                                         <div className="flex gap-2">
                                             <Button size="sm" variant="outline" className="text-green-500" onClick={() => handleProcessRequest(req.id, 'approved')}>

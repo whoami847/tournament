@@ -1,86 +1,41 @@
-import {
-  collection,
-  addDoc,
-  onSnapshot,
-  deleteDoc,
-  doc,
-  updateDoc,
-  query,
-  orderBy,
-  Timestamp,
-  where,
-  getDocs,
-} from 'firebase/firestore';
-import { firestore } from './firebase';
 import type { WithdrawMethod } from '@/types';
+import { mockWithdrawMethods } from './mock-data';
 
-const fromFirestore = (doc: any): WithdrawMethod => {
-  const data = doc.data();
-  return {
-    id: doc.id,
-    image: data.image || '',
-    name: data.name,
-    receiverInfo: data.receiverInfo,
-    feePercentage: data.feePercentage,
-    minAmount: data.minAmount,
-    maxAmount: data.maxAmount,
-    status: data.status,
-  };
-};
+let methods = [...mockWithdrawMethods];
 
 export const addWithdrawMethod = async (method: Omit<WithdrawMethod, 'id'>) => {
-  try {
-    await addDoc(collection(firestore, 'withdrawMethods'), {
-      ...method,
-      createdAt: Timestamp.now(),
-    });
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
-  }
+  const newMethod: WithdrawMethod = {
+    ...method,
+    id: `wm_${Date.now()}`,
+  };
+  methods.push(newMethod);
+  return { success: true };
 };
 
 export const getWithdrawMethodsStream = (callback: (methods: WithdrawMethod[]) => void) => {
-  const q = query(collection(firestore, 'withdrawMethods'), orderBy('name', 'asc'));
-  const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    callback(querySnapshot.docs.map(fromFirestore));
-  }, (error) => {
-    console.error("Error fetching withdraw methods:", error);
-    callback([]);
-  });
-  return unsubscribe;
+  callback([...methods].sort((a,b) => a.name.localeCompare(b.name)));
+  return () => {};
 };
 
 export const getActiveWithdrawMethods = async (): Promise<WithdrawMethod[]> => {
-    // The query was previously using orderBy('name'), which requires a composite index.
-    // To avoid this requirement for the user, we sort the results in code.
-    const q = query(collection(firestore, 'withdrawMethods'), where('status', '==', 'active'));
-    try {
-        const querySnapshot = await getDocs(q);
-        const methods = querySnapshot.docs.map(fromFirestore);
-        // Sort alphabetically by name
-        methods.sort((a, b) => a.name.localeCompare(b.name));
-        return methods;
-    } catch (error) {
-        console.error("Error fetching active withdraw methods:", error);
-        return [];
-    }
+    const active = methods.filter(m => m.status === 'active');
+    return Promise.resolve(active);
 }
 
 export const updateWithdrawMethod = async (id: string, data: Partial<Omit<WithdrawMethod, 'id'>>) => {
-  try {
-    await updateDoc(doc(firestore, 'withdrawMethods', id), data);
+  const methodIndex = methods.findIndex(m => m.id === id);
+  if (methodIndex > -1) {
+    methods[methodIndex] = { ...methods[methodIndex], ...data };
     return { success: true };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
   }
+  return { success: false, error: "Method not found." };
 };
 
 export const deleteWithdrawMethod = async (id: string) => {
-  try {
-    await deleteDoc(doc(firestore, 'withdrawMethods', id));
+  const initialLength = methods.length;
+  methods = methods.filter(m => m.id !== id);
+  if (methods.length < initialLength) {
     return { success: true };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
   }
+  return { success: false, error: "Method not found." };
 };

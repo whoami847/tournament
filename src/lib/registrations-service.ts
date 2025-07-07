@@ -1,32 +1,10 @@
-import {
-  collection,
-  doc,
-  onSnapshot,
-  query,
-  orderBy,
-  Timestamp,
-  type WriteBatch,
-} from 'firebase/firestore';
-import { firestore } from './firebase';
 import type { RegistrationLog, TeamType } from '@/types';
+import { mockRegistrationLogs } from './mock-data';
 
-const fromFirestore = (doc: any): RegistrationLog => {
-  const data = doc.data();
-  return {
-    id: doc.id,
-    tournamentId: data.tournamentId,
-    tournamentName: data.tournamentName,
-    game: data.game,
-    teamName: data.teamName,
-    teamType: data.teamType,
-    players: data.players,
-    status: data.status,
-    registeredAt: data.registeredAt,
-  };
-};
-
+// This function is intended to be called within a batch in the original code.
+// In mock mode, we'll just add it to the array.
 export const createRegistrationLog = (
-  batch: WriteBatch,
+  batch: null, // Batch is not used in mock mode
   logData: {
     tournamentId: string;
     tournamentName: string;
@@ -36,25 +14,16 @@ export const createRegistrationLog = (
     players: { name: string; gamerId: string }[];
   }
 ) => {
-  const newLogRef = doc(collection(firestore, 'registrations'));
-  const newLog: Omit<RegistrationLog, 'id'> = {
+  const newLog: RegistrationLog = {
     ...logData,
+    id: `reg_${Date.now()}`,
     status: 'approved',
-    registeredAt: Timestamp.now(),
+    registeredAt: new Date().toISOString(),
   };
-  batch.set(newLogRef, newLog);
+  mockRegistrationLogs.unshift(newLog);
 };
 
 export const getRegistrationsStream = (callback: (logs: RegistrationLog[]) => void) => {
-  const q = query(collection(firestore, 'registrations'), orderBy('registeredAt', 'desc'));
-  
-  const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    const logs = querySnapshot.docs.map(fromFirestore);
-    callback(logs);
-  }, (error) => {
-    console.error("Error fetching registrations stream: ", error);
-    callback([]);
-  });
-
-  return unsubscribe;
+  callback(mockRegistrationLogs);
+  return () => {};
 };

@@ -1,141 +1,94 @@
+import {
+  getAuth,
+  onAuthStateChanged as onFirebaseAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut as signOutFirebase,
+  updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendPasswordResetEmail,
+} from 'firebase/auth';
 import type { AuthUser, PlayerProfile } from '@/types';
-import { mockUsers, mockAdmin } from './mock-data';
-
-let currentUser: AuthUser | null = null;
-const listeners: ((user: AuthUser | null) => void)[] = [];
-
-// Simulate a logged-in user for demo purposes.
-// Switch between mockUser and mockAdmin to test different roles.
-const MOCK_AUTH_USER_ID = 'usr_player_1'; // or 'usr_player_1'
-const activeMockUser = mockUsers.find(u => u.id === MOCK_AUTH_USER_ID) || mockAdmin;
-
-if (activeMockUser) {
-    currentUser = {
-        uid: activeMockUser.id,
-        email: activeMockUser.email,
-        displayName: activeMockUser.name,
-        photoURL: activeMockUser.avatar,
-    };
-}
-
+import { auth, firestore } from './firebase';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export function onAuthStateChanged(callback: (user: AuthUser | null) => void) {
-  listeners.push(callback);
-  // Immediately notify with the current user state
-  setTimeout(() => callback(currentUser), 100);
-
-  // Return an unsubscribe function
-  return () => {
-    const index = listeners.indexOf(callback);
-    if (index > -1) {
-      listeners.splice(index, 1);
+  return onFirebaseAuthStateChanged(auth, (user) => {
+    if (user) {
+      const { uid, email, displayName, photoURL } = user;
+      callback({ uid, email, displayName, photoURL });
+    } else {
+      callback(null);
     }
-  };
-}
-
-const notifyListeners = () => {
-    for(const listener of listeners) {
-        listener(currentUser);
-    }
+  });
 }
 
 export async function signUp(email: string, password: string, fullName: string) {
-    console.log("Mock SignUp:", { email, password, fullName });
-    const newUser: PlayerProfile = {
-        id: `usr_${Date.now()}`,
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    const photoURL = `https://api.dicebear.com/8.x/lorelei/svg?seed=${user.uid}`;
+    
+    await updateProfile(user, {
+      displayName: fullName,
+      photoURL: photoURL
+    });
+    
+    await createUserProfile(user.uid, {
         name: fullName,
         email: email,
-        avatar: 'https://placehold.co/96x96.png',
-        gamerId: `player_${Date.now()}`,
-        joined: new Date().toISOString(),
-        role: 'Player',
-        winrate: 0,
-        games: 0,
-        balance: 100, // Welcome bonus
-        pendingBalance: 0,
-        status: 'active',
-        wins: 0,
-    };
-    mockUsers.push(newUser);
-    currentUser = {
-        uid: newUser.id,
-        email: newUser.email,
-        displayName: newUser.name,
-        photoURL: newUser.avatar,
-    };
-    notifyListeners();
-    return { user: currentUser };
+        avatar: photoURL,
+    });
+    
+    return userCredential;
 }
 
 export async function signIn(email: string, password: string) {
-    console.log("Mock SignIn:", { email, password });
-    let foundUser = mockUsers.find(u => u.email === email);
-    if(email === mockAdmin.email) foundUser = mockAdmin;
-    
-    if (!foundUser) {
-        throw new Error("User not found in mock data.");
-    }
-    
-    currentUser = {
-        uid: foundUser.id,
-        email: foundUser.email,
-        displayName: foundUser.name,
-        photoURL: foundUser.avatar,
-    };
-    notifyListeners();
-    return { user: currentUser };
+    return signInWithEmailAndPassword(auth, email, password);
 }
 
 export async function signInWithGoogle() {
-  console.log("Mock SignInWithGoogle");
-  // For demo, just sign in the default player
-  const userToSignIn = mockUsers.find(u => u.id === 'usr_player_1') || mockUsers[0];
-  if (!userToSignIn) {
-      throw new Error("No mock players available for Google Sign-in");
-  }
-
-  currentUser = {
-      uid: userToSignIn.id,
-      email: userToSignIn.email,
-      displayName: userToSignIn.name,
-      photoURL: userToSignIn.avatar,
-  };
-  notifyListeners();
-  return { user: currentUser };
+  const provider = new GoogleAuthProvider();
+  return signInWithPopup(auth, provider);
 }
 
-export function signOutUser(): Promise<void> {
-    console.log("Mock SignOut");
-    currentUser = null;
-    notifyListeners();
-    return Promise.resolve();
+export async function signOutUser() {
+    return signOutFirebase(auth);
 }
 
-export function sendPasswordReset(email: string): Promise<void> {
-  console.log(`Mock: Password reset email sent to ${email}`);
-  return Promise.resolve();
+export async function sendPasswordReset(email: string) {
+    return sendPasswordResetEmail(auth, email);
 }
 
-// Add a function to ensure a profile exists. In mock mode, it always does.
+export const createUserProfile = async (uid: string, data: Partial<PlayerProfile>) => {
+    const userRef = doc(firestore, "users", uid);
+    return setDoc(userRef, {
+        id: uid,
+        ...data,
+        gamerId: `player_${uid.substring(0, 6)}`,
+        joined: serverTimestamp(),
+        role: 'Player',
+        winrate: 0,
+        games: 0,
+        wins: 0,
+        balance: 100, // Welcome bonus
+        pendingBalance: 0,
+        status: 'active',
+    }, { merge: true });
+}
+
 export const ensureUserProfile = async (user: AuthUser) => {
-    const userExists = mockUsers.some(u => u.id === user.uid);
-    if (!userExists) {
-        const newUser: PlayerProfile = {
-            id: user.uid,
-            name: user.displayName || 'New Player',
-            email: user.email || '',
-            avatar: user.photoURL || 'https://placehold.co/96x96.png',
-            gamerId: `player_${Date.now()}`,
-            joined: new Date().toISOString(),
-            role: 'Player',
-            winrate: 0,
-            games: 0,
-            balance: 100,
-            pendingBalance: 0,
-            status: 'active',
-            wins: 0,
+    const userRef = doc(firestore, 'users', user.uid);
+    const docSnap = await getDoc(userRef);
+
+    if (!docSnap.exists()) {
+        const { displayName, email, photoURL } = user;
+        const newProfileData: Partial<PlayerProfile> = {
+            name: displayName || 'New Player',
+            email: email || '',
+            avatar: photoURL || `https://api.dicebear.com/8.x/lorelei/svg?seed=${user.uid}`,
         };
-        mockUsers.push(newUser);
+        await createUserProfile(user.uid, newProfileData);
     }
-    return Promise.resolve();
-};
+}

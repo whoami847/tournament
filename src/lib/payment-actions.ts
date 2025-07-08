@@ -1,7 +1,8 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { mockTransactions, mockUsers } from './mock-data';
+import { firestore } from './firebase';
+import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 
 export async function createPaymentUrl(
   userId: string | null,
@@ -19,25 +20,33 @@ export async function createPaymentUrl(
   if (!rawFormData.amount || +rawFormData.amount < 10) {
     return { error: 'Amount is required and must be at least 10.' };
   }
+  
+  const transactionRef = doc(firestore, 'transactions', `temp_${Date.now()}`); // Create a temp ref
 
-  const transaction_id = `TRX-${Date.now()}`;
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002';
+  // In a real app, this would call the payment gateway API
+  // and get a checkout URL. For now, we simulate success.
+  const transaction_id = transactionRef.id;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   const success_url = `${baseUrl}/payment/success?transaction_id=${transaction_id}`;
   
-  // Simulate creating a pending transaction
-  mockTransactions.unshift({
-    id: transaction_id,
-    userId,
-    amount: parseFloat(rawFormData.amount.toString()),
-    type: 'deposit',
-    description: 'Mock Deposit',
-    date: new Date().toISOString(),
-    // @ts-ignore
-    status: 'pending',
-    transaction_id,
-  });
+  // Create a pending transaction document
+  try {
+    const transactionData = {
+      userId,
+      amount: parseFloat(rawFormData.amount.toString()),
+      type: 'deposit',
+      description: 'Online Deposit',
+      date: serverTimestamp(),
+      status: 'pending',
+      gatewayTransactionId: transaction_id,
+    };
+    await setDoc(transactionRef, transactionData);
+  } catch (error: any) {
+    return { error: 'Failed to initiate transaction. Please try again.' }
+  }
 
-  // In mock mode, we just redirect to success immediately.
+  // In a real app, you would redirect to the payment gateway's URL
+  // For the demo, we redirect directly to our success page
   redirect(success_url);
 }
 
@@ -46,56 +55,33 @@ export async function verifyPayment(transaction_id: string | null) {
   if (!transaction_id) {
     return { status: 'error' as const, message: 'Transaction ID is missing.' };
   }
+  
+  // This is a simplified verification for demo.
+  // A real app would get this from the payment gateway callback and verify it securely on the backend.
+  
+  const transactionRef = doc(firestore, 'transactions', transaction_id);
+  const userRef = doc(firestore, 'users', (await getDoc(transactionRef)).data()?.userId);
 
-  const transactionIndex = mockTransactions.findIndex(t => t.id === transaction_id);
-  if (transactionIndex === -1) {
-    return { status: 'fail' as const, message: 'Transaction not found in our system.' };
-  }
-  
-  const transaction = mockTransactions[transactionIndex];
-  // @ts-ignore
-  if (transaction.status !== 'pending') {
-    return { status: 'success' as const, message: 'Transaction already processed.' };
-  }
-  
-  const user = mockUsers.find(u => u.id === transaction.userId);
-  if (user) {
-    user.balance += transaction.amount;
-  }
-  
-  // @ts-ignore
-  transaction.status = 'success';
-  
-  return { status: 'success' as const, data: { status: 'completed' }, message: 'Payment verified successfully.' };
-}
+  try {
+    await runTransaction(firestore, async (transaction) => {
+      const transactionDoc = await transaction.get(transactionRef);
+      if (!transactionDoc.exists() || transactionDoc.data().status !== 'pending') {
+        throw new Error("Transaction not found or already processed.");
+      }
+      
+      const userDoc = await transaction.get(userRef);
+      if (!userDoc.exists()) {
+        throw new Error("User not found.");
+      }
 
-export async function withdrawAmount(
-  userId: string,
-  amountToWithdraw: number,
-  method: string
-): Promise<{ success: boolean; error?: string }> {
-  if (!userId) {
-    return { success: false, error: 'User not authenticated.' };
+      const newBalance = userDoc.data().balance + transactionDoc.data().amount;
+      
+      transaction.update(userRef, { balance: newBalance });
+      transaction.update(transactionRef, { status: 'success' });
+    });
+    return { status: 'success' as const, message: 'Payment verified and balance updated.' };
+  } catch (error: any) {
+    console.error("Payment verification failed:", error);
+    return { status: 'fail' as const, message: error.message };
   }
-  if (!amountToWithdraw || amountToWithdraw <= 0) {
-    return { success: false, error: 'Invalid withdrawal amount.' };
-  }
-  
-  const user = mockUsers.find(u => u.id === userId);
-  if (!user || user.balance < amountToWithdraw) {
-    return { success: false, error: 'Insufficient balance.' };
-  }
-
-  user.balance -= amountToWithdraw;
-
-  mockTransactions.unshift({
-    id: `w_trx_${Date.now()}`,
-    userId,
-    amount: -amountToWithdraw,
-    type: 'withdrawal',
-    description: `Withdrawal to ${method}`,
-    date: new Date().toISOString(),
-  });
-  
-  return { success: true };
 }

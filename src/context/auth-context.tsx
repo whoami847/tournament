@@ -1,10 +1,9 @@
 'use client';
 
 import { createContext, useEffect, useState, type ReactNode } from 'react';
-import { onAuthStateChanged } from '@/lib/auth-service';
+import { onAuthStateChanged, ensureUserProfile } from '@/lib/auth-service';
 import type { AuthUser, PlayerProfile } from '@/types';
 import { getUserProfileStream } from '@/lib/users-service';
-import { ensureUserProfile } from '@/lib/auth-service';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -26,8 +25,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(authUser);
 
       if (authUser?.uid) {
-        // In a real app, you might want to create a profile if it doesn't exist.
-        // We'll add a helper for this.
         await ensureUserProfile(authUser);
         
         if (profileUnsubscribe) {

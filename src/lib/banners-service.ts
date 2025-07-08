@@ -1,37 +1,49 @@
-import { mockBanners } from './mock-data';
+import { firestore } from './firebase';
+import { collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import type { FeaturedBanner } from '@/types';
 
-// Make it a mutable copy so we can simulate writes
-let banners = [...mockBanners];
+const bannersCollection = collection(firestore, 'banners');
 
 export const addBanner = async (banner: Omit<FeaturedBanner, 'id'>) => {
-  const newBanner = {
-    ...banner,
-    id: `banner_${Date.now()}`,
-  };
-  banners.unshift(newBanner); // Add to the top
-  return { success: true };
+  try {
+    await addDoc(bannersCollection, {
+      ...banner,
+      createdAt: serverTimestamp(),
+    });
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 };
 
 export const getBannersStream = (callback: (banners: FeaturedBanner[]) => void) => {
-  callback(banners);
-  return () => {}; // Return an empty unsubscribe function
+  const q = query(bannersCollection, orderBy('createdAt', 'desc'));
+  const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const banners: FeaturedBanner[] = [];
+    querySnapshot.forEach((doc) => {
+      banners.push({ id: doc.id, ...doc.data() } as FeaturedBanner);
+    });
+    callback(banners);
+  });
+  return unsubscribe;
 };
 
 export const updateBanner = async (id: string, data: Partial<Omit<FeaturedBanner, 'id'>>) => {
-  const bannerIndex = banners.findIndex(b => b.id === id);
-  if (bannerIndex > -1) {
-    banners[bannerIndex] = { ...banners[bannerIndex], ...data };
+  const bannerDoc = doc(firestore, 'banners', id);
+  try {
+    await updateDoc(bannerDoc, data);
     return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
-  return { success: false, error: "Banner not found." };
 };
 
 export const deleteBanner = async (id: string) => {
-  const initialLength = banners.length;
-  banners = banners.filter(b => b.id !== id);
-  if (banners.length < initialLength) {
+  const bannerDoc = doc(firestore, 'banners', id);
+  try {
+    await deleteDoc(bannerDoc);
     return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
-  return { success: false, error: "Banner not found." };
 };

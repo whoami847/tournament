@@ -1,24 +1,36 @@
 import type { UserTeam, PlayerProfile, TeamMember, AppNotification } from '@/types';
-import { mockUsers, mockTeams } from './mock-data';
-import { createNotification } from './notifications-service';
+import { firestore } from './firebase';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, runTransaction, writeBatch } from 'firebase/firestore';
+import { createNotification, updateNotificationStatus } from './notifications-service';
 
-let teams = [...mockTeams];
+const teamsCollection = collection(firestore, 'teams');
+const usersCollection = collection(firestore, 'users');
 
 export const getTeamStream = (teamId: string, callback: (team: UserTeam | null) => void) => {
-  const team = teams.find(t => t.id === teamId) || null;
-  callback(team);
-  return () => {};
+  if (!teamId) {
+    callback(null);
+    return () => {};
+  }
+  const teamDocRef = doc(teamsCollection, teamId);
+  const unsubscribe = onSnapshot(teamDocRef, (doc) => {
+    if (doc.exists()) {
+      callback({ id: doc.id, ...doc.data() } as UserTeam);
+    } else {
+      callback(null);
+    }
+  });
+  return unsubscribe;
 }
 
 export const createTeam = async (leaderProfile: PlayerProfile, teamName: string) => {
     if (!leaderProfile) return { success: false, error: "User profile not found." };
     if (leaderProfile.teamId) return { success: false, error: "User is already in a team." };
 
-    const newTeam: UserTeam = {
-        id: `team_${Date.now()}`,
+    const newTeamRef = doc(teamsCollection);
+    const newTeam: Omit<UserTeam, 'id'> = {
         name: teamName,
         leaderId: leaderProfile.id,
-        avatar: leaderProfile.avatar || "https://placehold.co/96x96.png",
+        avatar: leaderProfile.avatar || `https://api.dicebear.com/8.x/bottts/svg?seed=${newTeamRef.id}`,
         dataAiHint: "team logo",
         members: [{
             uid: leaderProfile.id,
@@ -29,14 +41,19 @@ export const createTeam = async (leaderProfile: PlayerProfile, teamName: string)
         }],
         memberGamerIds: [leaderProfile.gamerId],
     };
-    teams.push(newTeam);
-    
-    const user = mockUsers.find(u => u.id === leaderProfile.id);
-    if (user) {
-        user.teamId = newTeam.id;
-    }
 
-    return { success: true, teamId: newTeam.id };
+    const userRef = doc(usersCollection, leaderProfile.id);
+    
+    const batch = writeBatch(firestore);
+    batch.set(newTeamRef, newTeam);
+    batch.update(userRef, { teamId: newTeamRef.id });
+
+    try {
+        await batch.commit();
+        return { success: true, teamId: newTeamRef.id };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
 }
 
 export const sendTeamInvite = async (inviterProfile: PlayerProfile, inviteeProfile: PlayerProfile, team: UserTeam) => {
@@ -59,75 +76,114 @@ export const sendTeamInvite = async (inviterProfile: PlayerProfile, inviteeProfi
 }
 
 export const respondToInvite = async (notificationId: string, acceptingUserProfile: PlayerProfile, teamId: string, response: 'accepted' | 'rejected', fromUid: string) => {
-    if (response === 'accepted') {
-        const team = teams.find(t => t.id === teamId);
-        if (!team) return { success: false, error: "Team no longer exists." };
-        if (team.members.length >= 5) return { success: false, error: "The team is now full." };
+    const teamDocRef = doc(teamsCollection, teamId);
+    const userDocRef = doc(usersCollection, acceptingUserProfile.id);
+
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const teamDoc = await transaction.get(teamDocRef);
+            if (!teamDoc.exists()) throw new Error("Team no longer exists.");
+            
+            const teamData = teamDoc.data() as UserTeam;
+
+            if (response === 'accepted') {
+                if (teamData.members.length >= 5) throw new Error("The team is now full.");
+                if (teamData.members.some(m => m.uid === acceptingUserProfile.id)) throw new Error("You are already in this team.");
+                
+                const acceptingUserDoc = await transaction.get(userDocRef);
+                if (acceptingUserDoc.exists() && acceptingUserDoc.data().teamId) {
+                    throw new Error("You are already in another team.");
+                }
+
+                const newMember: TeamMember = {
+                    uid: acceptingUserProfile.id,
+                    name: acceptingUserProfile.name,
+                    gamerId: acceptingUserProfile.gamerId,
+                    avatar: acceptingUserProfile.avatar,
+                    role: 'Member'
+                };
+
+                const updatedMembers = [...teamData.members, newMember];
+                const updatedGamerIds = [...teamData.memberGamerIds, acceptingUserProfile.gamerId];
+
+                transaction.update(teamDocRef, { members: updatedMembers, memberGamerIds: updatedGamerIds });
+                transaction.update(userDocRef, { teamId: teamId });
+            }
+        });
+
+        // After transaction is successful
+        await updateNotificationStatus(notificationId, response);
+        await createNotification({
+            userId: fromUid,
+            type: 'invite_response',
+            title: `Invite ${response}`,
+            description: `${acceptingUserProfile.name} has ${response} your invitation to join ${teamId}.`,
+            link: '/profile',
+            response: response
+        });
         
-        const newMember: TeamMember = {
-            uid: acceptingUserProfile.id,
-            name: acceptingUserProfile.name,
-            gamerId: acceptingUserProfile.gamerId,
-            avatar: acceptingUserProfile.avatar,
-            role: 'Member'
-        };
-        team.members.push(newMember);
-        team.memberGamerIds.push(acceptingUserProfile.gamerId);
-        
-        const user = mockUsers.find(u => u.id === acceptingUserProfile.id);
-        if(user) user.teamId = teamId;
+        return { success: true };
+
+    } catch (error: any) {
+        return { success: false, error: error.message };
     }
-    
-    await createNotification({
-        userId: fromUid,
-        type: 'invite_response',
-        title: `Invite ${response}`,
-        description: `${acceptingUserProfile.name} has ${response} your invitation.`,
-        link: '/profile',
-        response: response
-    });
-    
-    return { success: true };
 }
 
 export const addMemberManually = async (teamId: string, memberGamerId: string, memberName: string) => {
-    const team = teams.find(t => t.id === teamId);
-    if (!team) return { success: false, error: "Team not found." };
-    if (team.members.length >= 5) return { success: false, error: "Team is already full." };
-    if (team.memberGamerIds.includes(memberGamerId)) return { success: false, error: "Player with this Gamer ID is already in the team." };
-    
-    const newMember: TeamMember = {
-        name: memberName,
-        gamerId: memberGamerId,
-        role: 'Member'
-    };
-    team.members.push(newMember);
-    team.memberGamerIds.push(memberGamerId);
+    const teamDocRef = doc(teamsCollection, teamId);
 
-    return { success: true };
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const teamDoc = await transaction.get(teamDocRef);
+            if (!teamDoc.exists()) throw new Error("Team not found.");
+            const teamData = teamDoc.data() as UserTeam;
+
+            if (teamData.members.length >= 5) throw new Error("Team is already full.");
+            if (teamData.memberGamerIds.includes(memberGamerId)) throw new Error("Player with this Gamer ID is already in the team.");
+
+            const newMember: TeamMember = { name: memberName, gamerId: memberGamerId, role: 'Member' };
+            const updatedMembers = [...teamData.members, newMember];
+            const updatedGamerIds = [...teamData.memberGamerIds, memberGamerId];
+            
+            transaction.update(teamDocRef, { members: updatedMembers, memberGamerIds: updatedGamerIds });
+        });
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
 }
 
 export const leaveTeam = async (userId: string, teamId: string) => {
-    const team = teams.find(t => t.id === teamId);
-    const user = mockUsers.find(u => u.id === userId);
-
-    if (!team || !user) return { success: false, error: "Could not find team or user." };
+    const teamDocRef = doc(teamsCollection, teamId);
+    const userDocRef = doc(usersCollection, userId);
     
-    if (team.leaderId === userId && team.members.length > 1) {
-        return { success: false, error: "Leader must transfer leadership before leaving." };
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const teamDoc = await transaction.get(teamDocRef);
+            const userDoc = await transaction.get(userDocRef);
+
+            if (!teamDoc.exists() || !userDoc.exists()) throw new Error("Could not find team or user.");
+            
+            const teamData = teamDoc.data() as UserTeam;
+            const userData = userDoc.data() as PlayerProfile;
+
+            if (teamData.leaderId === userId && teamData.members.length > 1) {
+                throw new Error("Leader must transfer leadership before leaving, or be the last member.");
+            }
+
+            const updatedMembers = teamData.members.filter(m => m.uid !== userId);
+            const updatedGamerIds = teamData.memberGamerIds.filter(id => id !== userData.gamerId);
+
+            transaction.update(userDocRef, { teamId: '' });
+            
+            if (updatedMembers.length === 0) {
+                transaction.delete(teamDocRef);
+            } else {
+                transaction.update(teamDocRef, { members: updatedMembers, memberGamerIds: updatedGamerIds });
+            }
+        });
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
     }
-
-    team.members = team.members.filter(m => m.uid !== userId);
-    team.memberGamerIds = team.memberGamerIds.filter(id => id !== user.gamerId);
-    user.teamId = '';
-
-    if (team.members.length === 0) {
-        teams = teams.filter(t => t.id !== teamId);
-    }
-
-    return { success: true };
-}
-
-export const findTeamByGamerIdPlaceholder = async (gamerId: string): Promise<{teamId: string, teamDoc: UserTeam} | null> => {
-    return null; // This logic is too complex for a simple mock
 }

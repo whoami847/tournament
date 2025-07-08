@@ -6,65 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Camera, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { uploadImage } from '@/lib/storage-service';
 
 interface ImageUploadProps {
   initialImageUrl?: string;
   onUploadComplete: (url: string) => void;
 }
-
-const compressImage = (file: File): Promise<File> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new window.Image();
-        img.src = event.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            return reject(new Error('Failed to get canvas context.'));
-          }
-  
-          // Keep aspect ratio
-          let { width, height } = img;
-          const maxDim = 1280; // Max dimension for width or height
-          if (width > height) {
-            if (width > maxDim) {
-              height = Math.round(height * (maxDim / width));
-              width = maxDim;
-            }
-          } else {
-            if (height > maxDim) {
-              width = Math.round(width * (maxDim / height));
-              height = maxDim;
-            }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          ctx.drawImage(img, 0, 0, width, height);
-  
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                return reject(new Error('Canvas to Blob failed.'));
-              }
-              const compressedFile = new File([blob], file.name, {
-                type: 'image/jpeg',
-                lastModified: Date.now(),
-              });
-              resolve(compressedFile);
-            },
-            'image/jpeg',
-            0.7 // 70% quality
-          );
-        };
-        img.onerror = (err) => reject(err);
-      };
-      reader.onerror = (err) => reject(err);
-    });
-};
 
 export function ImageUpload({ initialImageUrl = '', onUploadComplete }: ImageUploadProps) {
   const [imageUrl, setImageUrl] = useState<string>(initialImageUrl);
@@ -75,7 +22,7 @@ export function ImageUpload({ initialImageUrl = '', onUploadComplete }: ImageUpl
   const { toast } = useToast();
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    let file = event.target.files?.[0];
+    const file = event.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
@@ -83,50 +30,24 @@ export function ImageUpload({ initialImageUrl = '', onUploadComplete }: ImageUpl
     setProgress(0);
 
     try {
-        if (file.size > 500 * 1024) { // 500KB limit
-            toast({
-                title: 'Compressing Large Image',
-                description: "This may take a moment...",
-            });
-            file = await compressImage(file);
-        }
-
-        const reader = new FileReader();
-
-        reader.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const progress = (event.loaded / event.total) * 100;
-            setProgress(progress);
-          }
-        };
-
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          setImageUrl(base64String);
-          onUploadComplete(base64String);
-          setUploading(false);
-          setProgress(100);
-          toast({
-            title: 'Image Processed',
-            description: 'The image is ready to be saved with the form.',
-          });
-        };
-
-        reader.onerror = () => {
-          throw new Error('Failed to read the file.');
-        };
-
-        reader.readAsDataURL(file);
-
-    } catch(e) {
-        const errorMessage = (e as Error).message || 'An unexpected error occurred during image processing.';
-        setError(errorMessage);
-        setUploading(false);
-        toast({
-            title: 'Upload Failed',
-            description: errorMessage,
-            variant: 'destructive',
-        });
+      // The path can be customized, e.g., `banners/${file.name}`
+      const downloadURL = await uploadImage(file, `uploads/${Date.now()}-${file.name}`, setProgress);
+      setImageUrl(downloadURL);
+      onUploadComplete(downloadURL);
+      toast({
+        title: 'Image Uploaded',
+        description: 'The image is ready to be saved with the form.',
+      });
+    } catch (e) {
+      const errorMessage = (e as Error).message || 'An unexpected error occurred during image upload.';
+      setError(errorMessage);
+      toast({
+        title: 'Upload Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -168,7 +89,7 @@ export function ImageUpload({ initialImageUrl = '', onUploadComplete }: ImageUpl
       {uploading && (
         <div className="space-y-2">
             <Progress value={progress} />
-            <p className="text-sm text-center text-muted-foreground">{`Processing... ${Math.round(progress)}%`}</p>
+            <p className="text-sm text-center text-muted-foreground">{`Uploading... ${Math.round(progress)}%`}</p>
         </div>
       )}
       

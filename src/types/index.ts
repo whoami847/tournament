@@ -1,3 +1,5 @@
+import type { Timestamp } from 'firebase/firestore';
+
 export type Game = string;
 
 export interface GameCategory {
@@ -47,7 +49,7 @@ export interface Tournament {
   id: string;
   name: string;
   game: Game;
-  startDate: string;
+  startDate: Timestamp | string;
   teamsCount: number;
   maxTeams: number;
   entryFee: number;
@@ -62,10 +64,10 @@ export interface Tournament {
   perKillPrize?: number;
   map?: string;
   version?: string;
-  createdAt?: string;
+  createdAt?: Timestamp | string;
   pointSystemEnabled?: boolean;
   pointSystem?: PointSystem;
-  tournamentName?: string; // For MatchHistoryCard consistency
+  tournamentName?: string;
 }
 
 export interface AuthUser {
@@ -82,17 +84,18 @@ export interface FeaturedBanner {
   date: string;
   image: string;
   dataAiHint: string;
+  createdAt?: Timestamp | string;
 }
 
 export interface PlayerProfile {
-  id: string; // This will be the user's UID
+  id: string;
   name: string;
   email: string;
   avatar: string;
   banner?: string;
   gameName?: string;
   gamerId: string;
-  joined: string; // ISO String
+  joined: Timestamp | string;
   role: string;
   winrate: number;
   games: number;
@@ -109,7 +112,7 @@ export interface Transaction {
   amount: number;
   type: 'deposit' | 'withdrawal' | 'prize' | 'fee' | 'admin_adjustment';
   description: string;
-  date: string; // ISO string
+  date: Timestamp | string;
 }
 
 export interface MatchResult {
@@ -124,7 +127,7 @@ export interface MatchResult {
   position: number;
   screenshotUrl: string;
   status: 'pending' | 'approved' | 'rejected';
-  submittedAt: string; // ISO String
+  submittedAt: Timestamp | string;
 }
 
 export interface AppNotification {
@@ -134,7 +137,7 @@ export interface AppNotification {
   description: string;
   link: string;
   read: boolean;
-  createdAt: string; // ISO String
+  createdAt: Timestamp | string;
   type?: 'generic' | 'team_invite' | 'invite_response';
   from?: { uid: string; name:string; };
   team?: { id: string; name: string; };
@@ -153,7 +156,7 @@ export interface RegistrationLog {
   teamType: TeamType;
   players: { name: string; gamerId: string }[];
   status: 'approved';
-  registeredAt: string; // ISO String
+  registeredAt: Timestamp | string;
 }
 
 export interface TeamMember {
@@ -202,7 +205,7 @@ export interface WithdrawRequest {
   method: string;
   accountNumber: string;
   status: 'pending' | 'approved' | 'rejected';
-  requestedAt: string; // ISO String
+  requestedAt: Timestamp | string;
 }
 
 export interface PendingPrize {
@@ -215,5 +218,5 @@ export interface PendingPrize {
   tournamentName: string;
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
-  createdAt: string; // ISO String
+  createdAt: Timestamp | string;
 }

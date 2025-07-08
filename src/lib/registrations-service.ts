@@ -1,10 +1,12 @@
+import { firestore } from './firebase';
+import { collection, addDoc, serverTimestamp, type WriteBatch } from 'firebase/firestore';
 import type { RegistrationLog, TeamType } from '@/types';
-import { mockRegistrationLogs } from './mock-data';
 
-// This function is intended to be called within a batch in the original code.
-// In mock mode, we'll just add it to the array.
+const registrationLogsCollection = collection(firestore, 'registrationLogs');
+
+// This function is designed to be used within a Firebase WriteBatch/Transaction
 export const createRegistrationLog = (
-  batch: null, // Batch is not used in mock mode
+  batch: WriteBatch,
   logData: {
     tournamentId: string;
     tournamentName: string;
@@ -14,16 +16,30 @@ export const createRegistrationLog = (
     players: { name: string; gamerId: string }[];
   }
 ) => {
-  const newLog: RegistrationLog = {
+  const newLogRef = doc(registrationLogsCollection); // Generate a new doc reference
+  const newLog: Omit<RegistrationLog, 'id'> = {
     ...logData,
-    id: `reg_${Date.now()}`,
     status: 'approved',
-    registeredAt: new Date().toISOString(),
+    registeredAt: serverTimestamp() as any, // Let the server set the timestamp
   };
-  mockRegistrationLogs.unshift(newLog);
+  batch.set(newLogRef, newLog);
 };
 
+// Standalone function for streaming all registration logs
 export const getRegistrationsStream = (callback: (logs: RegistrationLog[]) => void) => {
-  callback(mockRegistrationLogs);
-  return () => {};
+  const q = query(registrationLogsCollection, orderBy('registeredAt', 'desc'));
+
+  const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const logs: RegistrationLog[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      logs.push({
+        id: doc.id,
+        ...data,
+        registeredAt: (data.registeredAt?.toDate() ?? new Date()).toISOString(),
+      } as RegistrationLog);
+    });
+    callback(logs);
+  });
+  return unsubscribe;
 };

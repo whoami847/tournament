@@ -1,13 +1,28 @@
 import type { PaymentGatewaySettings } from '@/types';
-import { mockGatewaySettings } from './mock-data';
+import { firestore } from './firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-let settings = {...mockGatewaySettings};
+const settingsDocRef = doc(firestore, 'settings', 'paymentGateway');
 
 export const getGatewaySettings = async (): Promise<Omit<PaymentGatewaySettings, 'id'>> => {
-  return Promise.resolve(settings);
+    const docSnap = await getDoc(settingsDocRef);
+    if (docSnap.exists()) {
+        return docSnap.data() as Omit<PaymentGatewaySettings, 'id'>;
+    }
+    // Return default/empty settings if not found
+    return {
+        name: '',
+        accessToken: '',
+        checkoutUrl: '',
+        verifyUrl: '',
+    };
 };
 
 export const updateGatewaySettings = async (data: Partial<Omit<PaymentGatewaySettings, 'id'>>) => {
-  settings = { ...settings, ...data };
-  return { success: true };
+  try {
+    await setDoc(settingsDocRef, data, { merge: true });
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 };
